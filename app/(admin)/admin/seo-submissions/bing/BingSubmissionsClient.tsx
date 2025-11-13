@@ -679,27 +679,28 @@ export function BingSubmissionsClient({ config, submissions: initialSubmissions,
                     </p>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-12">
-                          <Checkbox
-                            checked={selectedIds.length === filteredSubmissions.length}
-                            onCheckedChange={handleSelectAll}
-                          />
-                        </TableHead>
-                        <TableHead>URL</TableHead>
-                        <TableHead>类型</TableHead>
-                        <TableHead>语言</TableHead>
-                        <TableHead>收录状态</TableHead>
-                        <TableHead>详细状态</TableHead>
-                        <TableHead>收录时间</TableHead>
-                        <TableHead>最后检查</TableHead>
-                        <TableHead>操作</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {indexPaginatedSubmissions.map((submission) => (
+                  <>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-12">
+                            <Checkbox
+                              checked={selectedIds.length === filteredSubmissions.length}
+                              onCheckedChange={handleSelectAll}
+                            />
+                          </TableHead>
+                          <TableHead>URL</TableHead>
+                          <TableHead>类型</TableHead>
+                          <TableHead>语言</TableHead>
+                          <TableHead>收录状态</TableHead>
+                          <TableHead>详细状态</TableHead>
+                          <TableHead>收录时间</TableHead>
+                          <TableHead>最后检查</TableHead>
+                          <TableHead>操作</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {indexPaginatedSubmissions.map((submission) => (
                         <TableRow key={submission.id}>
                           <TableCell>
                             <Checkbox
@@ -888,50 +889,49 @@ export function BingSubmissionsClient({ config, submissions: initialSubmissions,
                   </Table>
 
                   {/* 分页控件 */}
-                  {filteredSubmissions.length > 0 && (
-                    <div className="flex items-center justify-between px-4 py-3 border-t">
-                      <div className="text-sm text-muted-foreground">
-                        共 {filteredSubmissions.length} 条记录，第 {indexStartIndex + 1}-{Math.min(indexEndIndex, filteredSubmissions.length)} 条
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setIndexCurrentPage(p => Math.max(1, p - 1))}
-                          disabled={indexCurrentPage === 1}
-                        >
-                          上一页
-                        </Button>
-                        <span className="text-sm">
-                          第 {indexCurrentPage} / {indexTotalPages} 页
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setIndexCurrentPage(p => Math.min(indexTotalPages, p + 1))}
-                          disabled={indexCurrentPage === indexTotalPages}
-                        >
-                          下一页
-                        </Button>
-                        <Select
-                          value={indexPageSize.toString()}
-                          onValueChange={(value) => {
-                            setIndexPageSize(Number(value))
-                            setIndexCurrentPage(1)
-                          }}
-                        >
-                          <SelectTrigger className="w-24">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="20">20 条/页</SelectItem>
-                            <SelectItem value="50">50 条/页</SelectItem>
-                            <SelectItem value="100">100 条/页</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                  <div className="flex items-center justify-between px-4 py-3 border-t">
+                    <div className="text-sm text-muted-foreground">
+                      共 {filteredSubmissions.length} 条记录，第 {indexStartIndex + 1}-{Math.min(indexEndIndex, filteredSubmissions.length)} 条
                     </div>
-                  )}
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIndexCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={indexCurrentPage === 1}
+                      >
+                        上一页
+                      </Button>
+                      <span className="text-sm">
+                        第 {indexCurrentPage} / {indexTotalPages} 页
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIndexCurrentPage(p => Math.min(indexTotalPages, p + 1))}
+                        disabled={indexCurrentPage === indexTotalPages}
+                      >
+                        下一页
+                      </Button>
+                      <Select
+                        value={indexPageSize.toString()}
+                        onValueChange={(value) => {
+                          setIndexPageSize(Number(value))
+                          setIndexCurrentPage(1)
+                        }}
+                      >
+                        <SelectTrigger className="w-24">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="20">20 条/页</SelectItem>
+                          <SelectItem value="50">50 条/页</SelectItem>
+                          <SelectItem value="100">100 条/页</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </>
                 )}
               </TabsContent>
             </Tabs>
