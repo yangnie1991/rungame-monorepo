@@ -5,6 +5,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -78,6 +79,7 @@ const typeNames: Record<string, string> = {
 }
 
 export function BingSubmissionsClient({ config, submissions: initialSubmissions, stats: initialStats }: BingSubmissionsClientProps) {
+  const router = useRouter()
   const [submissions, setSubmissions] = useState(initialSubmissions)
   const [stats, setStats] = useState(initialStats)
   const [filter, setFilter] = useState<'all' | 'indexed' | 'not-indexed' | 'unchecked'>('all')
@@ -87,6 +89,10 @@ export function BingSubmissionsClient({ config, submissions: initialSubmissions,
   const [checkingIds, setCheckingIds] = useState<Set<string>>(new Set())
   const [isBatchChecking, setIsBatchChecking] = useState(false)
   const [isGeneratingUrls, setIsGeneratingUrls] = useState(false)
+
+  // 收录状态 tabs 的分页状态
+  const [indexCurrentPage, setIndexCurrentPage] = useState(1)
+  const [indexPageSize, setIndexPageSize] = useState(50)
 
   // Bing API 配置状态
   const [bingApiKey, setBingApiKey] = useState('')
@@ -134,6 +140,11 @@ export function BingSubmissionsClient({ config, submissions: initialSubmissions,
     })
   }
 
+  // 当筛选条件改变时，重置收录状态页码
+  useEffect(() => {
+    setIndexCurrentPage(1)
+  }, [filter, localeFilter, typeFilter])
+
   // Submit tab 状态（保留旧的用于快速推送）
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedGames, setSelectedGames] = useState<string[]>([])
@@ -173,6 +184,12 @@ export function BingSubmissionsClient({ config, submissions: initialSubmissions,
 
     return true
   })
+
+  // 收录状态 tabs 分页数据
+  const indexTotalPages = Math.ceil(filteredSubmissions.length / indexPageSize)
+  const indexStartIndex = (indexCurrentPage - 1) * indexPageSize
+  const indexEndIndex = indexStartIndex + indexPageSize
+  const indexPaginatedSubmissions = filteredSubmissions.slice(indexStartIndex, indexEndIndex)
 
   // 处理全选/取消全选
   const handleSelectAll = (checked: boolean) => {
@@ -252,8 +269,8 @@ export function BingSubmissionsClient({ config, submissions: initialSubmissions,
         toast.success(result.message)
         setSelectedIds([])
 
-        // 批量操作：刷新整个页面获取最新数据
-        window.location.reload()
+        // 批量操作：刷新 Server Components 数据
+        router.refresh()
       } else {
         toast.error(result.message)
       }
@@ -290,7 +307,7 @@ export function BingSubmissionsClient({ config, submissions: initialSubmissions,
             </div>
           </div>
         )
-        setTimeout(() => window.location.reload(), 1500)
+        setTimeout(() => router.refresh(), 1500)
       } else {
         toast.error(result.message)
       }
@@ -314,7 +331,7 @@ export function BingSubmissionsClient({ config, submissions: initialSubmissions,
 
       if (result.success) {
         toast.success(result.message)
-        window.location.reload()
+        router.refresh()
       } else {
         toast.error(result.message)
       }
@@ -421,8 +438,8 @@ export function BingSubmissionsClient({ config, submissions: initialSubmissions,
         // 清空选中
         setPushSelectedIds([])
         setPushingBatchIds([])
-        // 刷新页面
-        window.location.reload()
+        // 刷新数据
+        router.refresh()
       } else {
         toast.error(result.message)
       }
@@ -442,8 +459,8 @@ export function BingSubmissionsClient({ config, submissions: initialSubmissions,
 
       if (result.success) {
         toast.success(result.message)
-        // 刷新页面
-        window.location.reload()
+        // 刷新数据
+        router.refresh()
       } else {
         toast.error(result.message)
       }
@@ -478,7 +495,7 @@ export function BingSubmissionsClient({ config, submissions: initialSubmissions,
       if (result.success) {
         toast.success(result.message)
         setPushSelectedIds([])
-        setTimeout(() => window.location.reload(), 1000)
+        setTimeout(() => router.refresh(), 1000)
       } else {
         toast.error(result.message)
       }
@@ -682,7 +699,7 @@ export function BingSubmissionsClient({ config, submissions: initialSubmissions,
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredSubmissions.map((submission) => (
+                      {indexPaginatedSubmissions.map((submission) => (
                         <TableRow key={submission.id}>
                           <TableCell>
                             <Checkbox
@@ -714,17 +731,17 @@ export function BingSubmissionsClient({ config, submissions: initialSubmissions,
                           </TableCell>
                           <TableCell>
                             {submission.indexedByBing === true ? (
-                              <Badge className="bg-green-100 text-green-700">
+                              <Badge className="bg-green-100 text-green-700 inline-flex items-center whitespace-nowrap">
                                 <CheckCircle2 className="h-3 w-3 mr-1" />
                                 已收录
                               </Badge>
                             ) : submission.indexedByBing === false ? (
-                              <Badge className="bg-red-100 text-red-700">
+                              <Badge className="bg-red-100 text-red-700 inline-flex items-center whitespace-nowrap">
                                 <XCircle className="h-3 w-3 mr-1" />
                                 未收录
                               </Badge>
                             ) : (
-                              <Badge className="bg-gray-100 text-gray-700">
+                              <Badge className="bg-gray-100 text-gray-700 inline-flex items-center whitespace-nowrap">
                                 <Clock className="h-3 w-3 mr-1" />
                                 未检查
                               </Badge>
@@ -869,6 +886,52 @@ export function BingSubmissionsClient({ config, submissions: initialSubmissions,
                       ))}
                     </TableBody>
                   </Table>
+
+                  {/* 分页控件 */}
+                  {filteredSubmissions.length > 0 && (
+                    <div className="flex items-center justify-between px-4 py-3 border-t">
+                      <div className="text-sm text-muted-foreground">
+                        共 {filteredSubmissions.length} 条记录，第 {indexStartIndex + 1}-{Math.min(indexEndIndex, filteredSubmissions.length)} 条
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIndexCurrentPage(p => Math.max(1, p - 1))}
+                          disabled={indexCurrentPage === 1}
+                        >
+                          上一页
+                        </Button>
+                        <span className="text-sm">
+                          第 {indexCurrentPage} / {indexTotalPages} 页
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIndexCurrentPage(p => Math.min(indexTotalPages, p + 1))}
+                          disabled={indexCurrentPage === indexTotalPages}
+                        >
+                          下一页
+                        </Button>
+                        <Select
+                          value={indexPageSize.toString()}
+                          onValueChange={(value) => {
+                            setIndexPageSize(Number(value))
+                            setIndexCurrentPage(1)
+                          }}
+                        >
+                          <SelectTrigger className="w-24">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="20">20 条/页</SelectItem>
+                            <SelectItem value="50">50 条/页</SelectItem>
+                            <SelectItem value="100">100 条/页</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
                 )}
               </TabsContent>
             </Tabs>
