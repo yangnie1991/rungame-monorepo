@@ -26,6 +26,14 @@ import { Switch } from '@/components/ui/switch'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination'
 import { CheckCircle2, XCircle, Clock, RefreshCw, Settings, ExternalLink, Send, FileText, Loader2, TestTube, Info } from 'lucide-react'
 import { checkBingIndexStatus, checkBingIndexBatch } from '../index-check-actions'
 import { submitBingUrls, submitBingUrlsDirect } from '../submit-engine-actions'
@@ -893,26 +901,36 @@ export function BingSubmissionsClient({ config, submissions: initialSubmissions,
                     <div className="text-sm text-muted-foreground">
                       共 {filteredSubmissions.length} 条记录，第 {indexStartIndex + 1}-{Math.min(indexEndIndex, filteredSubmissions.length)} 条
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIndexCurrentPage(p => Math.max(1, p - 1))}
-                        disabled={indexCurrentPage === 1}
-                      >
-                        上一页
-                      </Button>
-                      <span className="text-sm">
-                        第 {indexCurrentPage} / {indexTotalPages} 页
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIndexCurrentPage(p => Math.min(indexTotalPages, p + 1))}
-                        disabled={indexCurrentPage === indexTotalPages}
-                      >
-                        下一页
-                      </Button>
+                    <div className="flex items-center gap-4">
+                      <Pagination>
+                        <PaginationContent>
+                          <PaginationItem>
+                            <PaginationPrevious
+                              href="#"
+                              onClick={(e) => {
+                                e.preventDefault()
+                                setIndexCurrentPage(p => Math.max(1, p - 1))
+                              }}
+                              className={indexCurrentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                            />
+                          </PaginationItem>
+                          <PaginationItem>
+                            <span className="text-sm px-2">
+                              第 {indexCurrentPage} / {indexTotalPages} 页
+                            </span>
+                          </PaginationItem>
+                          <PaginationItem>
+                            <PaginationNext
+                              href="#"
+                              onClick={(e) => {
+                                e.preventDefault()
+                                setIndexCurrentPage(p => Math.min(indexTotalPages, p + 1))
+                              }}
+                              className={indexCurrentPage === indexTotalPages ? 'pointer-events-none opacity-50' : ''}
+                            />
+                          </PaginationItem>
+                        </PaginationContent>
+                      </Pagination>
                       <Select
                         value={indexPageSize.toString()}
                         onValueChange={(value) => {
