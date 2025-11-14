@@ -174,6 +174,8 @@ GamePix 游戏导入完整指南，包括：
 #### ⚡ 性能优化
 - [查询优化](./QUERY-OPTIMIZATION.md) - 数据库查询性能优化
 - [R2 CDN 配置](./R2-CDN-SETUP.md) - Cloudflare R2 存储和 CDN 配置
+- [Public 文件迁移到 R2 快速指南](./PUBLIC-TO-R2-QUICKSTART.md) ⚡ - 将静态文件迁移到 R2 的快速决策指南
+- [Public 文件迁移到 R2 完整指南](./PUBLIC-TO-R2-MIGRATION.md) - 静态文件迁移的详细技术文档
 
 #### 🔧 开发工具
 - [环境验证](./ENVIRONMENT-VALIDATION.md) - 环境变量验证和配置

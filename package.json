@@ -2,17 +2,27 @@
   "name": "rungame-online",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "npm@10.9.2",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "unset NODE_ENV && prisma generate && prisma generate --schema=prisma/schema-cache.prisma && next build --turbopack",
-    "start": "next start",
-    "lint": "eslint",
-    "db:push": "prisma db push",
-    "db:seed": "tsx prisma/seed.ts",
-    "db:generate": "prisma generate && prisma generate --schema=prisma/schema-cache.prisma",
-    "db:push:cache": "prisma db push --schema=prisma/schema-cache.prisma",
-    "db:studio": "prisma studio",
-    "db:studio:cache": "prisma studio --schema=prisma/schema-cache.prisma"
+    "dev": "turbo run dev --filter=@rungame/website",
+    "dev:admin": "turbo run dev --filter=@rungame/admin",
+    "dev:website": "turbo run dev --filter=@rungame/website",
+    "build": "turbo run build",
+    "build:database": "turbo run build --filter=@rungame/database",
+    "build:admin": "turbo run build --filter=@rungame/admin",
+    "build:website": "turbo run build --filter=@rungame/website",
+    "start": "npm run start -w @rungame/website",
+    "start:admin": "npm run start -w @rungame/admin",
+    "start:website": "npm run start -w @rungame/website",
+    "lint": "turbo run lint",
+    "db:push": "npm run db:push -w @rungame/database",
+    "db:seed": "npm run db:seed -w @rungame/database",
+    "db:generate": "npm run generate -w @rungame/database",
+    "db:studio": "npm run db:studio -w @rungame/database"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -89,6 +99,7 @@
     "shadcn": "^3.5.0",
     "tailwindcss": "^4",
     "tsx": "^4.20.6",
+    "turbo": "^2.6.1",
     "tw-animate-css": "^1.4.0",
     "typescript": "^5"
   }
