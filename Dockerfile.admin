@@ -1,0 +1,95 @@
+# RunGame Admin - 多阶段 Docker 构建
+# 优化的生产部署配置
+
+# ============================================
+# 第一阶段: 依赖安装
+# ============================================
+FROM node:20-alpine AS deps
+WORKDIR /app
+
+# 安装构建依赖
+RUN apk add --no-cache libc6-compat python3 make g++
+
+# 复制 package 文件
+COPY package*.json ./
+COPY apps/admin/package*.json ./apps/admin/
+COPY packages/database/package*.json ./packages/database/
+
+# 安装依赖（包括 devDependencies，构建时需要）
+RUN npm ci
+
+# ============================================
+# 第二阶段: 构建
+# ============================================
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# 复制依赖
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/admin/node_modules ./apps/admin/node_modules
+COPY --from=deps /app/packages/database/node_modules ./packages/database/node_modules
+
+# 复制源代码
+COPY . .
+
+# 构建参数（可在构建时传入）
+ARG DATABASE_URL
+ARG NEXTAUTH_SECRET
+ARG NEXTAUTH_URL
+ARG NODE_ENV=production
+
+# 设置环境变量
+ENV DATABASE_URL=${DATABASE_URL}
+ENV NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+ENV NEXTAUTH_URL=${NEXTAUTH_URL}
+ENV NODE_ENV=${NODE_ENV}
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# 生成 Prisma Client
+RUN npm run db:generate
+
+# 构建 admin 应用（使用 Turbopack）
+RUN npm run build:admin
+
+# ============================================
+# 第三阶段: 生产运行时
+# ============================================
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+# 创建非 root 用户
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# 安装运行时依赖
+RUN apk add --no-cache curl
+
+# 设置环境变量
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3001
+
+# 复制必要文件
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/turbo.json ./
+COPY --from=builder /app/apps/admin/package*.json ./apps/admin/
+COPY --from=builder /app/packages/database/package*.json ./packages/database/
+
+# 复制构建产物
+COPY --from=builder --chown=nextjs:nodejs /app/apps/admin/.next ./apps/admin/.next
+COPY --from=builder --chown=nextjs:nodejs /app/apps/admin/public ./apps/admin/public
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/packages/database ./packages/database
+
+# 切换到非 root 用户
+USER nextjs
+
+# 暴露端口
+EXPOSE 3001
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:3001/api/health || exit 1
+
+# 启动应用
+CMD ["npm", "run", "start:admin"]

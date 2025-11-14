@@ -105,6 +105,59 @@ GamePix 游戏导入完整指南，包括：
 
 ---
 
+## 🚀 部署文档
+
+### 管理端部署（1Panel + Docker）
+
+完整的 Docker 容器化部署方案，支持 1Panel 面板和 GitHub Actions 自动部署：
+
+#### [部署概览](../DEPLOYMENT.md) ⭐
+完整的部署方案说明，包括：
+- 部署文件清单
+- 3 种部署方式对比
+- 架构说明
+- 安全最佳实践
+- 运维管理
+
+#### [快速部署卡片](../QUICK-DEPLOY.md) ⚡
+5 分钟快速部署指南：
+- 精简的部署步骤
+- 常用命令速查
+- 快速故障排查
+
+#### [快速开始指南](./DEPLOY-QUICKSTART.md) 🎯
+详细的快速部署教程（15-20 分钟）：
+- 前置要求检查
+- 7 个部署步骤详解
+- 自动部署配置
+- 日常使用指南
+
+#### [完整部署指南](./DEPLOY-ADMIN.md) 📖
+最详细的部署文档：
+- VPS 环境准备
+- 1Panel 配置
+- Docker 配置
+- Nginx 反向代理
+- SSL 证书申请
+- GitHub Actions 自动部署
+- 运维管理
+- 完整的故障排查
+
+#### [部署检查清单](./DEPLOY-CHECKLIST.md) ✅
+部署前后的完整检查清单：
+- 部署前检查
+- 部署步骤检查
+- 部署后验证
+- 性能优化
+- 故障恢复准备
+
+**推荐阅读顺序**:
+1. 新手：[快速部署卡片](../QUICK-DEPLOY.md) → [快速开始指南](./DEPLOY-QUICKSTART.md)
+2. 运维：[完整部署指南](./DEPLOY-ADMIN.md) → [部署检查清单](./DEPLOY-CHECKLIST.md)
+3. 开发：[部署概览](../DEPLOYMENT.md) - 了解架构和工作流
+
+---
+
 ## 🚀 快速开始
 
 ### 新开发者入门
@@ -170,6 +223,13 @@ GamePix 游戏导入完整指南，包括：
 - [浏览器插件](./GAMEPIX-IMPORT.md#浏览器插件使用)
 - [字段映射](./GAMEPIX-IMPORT.md#字段映射规则)
 - [R2 图片上传](./GAMEPIX-IMPORT.md#图片上传到-r2)
+
+#### 🚀 部署运维
+- [部署概览](../DEPLOYMENT.md) - 完整的部署方案说明
+- [快速部署卡片](../QUICK-DEPLOY.md) - 5 分钟快速参考
+- [快速开始指南](./DEPLOY-QUICKSTART.md) - 15 分钟详细教程
+- [完整部署指南](./DEPLOY-ADMIN.md) - 最详细的部署文档
+- [部署检查清单](./DEPLOY-CHECKLIST.md) - 部署前后检查清单
 
 #### ⚡ 性能优化
 - [查询优化](./QUERY-OPTIMIZATION.md) - 数据库查询性能优化

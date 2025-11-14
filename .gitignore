@@ -69,3 +69,5 @@ build.log
 
 # prisma generated clients
 /lib/generated/
+apps/admin/lib/generated/prisma-cache/libquery_engine-darwin-arm64.dylib.node
+apps/admin/lib/generated/prisma-cache/query_engine_bg.wasm

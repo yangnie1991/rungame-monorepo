@@ -8,7 +8,7 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "turbo run dev --filter=@rungame/website",
+    "dev": "turbo run dev --filter=@rungame/website --filter=@rungame/admin",
     "dev:admin": "turbo run dev --filter=@rungame/admin",
     "dev:website": "turbo run dev --filter=@rungame/website",
     "build": "turbo run build",
