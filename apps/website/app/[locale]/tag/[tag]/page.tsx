@@ -1,0 +1,264 @@
+import { getGamesByTagWithPagination, getAllTagsInfoMap } from "@rungame/database"
+import { GameSection } from "@/components/site/GameSection"
+import { notFound } from "next/navigation"
+import type { Metadata } from "next"
+import { Link } from "@/i18n/routing"
+import { getSiteUrl, generateAlternateLanguages } from "@/lib/seo-helpers"
+import { generateTagOGImageUrl } from "@/lib/og-image-helpers"
+import {
+  generateCollectionPageSchema,
+  generateBreadcrumbSchema,
+  renderJsonLd
+} from "@/lib/schema-generators"
+import {
+  generateTagTitle,
+  generateTagDescription,
+  combineKeywords,
+  generateTagBaseKeywords
+} from "@/lib/seo-template-generator"
+
+interface TagPageProps {
+  params: Promise<{ locale: string; tag: string }>
+  searchParams: Promise<{ page?: string }>
+}
+
+export async function generateMetadata({ params, searchParams }: TagPageProps): Promise<Metadata> {
+  const { locale, tag } = await params
+  const { page = "1" } = await searchParams
+  const currentPage = parseInt(page, 10)
+
+  // 只获取标签信息，不查询游戏列表（避免重复查询）
+  const tagsMap = await getAllTagsInfoMap(locale)
+  const tagInfo = tagsMap[tag]
+
+  if (!tagInfo) {
+    return {
+      title: "Tag Not Found",
+    }
+  }
+
+  const siteUrl = getSiteUrl()
+
+  // ========================================
+  // 1. 标题：完全使用模板生成（不使用数据库的 metaTitle）
+  // ========================================
+  const baseTitle = generateTagTitle({
+    name: tagInfo.name,
+    gameCount: tagInfo.gameCount,
+  }, locale)
+
+  // 为分页页面添加页码
+  const title = currentPage > 1
+    ? `${baseTitle} (${locale === 'zh' ? '第' : 'Page '}${currentPage}${locale === 'zh' ? '页' : ''})`
+    : baseTitle
+
+  // ========================================
+  // 2. 描述：优先使用数据库的 metaDescription
+  // ========================================
+  let description: string
+  if (currentPage > 1) {
+    // 分页页面使用固定格式
+    description = locale === 'zh'
+      ? `浏览更多${tagInfo.name}游戏 - 第${currentPage}页。在 RunGame 上免费畅玩，无需下载。`
+      : `Discover more ${tagInfo.name.toLowerCase()} games - Page ${currentPage}. Enjoy instant play with no downloads required.`
+  } else {
+    // 第一页：优先使用数据库的 metaDescription，回退到模板生成
+    description = tagInfo.metaDescription || generateTagDescription({
+      name: tagInfo.name,
+      gameCount: tagInfo.gameCount,
+    }, locale)
+  }
+
+  // ========================================
+  // 3. 关键词：固定模板 + 数据库个性关键词
+  // ========================================
+  const baseKeywords = generateTagBaseKeywords({
+    name: tagInfo.name,
+    gameCount: tagInfo.gameCount,
+  }, locale)
+
+  const keywords = combineKeywords(baseKeywords, tagInfo.keywords)
+
+  // 生成动态 OG 图片 URL
+  const ogImageUrl = generateTagOGImageUrl({
+    name: tagInfo.name,
+    gameCount: tagInfo.gameCount,
+    icon: '🏷️',
+  })
+
+  // 构建路径（包含页码）
+  const path = currentPage > 1
+    ? `/tag/${tag}?page=${currentPage}`
+    : `/tag/${tag}`
+
+  // Open Graph locale 映射
+  const ogLocaleMap: Record<string, string> = {
+    'zh': 'zh_CN',
+    'en': 'en_US',
+  }
+
+  // 获取分页信息以生成 prev/next 链接
+  const data = await getGamesByTagWithPagination(tag, locale, currentPage, 30)
+  const pagination = data?.pagination
+
+  return {
+    title,
+    description,
+    keywords,
+    openGraph: {
+      title,
+      description,
+      url: `${siteUrl}${locale === 'en' ? '' : `/${locale}`}${path}`,
+      siteName: 'RunGame',
+      locale: ogLocaleMap[locale] || 'en_US',
+      type: 'website',
+      images: [{
+        url: ogImageUrl,
+        width: 1200,
+        height: 630,
+        alt: tagInfo.name,
+      }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [ogImageUrl],
+      creator: '@rungame',
+      site: '@rungame',
+    },
+    alternates: {
+      // 自引用 canonical（包含当前页码）
+      canonical: `${siteUrl}${locale === 'en' ? '' : `/${locale}`}${path}`,
+
+      // Prev link（如果不是第一页）
+      ...(currentPage > 1 && {
+        prev: currentPage === 2
+          ? `${siteUrl}${locale === 'en' ? '' : `/${locale}`}/tag/${tag}`
+          : `${siteUrl}${locale === 'en' ? '' : `/${locale}`}/tag/${tag}?page=${currentPage - 1}`,
+      }),
+
+      // Next link（如果有更多页面）
+      ...(pagination?.hasMore && {
+        next: `${siteUrl}${locale === 'en' ? '' : `/${locale}`}/tag/${tag}?page=${currentPage + 1}`,
+      }),
+
+      languages: generateAlternateLanguages(
+        currentPage > 1 ? `/tag/${tag}?page=${currentPage}` : `/tag/${tag}`
+      ),
+    },
+  }
+}
+
+export default async function TagPage({ params, searchParams }: TagPageProps) {
+  const { locale, tag } = await params
+  const { page: pageParam } = await searchParams
+  const page = pageParam ? parseInt(pageParam) : 1
+
+  const data = await getGamesByTagWithPagination(tag, locale, page, 30)
+
+  if (!data) {
+    notFound()
+  }
+
+  // 翻译文本
+  const t = {
+    home: locale === "zh" ? "首页" : "Home",
+    tags: locale === "zh" ? "标签" : "Tags",
+    games: locale === "zh" ? "游戏" : "Games",
+    page: locale === "zh" ? "页" : "Page",
+    previous: locale === "zh" ? "上一页" : "Previous",
+    next: locale === "zh" ? "下一页" : "Next",
+  }
+
+  // 将游戏转换为GameSection需要的格式
+  const formattedGames = data.games.map((game) => ({
+    slug: game.slug,
+    thumbnail: game.thumbnail,
+    title: game.title,
+    description: game.description,
+    category: { name: game.category, slug: "" },
+    tags: (game.tags || []).map((tagName: string) => ({ name: tagName })),
+  }))
+
+  // 面包屑 Schema
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: t.home, url: locale === 'en' ? '/' : `/${locale}/` },
+    { name: data.tag.name, url: '' },
+  ])
+
+  // 标签集合 Schema（页面感知）
+  const collectionSchema = generateCollectionPageSchema({
+    name: page > 1
+      ? `${data.tag.name} Games - ${t.page} ${page}`
+      : `${data.tag.name} Games`,
+    description: `Play the best ${data.tag.name} games online for free`,
+    url: page > 1
+      ? `${locale === 'en' ? '' : `/${locale}`}/tag/${tag}?page=${page}`
+      : `${locale === 'en' ? '' : `/${locale}`}/tag/${tag}`,
+    numberOfItems: data.games.length, // 当前页面的游戏数量，而不是总数
+  })
+
+  return (
+    <div className="space-y-6">
+      {/* 添加结构化数据 */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: renderJsonLd(breadcrumbSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: renderJsonLd(collectionSchema) }}
+      />
+
+      {/* 面包屑导航 */}
+      <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
+        <Link href="/" className="hover:text-foreground transition-colors">
+          {t.home}
+        </Link>
+        <span>/</span>
+        <span className="text-foreground">{data.tag.name}</span>
+      </nav>
+
+      {/* 标签标题 */}
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold">
+          {data.tag.name} {t.games}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {data.pagination.totalGames.toLocaleString()} {t.games}
+        </p>
+      </div>
+
+      {/* 游戏列表 */}
+      <GameSection title={`${data.tag.name} ${t.games}`} games={formattedGames} locale={locale} showTitle={false} />
+
+      {/* 分页导航 */}
+      {data.pagination.totalPages > 1 && (
+        <div className="flex items-center justify-center space-x-4 py-8">
+          {page > 1 && (
+            <Link
+              href={`/tag/${tag}?page=${page - 1}`}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              {t.previous}
+            </Link>
+          )}
+
+          <span className="text-sm text-muted-foreground">
+            {t.page} {page} / {data.pagination.totalPages}
+          </span>
+
+          {data.pagination.hasMore && (
+            <Link
+              href={`/tag/${tag}?page=${page + 1}`}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              {t.next}
+            </Link>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
