@@ -1,13 +1,11 @@
 name: Deploy Admin to VPS
-# 测试工作流触发 - 2025-11-15
 
 on:
   push:
     branches:
       - main                        # 主分支
-      - master                      # 备用主分支名
       - production                  # 生产分支
-      - feature/monorepo-migration  # 你当前的分支
+      - dev                         # 开发分支
     paths:
       - 'apps/admin/**'
       - 'packages/database/**'
