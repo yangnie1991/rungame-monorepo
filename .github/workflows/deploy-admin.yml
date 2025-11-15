@@ -1,4 +1,5 @@
 name: Deploy Admin to VPS
+# 测试工作流触发 - 2025-11-15
 
 on:
   push:
