@@ -3,7 +3,10 @@ name: Deploy Admin to VPS
 on:
   push:
     branches:
-      - main  # 或者你的主分支名称
+      - main                        # 主分支
+      - master                      # 备用主分支名
+      - production                  # 生产分支
+      - feature/monorepo-migration  # 你当前的分支
     paths:
       - 'apps/admin/**'
       - 'packages/database/**'
@@ -11,6 +14,20 @@ on:
       - 'docker-compose.admin.yml'
       - '.github/workflows/deploy-admin.yml'
   workflow_dispatch:  # 允许手动触发
+    inputs:
+      branch:
+        description: '要部署的分支（留空则使用当前分支）'
+        required: false
+        default: ''
+      environment:
+        description: '部署环境'
+        required: false
+        type: choice
+        default: 'production'
+        options:
+          - production
+          - staging
+          - development
 
 jobs:
   deploy:
@@ -23,6 +40,8 @@ jobs:
       # ==========================================
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
 
       # ==========================================
       # 2. 设置 Node.js 环境（可选，用于构建检查）
@@ -34,21 +53,39 @@ jobs:
           cache: 'npm'
 
       # ==========================================
-      # 3. SSH 部署到 VPS
+      # 3. 获取分支信息
+      # ==========================================
+      - name: Get branch info
+        id: branch
+        run: |
+          # 获取分支名称（去掉 refs/heads/ 前缀）
+          BRANCH_NAME="${{ github.event.inputs.branch || github.ref_name }}"
+          echo "branch_name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
+          echo "部署分支: ${BRANCH_NAME}"
+          echo "部署环境: ${{ github.event.inputs.environment || 'production' }}"
+
+      # ==========================================
+      # 4. SSH 部署到 VPS
       # ==========================================
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          DEPLOY_BRANCH: ${{ steps.branch.outputs.branch_name }}
+          DEPLOY_ENV: ${{ github.event.inputs.environment || 'production' }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
+          envs: DEPLOY_BRANCH,DEPLOY_ENV
           script: |
             # 设置错误时退出
             set -e
 
             echo "=========================================="
             echo "开始部署 RunGame 管理端"
+            echo "分支: ${DEPLOY_BRANCH}"
+            echo "环境: ${DEPLOY_ENV}"
             echo "时间: $(date)"
             echo "=========================================="
 
@@ -61,7 +98,11 @@ jobs:
             # 拉取最新代码
             echo "📦 拉取最新代码..."
             git fetch origin
-            git reset --hard origin/main
+
+            # 切换到指定分支
+            echo "🔀 切换到分支: ${DEPLOY_BRANCH}"
+            git checkout ${DEPLOY_BRANCH}
+            git reset --hard origin/${DEPLOY_BRANCH}
 
             # 备份当前容器（如果存在）
             if docker ps -a --format '{{.Names}}' | grep -q "^rungame-admin$"; then
