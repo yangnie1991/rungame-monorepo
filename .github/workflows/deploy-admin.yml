@@ -3,9 +3,7 @@ name: Deploy Admin to VPS
 on:
   push:
     branches:
-      - main                        # 主分支
-      - production                  # 生产分支
-      - dev                         # 开发分支
+      - main                        # 仅主分支触发自动部署
     paths:
       - 'apps/admin/**'
       - 'packages/database/**'
