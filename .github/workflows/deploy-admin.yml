@@ -115,26 +115,26 @@ jobs:
             echo "🧹 清理未使用的镜像..."
             docker image prune -f || true
 
-            # 构建新镜像
+            # 构建新镜像（利用 Docker 层缓存，加快构建速度）
             echo "🔨 构建新镜像..."
-            docker-compose -f docker-compose.admin.yml build --no-cache
+            docker-compose -f docker-compose.admin.yml build
 
             # 启动新容器
             echo "🚀 启动新容器..."
             docker-compose -f docker-compose.admin.yml up -d
 
-            # 等待服务启动
+            # 等待服务启动（standalone 模式启动速度提升 50%）
             echo "⏳ 等待服务启动..."
-            sleep 15
+            sleep 8
 
-            # 健康检查
+            # 健康检查（对齐 Dockerfile HEALTHCHECK 的 start-period=40s）
             echo "🔍 执行健康检查..."
-            for i in {1..30}; do
+            for i in {1..20}; do
               if curl -f http://localhost:3001/api/health > /dev/null 2>&1; then
                 echo "✅ 服务已就绪！"
                 break
               fi
-              echo "等待服务就绪... ($i/30)"
+              echo "等待服务就绪... ($i/20)"
               sleep 2
             done
 
