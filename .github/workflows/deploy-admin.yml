@@ -71,6 +71,8 @@ jobs:
           DEPLOY_ENV: ${{ github.event.inputs.environment || 'production' }}
           # 环境变量（从 GitHub Secrets 传递）
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ADMIN_DATABASE_URL: ${{ secrets.ADMIN_DATABASE_URL }}
+          ADMIN_DB_PASSWORD: ${{ secrets.ADMIN_DB_PASSWORD }}
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
           NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
@@ -83,7 +85,7 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
-          envs: DEPLOY_BRANCH,DEPLOY_ENV,DATABASE_URL,NEXTAUTH_SECRET,NEXTAUTH_URL,R2_ACCOUNT_ID,R2_ACCESS_KEY_ID,R2_SECRET_ACCESS_KEY,R2_BUCKET_NAME,R2_PUBLIC_URL
+          envs: DEPLOY_BRANCH,DEPLOY_ENV,DATABASE_URL,ADMIN_DATABASE_URL,ADMIN_DB_PASSWORD,NEXTAUTH_SECRET,NEXTAUTH_URL,R2_ACCOUNT_ID,R2_ACCESS_KEY_ID,R2_SECRET_ACCESS_KEY,R2_BUCKET_NAME,R2_PUBLIC_URL
           script: |
             # 设置错误时退出
             set -e
@@ -128,8 +130,12 @@ jobs:
             # 生成 .env 文件（从 GitHub Secrets）
             echo "📝 生成 .env 配置文件..."
             cat > .env <<EOF
-            # 数据库配置
+            # 主数据库配置（业务数据）
             DATABASE_URL=${DATABASE_URL}
+
+            # 管理界面专用数据库配置
+            ADMIN_DATABASE_URL=${ADMIN_DATABASE_URL:-}
+            ADMIN_DB_PASSWORD=${ADMIN_DB_PASSWORD:-}
 
             # NextAuth 配置
             NEXTAUTH_SECRET=${NEXTAUTH_SECRET}

@@ -24,14 +24,37 @@
 
 ### 2. 数据库配置
 
+本项目使用**双数据库架构**：
+
 | Secret 名称 | 说明 | 示例 | 必需 |
 |------------|------|------|------|
-| `DATABASE_URL` | PostgreSQL 连接字符串 | `postgresql://user:pass@host:5432/db` | ✅ |
+| `DATABASE_URL` | 主数据库连接字符串 | `postgresql://user:pass@host:5432/main_db` | ✅ |
+| `ADMIN_DATABASE_URL` | 管理界面专用数据库 | `postgresql://user:pass@host:5432/admin_db` | ⚠️ 推荐 |
+| `ADMIN_DB_PASSWORD` | 本地管理数据库密码 | 自动生成的强密码 | ⚠️ 本地模式必需 |
 
 **DATABASE_URL 格式**：
 ```
 postgresql://用户名:密码@主机:端口/数据库名?schema=public
 ```
+
+**架构说明**：
+- **主数据库** (DATABASE_URL)：存储业务核心数据（用户、游戏、分类等）
+- **管理界面数据库** (ADMIN_DATABASE_URL)：存储管理员账号、审计日志、配置等
+
+**配置模式**：
+
+#### 方案 A：远程管理数据库（推荐生产环境）
+只需配置 `ADMIN_DATABASE_URL`，指向云数据库：
+```bash
+ADMIN_DATABASE_URL=postgresql://admin:pass@rds.example.com:5432/admin_db
+```
+
+#### 方案 B：本地 Docker 管理数据库（推荐开发环境）
+只需配置 `ADMIN_DB_PASSWORD`，自动使用本地容器：
+```bash
+ADMIN_DB_PASSWORD=your-strong-password
+```
+docker-compose 会自动启动 `rungame-admin-db` 容器
 
 ### 3. NextAuth 配置
 
@@ -246,6 +269,32 @@ http://localhost:3001
 
 # VPS IP 访问
 http://123.45.67.89:3001
+```
+
+### REDIS_URL 示例
+
+```bash
+# 本地 Docker Redis（默认，无需配置 REDIS_URL）
+# 只需配置 REDIS_PASSWORD
+redis://:your-password@redis:6379
+
+# 阿里云 Redis
+redis://:password@r-xxxxxxx.redis.rds.aliyuncs.com:6379
+
+# 腾讯云 Redis
+redis://:password@10.x.x.x:6379
+
+# AWS ElastiCache
+redis://:password@clustercfg.my-redis.xxxxx.use1.cache.amazonaws.com:6379
+
+# Upstash Redis（无密码）
+redis://region.upstash.io:6379
+
+# Redis with TLS
+rediss://:password@host:6380
+
+# Redis Cluster（需要应用支持）
+redis://:password@node1:6379,node2:6379,node3:6379
 ```
 
 ## 多环境配置

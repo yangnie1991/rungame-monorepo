@@ -16,7 +16,11 @@ services:
       - "3001:3001"
     environment:
       - NODE_ENV=production
+      # 主数据库（业务数据）
       - DATABASE_URL=${DATABASE_URL}
+      # 管理界面专用数据库（优先使用远程，如未配置则使用本地）
+      - ADMIN_DATABASE_URL=${ADMIN_DATABASE_URL:-postgresql://${ADMIN_DB_USER:-admin}:${ADMIN_DB_PASSWORD}@admin-db:5432/${ADMIN_DB_NAME:-rungame_admin}}
+      # NextAuth 配置
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - NEXTAUTH_URL=${NEXTAUTH_URL}
       - NEXTAUTH_TRUST_HOST=true
@@ -42,6 +46,39 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  # 管理界面专用 PostgreSQL 数据库（可选：本地数据库）
+  admin-db:
+    image: postgres:16-alpine
+    container_name: rungame-admin-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${ADMIN_DB_USER:-admin}
+      - POSTGRES_PASSWORD=${ADMIN_DB_PASSWORD}
+      - POSTGRES_DB=${ADMIN_DB_NAME:-rungame_admin}
+    ports:
+      - "5433:5432"  # 避免与主数据库端口冲突
+    volumes:
+      - admin-db-data:/var/lib/postgresql/data
+    networks:
+      - rungame-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${ADMIN_DB_USER:-admin}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    labels:
+      - "com.docker.compose.project=rungame"
+      - "com.docker.compose.service=admin-db"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  admin-db-data:
+    name: rungame-admin-db-data
 
 networks:
   rungame-network:
