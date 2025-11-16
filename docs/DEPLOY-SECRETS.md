@@ -29,8 +29,8 @@
 | Secret 名称 | 说明 | 示例 | 必需 |
 |------------|------|------|------|
 | `DATABASE_URL` | 主数据库连接字符串 | `postgresql://user:pass@host:5432/main_db` | ✅ |
-| `ADMIN_DATABASE_URL` | 管理界面专用数据库 | `postgresql://user:pass@host:5432/admin_db` | ⚠️ 推荐 |
-| `ADMIN_DB_PASSWORD` | 本地管理数据库密码 | 自动生成的强密码 | ⚠️ 本地模式必需 |
+| `CACHE_DATABASE_URL` | 缓存数据库连接字符串 | `postgresql://cache:pass@host:5432/cache_db` | ⚠️ 推荐 |
+| `CACHE_DB_PASSWORD` | 本地缓存数据库密码 | 自动生成的强密码 | ⚠️ 本地模式必需 |
 
 **DATABASE_URL 格式**：
 ```
@@ -38,23 +38,30 @@ postgresql://用户名:密码@主机:端口/数据库名?schema=public
 ```
 
 **架构说明**：
-- **主数据库** (DATABASE_URL)：存储业务核心数据（用户、游戏、分类等）
-- **管理界面数据库** (ADMIN_DATABASE_URL)：存储管理员账号、审计日志、配置等
+- **主数据库** (DATABASE_URL)：存储业务核心数据
+  - 游戏、分类、标签、翻译
+  - 管理员账号、权限配置
+  - SEO 配置、网站设置
+
+- **缓存数据库** (CACHE_DATABASE_URL)：存储临时和缓存数据
+  - GamePix 游戏列表缓存
+  - 游戏导入同步日志
+  - AI 对话历史（7天自动清理）
 
 **配置模式**：
 
-#### 方案 A：远程管理数据库（推荐生产环境）
-只需配置 `ADMIN_DATABASE_URL`，指向云数据库：
+#### 方案 A：远程缓存数据库（推荐生产环境）
+只需配置 `CACHE_DATABASE_URL`，指向云数据库：
 ```bash
-ADMIN_DATABASE_URL=postgresql://admin:pass@rds.example.com:5432/admin_db
+CACHE_DATABASE_URL=postgresql://cache:pass@rds.example.com:5432/cache_db
 ```
 
-#### 方案 B：本地 Docker 管理数据库（推荐开发环境）
-只需配置 `ADMIN_DB_PASSWORD`，自动使用本地容器：
+#### 方案 B：本地 Docker 缓存数据库（推荐开发环境）
+只需配置 `CACHE_DB_PASSWORD`，自动使用本地容器：
 ```bash
-ADMIN_DB_PASSWORD=your-strong-password
+CACHE_DB_PASSWORD=your-strong-password
 ```
-docker-compose 会自动启动 `rungame-admin-db` 容器
+docker-compose 会自动启动 `rungame-cache-db` 容器
 
 ### 3. NextAuth 配置
 
@@ -271,30 +278,27 @@ http://localhost:3001
 http://123.45.67.89:3001
 ```
 
-### REDIS_URL 示例
+### CACHE_DATABASE_URL 示例
 
 ```bash
-# 本地 Docker Redis（默认，无需配置 REDIS_URL）
-# 只需配置 REDIS_PASSWORD
-redis://:your-password@redis:6379
+# 本地 Docker PostgreSQL（默认，无需配置 CACHE_DATABASE_URL）
+# 只需配置 CACHE_DB_PASSWORD
+postgresql://cache:password@cache-db:5432/rungame_cache
 
-# 阿里云 Redis
-redis://:password@r-xxxxxxx.redis.rds.aliyuncs.com:6379
+# 阿里云 RDS（可以与主库在同一实例，节省成本）
+postgresql://cache:pass@rds-xxx.aliyuncs.com:5432/cache_db
 
-# 腾讯云 Redis
-redis://:password@10.x.x.x:6379
+# 腾讯云 PostgreSQL
+postgresql://cache:pass@10.x.x.x:5432/cache_db
 
-# AWS ElastiCache
-redis://:password@clustercfg.my-redis.xxxxx.use1.cache.amazonaws.com:6379
+# AWS RDS
+postgresql://cache:pass@db.xxxxx.us-east-1.rds.amazonaws.com:5432/cache_db
 
-# Upstash Redis（无密码）
-redis://region.upstash.io:6379
+# Neon（推荐：免费层足够，低延迟）
+postgresql://user:pass@ep-xxx-xxx.us-east-2.aws.neon.tech/cache_db
 
-# Redis with TLS
-rediss://:password@host:6380
-
-# Redis Cluster（需要应用支持）
-redis://:password@node1:6379,node2:6379,node3:6379
+# Supabase
+postgresql://postgres:pass@db.xxx.supabase.co:5432/postgres?schema=cache
 ```
 
 ## 多环境配置

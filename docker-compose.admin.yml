@@ -18,8 +18,8 @@ services:
       - NODE_ENV=production
       # 主数据库（业务数据）
       - DATABASE_URL=${DATABASE_URL}
-      # 管理界面专用数据库（优先使用远程，如未配置则使用本地）
-      - ADMIN_DATABASE_URL=${ADMIN_DATABASE_URL:-postgresql://${ADMIN_DB_USER:-admin}:${ADMIN_DB_PASSWORD}@admin-db:5432/${ADMIN_DB_NAME:-rungame_admin}}
+      # 缓存数据库（游戏导入缓存 + AI 对话历史）
+      - CACHE_DATABASE_URL=${CACHE_DATABASE_URL:-postgresql://${CACHE_DB_USER:-cache}:${CACHE_DB_PASSWORD}@cache-db:5432/${CACHE_DB_NAME:-rungame_cache}}
       # NextAuth 配置
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - NEXTAUTH_URL=${NEXTAUTH_URL}
@@ -47,29 +47,29 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # 管理界面专用 PostgreSQL 数据库（可选：本地数据库）
-  admin-db:
+  # 缓存数据库（GamePix 缓存 + AI 对话历史）
+  cache-db:
     image: postgres:16-alpine
-    container_name: rungame-admin-db
+    container_name: rungame-cache-db
     restart: unless-stopped
     environment:
-      - POSTGRES_USER=${ADMIN_DB_USER:-admin}
-      - POSTGRES_PASSWORD=${ADMIN_DB_PASSWORD}
-      - POSTGRES_DB=${ADMIN_DB_NAME:-rungame_admin}
+      - POSTGRES_USER=${CACHE_DB_USER:-cache}
+      - POSTGRES_PASSWORD=${CACHE_DB_PASSWORD}
+      - POSTGRES_DB=${CACHE_DB_NAME:-rungame_cache}
     ports:
       - "5433:5432"  # 避免与主数据库端口冲突
     volumes:
-      - admin-db-data:/var/lib/postgresql/data
+      - cache-db-data:/var/lib/postgresql/data
     networks:
       - rungame-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${ADMIN_DB_USER:-admin}"]
+      test: ["CMD-SHELL", "pg_isready -U ${CACHE_DB_USER:-cache}"]
       interval: 10s
       timeout: 5s
       retries: 5
     labels:
       - "com.docker.compose.project=rungame"
-      - "com.docker.compose.service=admin-db"
+      - "com.docker.compose.service=cache-db"
     logging:
       driver: "json-file"
       options:
@@ -77,8 +77,8 @@ services:
         max-file: "3"
 
 volumes:
-  admin-db-data:
-    name: rungame-admin-db-data
+  cache-db-data:
+    name: rungame-cache-db-data
 
 networks:
   rungame-network:
