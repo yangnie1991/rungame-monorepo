@@ -86,15 +86,42 @@ jobs:
             echo "时间: $(date)"
             echo "=========================================="
 
-            # 进入项目目录
-            cd /opt/1panel/docker/compose/rungame-admin || {
-              echo "❌ 项目目录不存在，请先在 1Panel 中创建项目"
-              exit 1
-            }
+            # 检查并初始化项目目录
+            if [ ! -d "/opt/1panel/docker/compose/rungame-admin" ]; then
+              echo "📁 项目目录不存在，创建并克隆仓库..."
+              mkdir -p /opt/1panel/docker/compose
+              cd /opt/1panel/docker/compose
+              git clone https://github.com/${GITHUB_REPOSITORY}.git rungame-admin
+              cd rungame-admin
 
-            # 拉取最新代码
-            echo "📦 拉取最新代码..."
-            git fetch origin
+              # 检查 .env 文件
+              if [ ! -f .env ]; then
+                echo "⚠️  警告: .env 文件不存在，请在首次部署后手动配置"
+                echo "参考: cp .env.example .env && nano .env"
+              fi
+            else
+              # 进入已存在的项目目录
+              cd /opt/1panel/docker/compose/rungame-admin
+
+              # 检查是否为 Git 仓库
+              if [ ! -d .git ]; then
+                echo "⚠️  目录存在但不是 Git 仓库，重新初始化..."
+                cd ..
+                mv rungame-admin rungame-admin.backup.$(date +%Y%m%d_%H%M%S)
+                git clone https://github.com/${GITHUB_REPOSITORY}.git rungame-admin
+                cd rungame-admin
+
+                # 尝试恢复 .env 文件
+                if [ -f ../rungame-admin.backup.*/.env ]; then
+                  echo "📋 恢复 .env 配置..."
+                  cp ../rungame-admin.backup.*/.env .env
+                fi
+              else
+                # 拉取最新代码
+                echo "📦 拉取最新代码..."
+                git fetch origin
+              fi
+            fi
 
             # 切换到指定分支
             echo "🔀 切换到分支: ${DEPLOY_BRANCH}"
