@@ -69,12 +69,21 @@ jobs:
         env:
           DEPLOY_BRANCH: ${{ steps.branch.outputs.branch_name }}
           DEPLOY_ENV: ${{ github.event.inputs.environment || 'production' }}
+          # 环境变量（从 GitHub Secrets 传递）
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
-          envs: DEPLOY_BRANCH,DEPLOY_ENV
+          envs: DEPLOY_BRANCH,DEPLOY_ENV,DATABASE_URL,NEXTAUTH_SECRET,NEXTAUTH_URL,R2_ACCOUNT_ID,R2_ACCESS_KEY_ID,R2_SECRET_ACCESS_KEY,R2_BUCKET_NAME,R2_PUBLIC_URL
           script: |
             # 设置错误时退出
             set -e
@@ -93,12 +102,6 @@ jobs:
               cd /opt/1panel/docker/compose
               git clone https://github.com/${GITHUB_REPOSITORY}.git rungame-admin
               cd rungame-admin
-
-              # 检查 .env 文件
-              if [ ! -f .env ]; then
-                echo "⚠️  警告: .env 文件不存在，请在首次部署后手动配置"
-                echo "参考: cp .env.example .env && nano .env"
-              fi
             else
               # 进入已存在的项目目录
               cd /opt/1panel/docker/compose/rungame-admin
@@ -110,12 +113,6 @@ jobs:
                 mv rungame-admin rungame-admin.backup.$(date +%Y%m%d_%H%M%S)
                 git clone https://github.com/${GITHUB_REPOSITORY}.git rungame-admin
                 cd rungame-admin
-
-                # 尝试恢复 .env 文件
-                if [ -f ../rungame-admin.backup.*/.env ]; then
-                  echo "📋 恢复 .env 配置..."
-                  cp ../rungame-admin.backup.*/.env .env
-                fi
               else
                 # 拉取最新代码
                 echo "📦 拉取最新代码..."
@@ -127,6 +124,25 @@ jobs:
             echo "🔀 切换到分支: ${DEPLOY_BRANCH}"
             git checkout ${DEPLOY_BRANCH}
             git reset --hard origin/${DEPLOY_BRANCH}
+
+            # 生成 .env 文件（从 GitHub Secrets）
+            echo "📝 生成 .env 配置文件..."
+            cat > .env <<EOF
+            # 数据库配置
+            DATABASE_URL=${DATABASE_URL}
+
+            # NextAuth 配置
+            NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+            NEXTAUTH_URL=${NEXTAUTH_URL}
+
+            # R2 存储配置
+            R2_ACCOUNT_ID=${R2_ACCOUNT_ID:-}
+            R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID:-}
+            R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY:-}
+            R2_BUCKET_NAME=${R2_BUCKET_NAME:-}
+            R2_PUBLIC_URL=${R2_PUBLIC_URL:-}
+            EOF
+            echo "✅ .env 文件已生成"
 
             # 备份当前容器（如果存在）
             if docker ps -a --format '{{.Names}}' | grep -q "^rungame-admin$"; then
