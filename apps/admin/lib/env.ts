@@ -6,14 +6,23 @@
 /**
  * 验证必需的环境变量
  * 如果缺少任何必需的环境变量，抛出错误
+ * @param buildTimeOnly - 是否只验证构建时必需的变量
  */
-export function validateRequiredEnvVars() {
-  const required = [
+export function validateRequiredEnvVars(buildTimeOnly = false) {
+  // 构建时必需的环境变量（主要是数据库相关）
+  const buildTimeRequired = [
     'DATABASE_URL',
+  ]
+
+  // 运行时必需的环境变量（认证、加密等）
+  const runtimeRequired = [
     'NEXTAUTH_SECRET',
     'NEXTAUTH_URL',
     'ENCRYPTION_KEY',
   ]
+
+  // 根据阶段选择需要验证的变量
+  const required = buildTimeOnly ? buildTimeRequired : [...buildTimeRequired, ...runtimeRequired]
 
   const missing: string[] = []
 
@@ -89,24 +98,25 @@ export function initEnv() {
     return
   }
 
-  // 跳过构建阶段的验证（next build 时不需要验证运行时环境变量）
-  // 这些变量只在应用实际运行时才需要
+  // 检测是否为构建阶段
   const isBuildTime =
     process.env.NEXT_PHASE === 'phase-production-build' ||
     process.env.SKIP_ENV_VALIDATION === 'true' ||
-    process.argv.includes('build')
-
-  if (isBuildTime) {
-    console.log('⏭️ 构建阶段：跳过环境变量验证')
-    return
-  }
+    process.argv.some(arg => arg.includes('build'))
 
   try {
-    validateRequiredEnvVars()
-    validateEncryptionKeyStrength()
+    if (isBuildTime) {
+      // 构建阶段：只验证构建时必需的环境变量
+      console.log('🔨 构建阶段：验证构建时环境变量')
+      validateRequiredEnvVars(true) // 只验证 DATABASE_URL
+    } else {
+      // 运行时阶段：验证所有环境变量
+      validateRequiredEnvVars(false) // 验证所有变量
+      validateEncryptionKeyStrength()
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('✅ 环境变量验证通过')
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ 环境变量验证通过')
+      }
     }
   } catch (error) {
     console.error(error)
