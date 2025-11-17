@@ -89,6 +89,14 @@ export function initEnv() {
     return
   }
 
+  // 跳过构建阶段的验证（next build 时不需要验证运行时环境变量）
+  // 这些变量只在应用实际运行时才需要
+  const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
+  if (isBuildTime) {
+    console.log('⏭️ 构建阶段：跳过环境变量验证')
+    return
+  }
+
   try {
     validateRequiredEnvVars()
     validateEncryptionKeyStrength()
