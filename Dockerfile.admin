@@ -98,3 +98,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 
 # 🔥 使用 standalone 生成的 server.js（性能提升 50%+）
 CMD ["node", "apps/admin/server.js"]
+# Deployment test at Tue Nov 18 01:36:22 CST 2025
