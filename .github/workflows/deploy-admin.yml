@@ -146,76 +146,76 @@ jobs:
             # ============================================
             echo "📝 生成 Admin 应用配置文件..."
             mkdir -p apps/admin
-            cat > apps/admin/.env.local << 'ENVEOF'
-            # ============================================================
-            # Admin 应用环境变量（Admin 部署专用）
-            # 由 GitHub Actions 自动生成 - 请勿手动编辑
-            # ============================================================
+            cat > apps/admin/.env.local <<'ENVEOF'
+# ============================================================
+# Admin 应用环境变量（Admin 部署专用）
+# 由 GitHub Actions 自动生成 - 请勿手动编辑
+# ============================================================
 
-            # ============================================
-            # 数据库配置
-            # ============================================
-            # 业务数据库连接（展示端和管理端共用）
-            DATABASE_URL=${DATABASE_URL}
+# ============================================
+# 数据库配置
+# ============================================
+# 业务数据库连接（展示端和管理端共用）
+DATABASE_URL=${DATABASE_URL}
 
-            # 管理数据库连接（仅管理端使用）
-            CACHE_DATABASE_URL=${CACHE_DATABASE_URL}
+# 管理数据库连接（仅管理端使用）
+CACHE_DATABASE_URL=${CACHE_DATABASE_URL}
 
-            # ============================================
-            # NextAuth.js 配置（管理员认证）
-            # ============================================
-            NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-            NEXTAUTH_URL=${NEXTAUTH_URL}
+# ============================================
+# NextAuth.js 配置（管理员认证）
+# ============================================
+NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+NEXTAUTH_URL=${NEXTAUTH_URL}
 
-            # ============================================
-            # AI 配置加密密钥
-            # ============================================
-            ENCRYPTION_KEY=${ENCRYPTION_KEY}
+# ============================================
+# AI 配置加密密钥
+# ============================================
+ENCRYPTION_KEY=${ENCRYPTION_KEY}
 
-            # ============================================
-            # 应用配置
-            # ============================================
-            NODE_ENV=${NODE_ENV}
-            NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
+# ============================================
+# 应用配置
+# ============================================
+NODE_ENV=${NODE_ENV}
+NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
 
-            # Google Analytics（可选）
-            NEXT_PUBLIC_GA_ID=${NEXT_PUBLIC_GA_ID:-}
+# Google Analytics（可选）
+NEXT_PUBLIC_GA_ID=${NEXT_PUBLIC_GA_ID:-}
 
-            # Google AdSense（可选）
-            NEXT_PUBLIC_ADSENSE_ID=${NEXT_PUBLIC_ADSENSE_ID:-}
+# Google AdSense（可选）
+NEXT_PUBLIC_ADSENSE_ID=${NEXT_PUBLIC_ADSENSE_ID:-}
 
-            # ============================================
-            # Cloudflare R2 配置（可选）
-            # ============================================
-            R2_ACCOUNT_ID=${R2_ACCOUNT_ID:-}
-            R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID:-}
-            R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY:-}
-            R2_BUCKET_NAME=${R2_BUCKET_NAME:-}
-            R2_PUBLIC_URL=${R2_PUBLIC_URL:-}
+# ============================================
+# Cloudflare R2 配置（可选）
+# ============================================
+R2_ACCOUNT_ID=${R2_ACCOUNT_ID:-}
+R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID:-}
+R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY:-}
+R2_BUCKET_NAME=${R2_BUCKET_NAME:-}
+R2_PUBLIC_URL=${R2_PUBLIC_URL:-}
 
-            # ============================================
-            # Google Custom Search API 配置（可选）
-            # ============================================
-            GOOGLE_SEARCH_API_KEY=${GOOGLE_SEARCH_API_KEY:-}
-            GOOGLE_SEARCH_ENGINE_ID=${GOOGLE_SEARCH_ENGINE_ID:-}
+# ============================================
+# Google Custom Search API 配置（可选）
+# ============================================
+GOOGLE_SEARCH_API_KEY=${GOOGLE_SEARCH_API_KEY:-}
+GOOGLE_SEARCH_ENGINE_ID=${GOOGLE_SEARCH_ENGINE_ID:-}
 ENVEOF
-            # 去除前导空格并展开环境变量
-            sed 's/^            //' apps/admin/.env.local | envsubst > apps/admin/.env.local.tmp
+            # 展开环境变量
+            envsubst < apps/admin/.env.local > apps/admin/.env.local.tmp
             mv apps/admin/.env.local.tmp apps/admin/.env.local
             echo "✅ Admin .env.local 文件已生成"
 
             # 同时生成根目录 .env（用于 docker-compose 读取）
             echo "📝 生成 Docker Compose 配置文件..."
-            cat > .env << 'DOCKEREOF'
-            # Docker Compose 环境变量（由 GitHub Actions 自动生成）
-            DATABASE_URL=${DATABASE_URL}
-            CACHE_DATABASE_URL=${CACHE_DATABASE_URL}
-            NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-            NEXTAUTH_URL=${NEXTAUTH_URL}
-            NODE_ENV=${NODE_ENV}
+            cat > .env <<'DOCKEREOF'
+# Docker Compose 环境变量（由 GitHub Actions 自动生成）
+DATABASE_URL=${DATABASE_URL}
+CACHE_DATABASE_URL=${CACHE_DATABASE_URL}
+NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+NEXTAUTH_URL=${NEXTAUTH_URL}
+NODE_ENV=${NODE_ENV}
 DOCKEREOF
-            # 去除前导空格并展开环境变量
-            sed 's/^            //' .env | envsubst > .env.tmp
+            # 展开环境变量
+            envsubst < .env > .env.tmp
             mv .env.tmp .env
             echo "✅ Docker Compose .env 文件已生成"
 
