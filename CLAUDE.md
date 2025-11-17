@@ -61,7 +61,7 @@ pnpm lint                      # 运行所有应用的 ESLint
 ```
 rungame-monorepo/
 ├── apps/
-│   ├── admin/                 # 管理后台应用（端口 3001）
+│   ├── admin/                 # 管理后台应用（端口 4000）
 │   │   ├── app/               # Next.js App Router
 │   │   │   ├── (admin)/       # 管理后台路由组
 │   │   │   ├── api/           # API 路由
@@ -449,8 +449,11 @@ npm install <package> -w root
 - **Turbopack**: 所有应用构建和开发使用 `--turbopack` 标志
 - **端口分配**:
   - Website: 3000 (默认)
-  - Admin: 3001
-- **数据库**: 共享的 PostgreSQL 实例（在 `.env` 中设置 `DATABASE_URL`）
+  - Admin: 4000
+- **数据库**: 双库分离架构
+  - 业务数据库: `DATABASE_URL` (共享，Admin + Website)
+  - 管理数据库: `CACHE_DATABASE_URL` (仅 Admin)
+  - 外部托管（生产环境推荐使用云数据库服务）
 
 ## 关键约束
 
@@ -525,23 +528,25 @@ DATABASE_URL="postgresql://game:password@host:6432/game?schema=public&pgbouncer=
 ### 📚 完整文档目录
 详见 [docs/README.md](docs/README.md) - 包含完整的文档导航和索引
 
-### 核心文档（7个）
-- [README.md](README.md) - 项目快速开始
+**文档总数**: 11 个核心文档（已精简）
+
+### 核心架构（4 个）
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - 项目架构和技术栈详解
-- [docs/DATABASE.md](docs/DATABASE.md) - 数据库架构和查询模式
+- [docs/DATABASE.md](docs/DATABASE.md) - 数据库架构、双库分离、查询优化
 - [docs/I18N.md](docs/I18N.md) - next-intl 多语言实现指南
 - [docs/PAGE-STRUCTURE.md](docs/PAGE-STRUCTURE.md) - PageType 动态页面系统
-- [docs/SEO.md](docs/SEO.md) - 搜索引擎优化完整指南
+
+### 部署指南（2 个）
+- [docs/1PANEL-DEPLOYMENT.md](docs/1PANEL-DEPLOYMENT.md) - 1Panel 面板部署指南（推荐）
+- [docs/GITHUB-SECRETS-SETUP.md](docs/GITHUB-SECRETS-SETUP.md) - GitHub Actions 环境变量配置
+
+### 功能模块（3 个）
 - [docs/AI-FEATURES.md](docs/AI-FEATURES.md) - AI 功能完整实现指南
 - [docs/GAMEPIX-IMPORT.md](docs/GAMEPIX-IMPORT.md) - GamePix 游戏导入指南
+- [docs/SEO.md](docs/SEO.md) - 搜索引擎优化完整指南
 
-### 扩展文档（6个）
-- [docs/SEO-CONTENT-GENERATION.md](docs/SEO-CONTENT-GENERATION.md) - SEO 内容生成
-- [docs/GOOGLE-SEO-META-LENGTH.md](docs/GOOGLE-SEO-META-LENGTH.md) - Google SEO 字符限制
-- [docs/GOOGLE-SEARCH-API-SETUP.md](docs/GOOGLE-SEARCH-API-SETUP.md) - Google API 配置
-- [docs/QUERY-OPTIMIZATION.md](docs/QUERY-OPTIMIZATION.md) - 查询优化
-- [docs/R2-CDN-SETUP.md](docs/R2-CDN-SETUP.md) - R2 CDN 配置
-- [docs/ENVIRONMENT-VALIDATION.md](docs/ENVIRONMENT-VALIDATION.md) - 环境验证
+### 扩展功能（1 个）
+- [docs/R2-CDN-SETUP.md](docs/R2-CDN-SETUP.md) - R2 CDN 配置和迁移指南
 
 ### 工具脚本
 - [scripts/README.md](scripts/README.md) - 维护脚本使用指南
@@ -549,9 +554,6 @@ DATABASE_URL="postgresql://game:password@host:6432/game?schema=public&pgbouncer=
 - scripts/validation/ - 验证脚本（数据完整性检查）
 - scripts/seo/ - SEO 相关脚本
 - scripts/assets/ - 资源生成脚本（图标、Logo等）
-
-### 项目清理记录
-- [CLEANUP-SUMMARY.md](CLEANUP-SUMMARY.md) - 2025-01-30 文档清理详细记录
 
 ---
 ## 强制性限制
