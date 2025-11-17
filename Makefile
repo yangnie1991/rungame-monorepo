@@ -13,7 +13,7 @@ help:
 	@echo "  make build-all         - 构建所有应用镜像"
 	@echo ""
 	@echo "启动容器:"
-	@echo "  make start-admin       - 启动 Admin 容器 (端口 3001)"
+	@echo "  make start-admin       - 启动 Admin 容器 (端口 4000)"
 	@echo "  make start-website     - 启动 Website 容器 (端口 3000)"
 	@echo "  make start-all         - 启动所有容器"
 	@echo ""
@@ -43,7 +43,7 @@ build-admin:
 		--file Dockerfile.admin \
 		--build-arg DATABASE_URL="${DATABASE_URL}" \
 		--build-arg NEXTAUTH_SECRET="${NEXTAUTH_SECRET}" \
-		--build-arg NEXTAUTH_URL="${NEXTAUTH_URL:-http://localhost:3001}" \
+		--build-arg NEXTAUTH_URL="${NEXTAUTH_URL:-http://localhost:4000}" \
 		--tag rungame-admin:latest \
 		--tag rungame-admin:$(shell date +%Y%m%d-%H%M%S) \
 		.
@@ -58,11 +58,11 @@ start-admin:
 	docker run -d \
 		--name rungame-admin \
 		--restart unless-stopped \
-		-p 3001:3001 \
+		-p 4000:4000 \
 		--env-file .env \
-		-e PORT=3001 \
+		-e PORT=4000 \
 		rungame-admin:latest
-	@echo "✅ Admin 容器已启动: http://localhost:3001"
+	@echo "✅ Admin 容器已启动: http://localhost:4000"
 	@echo "📊 查看日志: make logs-admin"
 
 stop-admin:
@@ -131,7 +131,7 @@ start-all: start-admin start-website
 	@echo "🎉 所有容器已启动！"
 	@echo ""
 	@echo "访问地址:"
-	@echo "  - Admin:   http://localhost:3001"
+	@echo "  - Admin:   http://localhost:4000"
 	@echo "  - Website: http://localhost:3000"
 
 stop-all: stop-admin stop-website

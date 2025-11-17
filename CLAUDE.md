@@ -8,7 +8,7 @@ RunGame 是一个多语言在线游戏平台，采用 **Turborepo Monorepo** 架
 
 ### Monorepo 结构
 
-- **apps/admin** - 管理后台应用 (Next.js 15, 端口 3001)
+- **apps/admin** - 管理后台应用 (Next.js 15, 端口 4000)
 - **apps/website** - 用户端网站 (Next.js 15, 端口 3000)
 - **packages/database** - 共享数据库层 (Prisma + PostgreSQL)
 
@@ -23,33 +23,33 @@ RunGame 是一个多语言在线游戏平台，采用 **Turborepo Monorepo** 架
 
 ```bash
 # 开发（Monorepo）
-npm run dev                    # 同时启动 admin (3001) 和 website (3000)
-npm run dev:admin              # 仅启动管理后台（端口 3001）
-npm run dev:website            # 仅启动用户端网站（端口 3000）
+pnpm dev                       # 同时启动 admin (4000) 和 website (3000)
+pnpm dev:admin                 # 仅启动管理后台（端口 4000）
+pnpm dev:website               # 仅启动用户端网站（端口 3000）
 
 # 构建
-npm run build                  # 构建所有应用
-npm run build:admin            # 仅构建管理后台
-npm run build:website          # 仅构建用户端网站
-npm run build:database         # 构建数据库包
+pnpm build                     # 构建所有应用
+pnpm build:admin               # 仅构建管理后台
+pnpm build:website             # 仅构建用户端网站
+pnpm build:database            # 构建数据库包
 
 # 生产运行
-npm run start                  # 启动 website 生产服务器（端口 3000）
-npm run start:admin            # 启动 admin 生产服务器（端口 3001）
-npm run start:website          # 启动 website 生产服务器（端口 3000）
+pnpm start                     # 启动 website 生产服务器（端口 3000）
+pnpm start:admin               # 启动 admin 生产服务器（端口 4000）
+pnpm start:website             # 启动 website 生产服务器（端口 3000）
 
 # 数据库（通过 @rungame/database workspace）
-npm run db:push                # 将 Prisma schema 推送到数据库
-npm run db:seed                # 填充数据库初始数据（管理员、分类、游戏）
-npm run db:generate            # 生成 Prisma 客户端
-npm run db:studio              # 打开 Prisma Studio
+pnpm db:push                   # 将 Prisma schema 推送到数据库
+pnpm db:seed                   # 填充数据库初始数据（管理员、分类、游戏）
+pnpm db:generate               # 生成 Prisma 客户端
+pnpm db:studio                 # 打开 Prisma Studio
 
 # 代码质量
-npm run lint                   # 运行所有应用的 ESLint
+pnpm lint                      # 运行所有应用的 ESLint
 ```
 
 **管理员登录**（填充数据后）:
-- Admin URL: http://localhost:3001/login
+- Admin URL: http://localhost:4000/login
 - Website URL: http://localhost:3000
 - 邮箱: admin@rungame.online
 - 密码: admin123

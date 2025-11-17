@@ -6,7 +6,7 @@
 
 import { google } from 'googleapis'
 import type { OAuth2Client } from 'google-auth-library'
-import { prisma } from "@rungame/database"
+import { prismaAdmin } from "@rungame/database"
 
 /**
  * 从数据库配置创建 OAuth2 客户端
@@ -15,7 +15,7 @@ import { prisma } from "@rungame/database"
  */
 export async function createGoogleOAuth2Client(): Promise<OAuth2Client | null> {
   try {
-    const config = await prisma.searchEngineConfig.findFirst({
+    const config = await prismaAdmin.searchEngineConfig.findFirst({
       where: { type: 'google' },
     })
 
@@ -53,7 +53,7 @@ export async function createGoogleOAuth2Client(): Promise<OAuth2Client | null> {
       console.log('[Google OAuth] Token 已刷新，更新到数据库')
 
       if (tokens.access_token) {
-        await prisma.searchEngineConfig.update({
+        await prismaAdmin.searchEngineConfig.update({
           where: { id: config.id },
           data: {
             extraConfig: {

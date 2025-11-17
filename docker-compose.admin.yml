@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # 管理端应用
+  # 管理端应用（使用外部数据库，不包含本地数据库容器）
   admin:
     build:
       context: .
@@ -13,13 +13,13 @@ services:
     container_name: rungame-admin
     restart: unless-stopped
     ports:
-      - "3001:3001"
+      - "4000:4000"
     environment:
       - NODE_ENV=production
-      # 主数据库（业务数据）
+      # 业务数据库（外部托管，从 GitHub Secrets 读取）
       - DATABASE_URL=${DATABASE_URL}
-      # 缓存数据库（游戏导入缓存 + AI 对话历史）
-      - CACHE_DATABASE_URL=${CACHE_DATABASE_URL:-postgresql://${CACHE_DB_USER:-cache}:${CACHE_DB_PASSWORD}@cache-db:5432/${CACHE_DB_NAME:-rungame_cache}}
+      # 管理数据库（外部托管，从 GitHub Secrets 读取）
+      - CACHE_DATABASE_URL=${CACHE_DATABASE_URL}
       # NextAuth 配置
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - NEXTAUTH_URL=${NEXTAUTH_URL}
@@ -30,10 +30,8 @@ services:
       - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY}
       - R2_BUCKET_NAME=${R2_BUCKET_NAME}
       - R2_PUBLIC_URL=${R2_PUBLIC_URL}
-    networks:
-      - rungame-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:4000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -46,41 +44,3 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-  # 缓存数据库（GamePix 缓存 + AI 对话历史）
-  cache-db:
-    image: postgres:16-alpine
-    container_name: rungame-cache-db
-    restart: unless-stopped
-    environment:
-      - POSTGRES_USER=${CACHE_DB_USER:-cache}
-      - POSTGRES_PASSWORD=${CACHE_DB_PASSWORD}
-      - POSTGRES_DB=${CACHE_DB_NAME:-rungame_cache}
-    ports:
-      - "5433:5432"  # 避免与主数据库端口冲突
-    volumes:
-      - cache-db-data:/var/lib/postgresql/data
-    networks:
-      - rungame-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${CACHE_DB_USER:-cache}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    labels:
-      - "com.docker.compose.project=rungame"
-      - "com.docker.compose.service=cache-db"
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-volumes:
-  cache-db-data:
-    name: rungame-cache-db-data
-
-networks:
-  rungame-network:
-    name: rungame-network
-    driver: bridge

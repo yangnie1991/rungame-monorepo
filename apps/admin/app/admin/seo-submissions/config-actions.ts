@@ -5,7 +5,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { prisma } from "@rungame/database"
+import { prismaAdmin } from "@rungame/database"
 import { z } from 'zod'
 import { checkGoogleIndexWithAPI } from '@/lib/seo-submissions/google-index-check'
 import { checkBingIndexWithAPI } from '@/lib/seo-submissions/bing-index-check'
@@ -81,7 +81,7 @@ export async function updateGoogleConfig(data: GoogleConfigData): Promise<Update
     const validated = googleConfigSchema.parse(data)
 
     // 2. 查找现有配置
-    const config = await prisma.searchEngineConfig.findFirst({
+    const config = await prismaAdmin.searchEngineConfig.findFirst({
       where: { type: 'google' },
     })
 
@@ -151,7 +151,7 @@ export async function updateGoogleConfig(data: GoogleConfigData): Promise<Update
     })
 
     // 5. 更新数据库
-    await prisma.searchEngineConfig.update({
+    await prismaAdmin.searchEngineConfig.update({
       where: { id: config.id },
       data: {
         isEnabled: validated.isEnabled,
@@ -199,7 +199,7 @@ export async function updateBingConfig(data: BingConfigData): Promise<UpdateConf
     const validated = bingConfigSchema.parse(data)
 
     // 2. 查找现有配置
-    const config = await prisma.searchEngineConfig.findFirst({
+    const config = await prismaAdmin.searchEngineConfig.findFirst({
       where: { type: 'indexnow' },
     })
 
@@ -224,7 +224,7 @@ export async function updateBingConfig(data: BingConfigData): Promise<UpdateConf
     })
 
     // 3. 更新数据库
-    await prisma.searchEngineConfig.update({
+    await prismaAdmin.searchEngineConfig.update({
       where: { id: config.id },
       data: {
         isEnabled: validated.isEnabled,

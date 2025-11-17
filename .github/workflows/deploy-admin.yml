@@ -69,23 +69,36 @@ jobs:
         env:
           DEPLOY_BRANCH: ${{ steps.branch.outputs.branch_name }}
           DEPLOY_ENV: ${{ github.event.inputs.environment || 'production' }}
-          # 环境变量（从 GitHub Secrets 传递）
+          # ============================================
+          # 共享环境变量（根目录 .env）
+          # ============================================
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NODE_ENV: ${{ secrets.NODE_ENV || 'production' }}
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+          NEXT_PUBLIC_GA_ID: ${{ secrets.NEXT_PUBLIC_GA_ID }}
+          NEXT_PUBLIC_ADSENSE_ID: ${{ secrets.NEXT_PUBLIC_ADSENSE_ID }}
+          # ============================================
+          # Admin 特定环境变量（apps/admin/.env.local）
+          # ============================================
           CACHE_DATABASE_URL: ${{ secrets.CACHE_DATABASE_URL }}
-          CACHE_DB_PASSWORD: ${{ secrets.CACHE_DB_PASSWORD }}
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
           NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+          # R2 存储配置
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
           R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+          # Google Search API 配置（可选）
+          GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY }}
+          GOOGLE_SEARCH_ENGINE_ID: ${{ secrets.GOOGLE_SEARCH_ENGINE_ID }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
-          envs: DEPLOY_BRANCH,DEPLOY_ENV,DATABASE_URL,CACHE_DATABASE_URL,CACHE_DB_PASSWORD,NEXTAUTH_SECRET,NEXTAUTH_URL,R2_ACCOUNT_ID,R2_ACCESS_KEY_ID,R2_SECRET_ACCESS_KEY,R2_BUCKET_NAME,R2_PUBLIC_URL
+          envs: DEPLOY_BRANCH,DEPLOY_ENV,DATABASE_URL,NODE_ENV,NEXT_PUBLIC_SITE_URL,NEXT_PUBLIC_GA_ID,NEXT_PUBLIC_ADSENSE_ID,CACHE_DATABASE_URL,NEXTAUTH_SECRET,NEXTAUTH_URL,ENCRYPTION_KEY,R2_ACCOUNT_ID,R2_ACCESS_KEY_ID,R2_SECRET_ACCESS_KEY,R2_BUCKET_NAME,R2_PUBLIC_URL,GOOGLE_SEARCH_API_KEY,GOOGLE_SEARCH_ENGINE_ID
           script: |
             # 设置错误时退出
             set -e
@@ -127,28 +140,85 @@ jobs:
             git checkout ${DEPLOY_BRANCH}
             git reset --hard origin/${DEPLOY_BRANCH}
 
-            # 生成 .env 文件（从 GitHub Secrets）
-            echo "📝 生成 .env 配置文件..."
-            cat > .env <<EOF
-            # 主数据库配置（业务数据）
-            DATABASE_URL=${DATABASE_URL}
+            # ============================================
+            # 生成 Admin 应用环境变量配置文件
+            # 注意：仅部署 Admin，所有变量合并到 apps/admin/.env.local
+            # ============================================
+            echo "📝 生成 Admin 应用配置文件..."
+            mkdir -p apps/admin
+            cat > apps/admin/.env.local << EOF
+# ============================================================
+# Admin 应用环境变量（Admin 部署专用）
+# 由 GitHub Actions 自动生成 - 请勿手动编辑
+# ============================================================
 
-            # 缓存数据库配置（GamePix 缓存 + AI 对话历史）
-            CACHE_DATABASE_URL=${CACHE_DATABASE_URL:-}
-            CACHE_DB_PASSWORD=${CACHE_DB_PASSWORD:-}
+# ============================================
+# 数据库配置
+# ============================================
+# 业务数据库连接（展示端和管理端共用）
+DATABASE_URL=${DATABASE_URL}
 
-            # NextAuth 配置
-            NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-            NEXTAUTH_URL=${NEXTAUTH_URL}
+# 管理数据库连接（仅管理端使用）
+CACHE_DATABASE_URL=${CACHE_DATABASE_URL}
 
-            # R2 存储配置
-            R2_ACCOUNT_ID=${R2_ACCOUNT_ID:-}
-            R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID:-}
-            R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY:-}
-            R2_BUCKET_NAME=${R2_BUCKET_NAME:-}
-            R2_PUBLIC_URL=${R2_PUBLIC_URL:-}
-            EOF
-            echo "✅ .env 文件已生成"
+# ============================================
+# NextAuth.js 配置（管理员认证）
+# ============================================
+NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+NEXTAUTH_URL=${NEXTAUTH_URL}
+
+# ============================================
+# AI 配置加密密钥
+# ============================================
+ENCRYPTION_KEY=${ENCRYPTION_KEY}
+
+# ============================================
+# 应用配置
+# ============================================
+NODE_ENV=${NODE_ENV}
+NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
+
+# Google Analytics（可选）
+NEXT_PUBLIC_GA_ID=${NEXT_PUBLIC_GA_ID:-}
+
+# Google AdSense（可选）
+NEXT_PUBLIC_ADSENSE_ID=${NEXT_PUBLIC_ADSENSE_ID:-}
+
+# ============================================
+# Cloudflare R2 配置（可选）
+# ============================================
+R2_ACCOUNT_ID=${R2_ACCOUNT_ID:-}
+R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID:-}
+R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY:-}
+R2_BUCKET_NAME=${R2_BUCKET_NAME:-}
+R2_PUBLIC_URL=${R2_PUBLIC_URL:-}
+
+# ============================================
+# Google Custom Search API 配置（可选）
+# ============================================
+GOOGLE_SEARCH_API_KEY=${GOOGLE_SEARCH_API_KEY:-}
+GOOGLE_SEARCH_ENGINE_ID=${GOOGLE_SEARCH_ENGINE_ID:-}
+EOF
+            echo "✅ Admin .env.local 文件已生成"
+
+            # 同时生成根目录 .env（用于 docker-compose 读取）
+            echo "📝 生成 Docker Compose 配置文件..."
+            cat > .env << EOF
+# Docker Compose 环境变量（由 GitHub Actions 自动生成）
+DATABASE_URL=${DATABASE_URL}
+CACHE_DATABASE_URL=${CACHE_DATABASE_URL}
+NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+NEXTAUTH_URL=${NEXTAUTH_URL}
+NODE_ENV=${NODE_ENV}
+EOF
+            echo "✅ Docker Compose .env 文件已生成"
+
+            # 显示生成的配置文件（隐藏敏感信息）
+            echo ""
+            echo "📋 生成的配置文件概览:"
+            echo "  - .env (Docker Compose): \$(grep -c '^[A-Z]' .env || echo 0) 个变量"
+            echo "  - apps/admin/.env.local (Admin App): \$(grep -c '^[A-Z]' apps/admin/.env.local || echo 0) 个变量"
+            echo ""
 
             # 备份当前容器（如果存在）
             if docker ps -a --format '{{.Names}}' | grep -q "^rungame-admin$"; then
@@ -179,7 +249,7 @@ jobs:
             # 健康检查（对齐 Dockerfile HEALTHCHECK 的 start-period=40s）
             echo "🔍 执行健康检查..."
             for i in {1..20}; do
-              if curl -f http://localhost:3001/api/health > /dev/null 2>&1; then
+              if curl -f http://localhost:4000/api/health > /dev/null 2>&1; then
                 echo "✅ 服务已就绪！"
                 break
               fi

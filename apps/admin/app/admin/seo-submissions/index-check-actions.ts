@@ -5,7 +5,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { prisma } from "@rungame/database"
+import { prismaAdmin } from "@rungame/database"
 import { checkGoogleIndexSimple, checkGoogleIndexWithAPI } from '@/lib/seo-submissions/google-index-check'
 import { checkBingIndexSimple, checkBingIndexWithAPI } from '@/lib/seo-submissions/bing-index-check'
 
@@ -30,7 +30,7 @@ export async function checkGoogleIndexStatus(
 ): Promise<CheckIndexResult> {
   try {
     // 获取提交记录
-    const submission = await prisma.urlSubmission.findUnique({
+    const submission = await prismaAdmin.urlSubmission.findUnique({
       where: { id: submissionId },
     })
 
@@ -42,7 +42,7 @@ export async function checkGoogleIndexStatus(
     }
 
     // 从数据库获取 Google 配置
-    const googleConfig = await prisma.searchEngineConfig.findFirst({
+    const googleConfig = await prismaAdmin.searchEngineConfig.findFirst({
       where: { type: 'google', isEnabled: true },
     })
 
@@ -87,7 +87,7 @@ export async function checkGoogleIndexStatus(
 
     // 更新数据库
     const previousIndexed = submission.indexedByGoogle
-    await prisma.urlSubmission.update({
+    await prismaAdmin.urlSubmission.update({
       where: { id: submissionId },
       data: {
         indexedByGoogle: result.isIndexed,
@@ -135,7 +135,7 @@ export async function checkBingIndexStatus(
   submissionId: string
 ): Promise<CheckIndexResult> {
   try {
-    const submission = await prisma.urlSubmission.findUnique({
+    const submission = await prismaAdmin.urlSubmission.findUnique({
       where: { id: submissionId },
     })
 
@@ -147,7 +147,7 @@ export async function checkBingIndexStatus(
     }
 
     // 从数据库获取 Bing 配置
-    const bingConfig = await prisma.searchEngineConfig.findFirst({
+    const bingConfig = await prismaAdmin.searchEngineConfig.findFirst({
       where: { type: 'indexnow', isEnabled: true },
     })
 
@@ -162,7 +162,7 @@ export async function checkBingIndexStatus(
 
     // 更新数据库
     const previousIndexed = submission.indexedByBing
-    await prisma.urlSubmission.update({
+    await prismaAdmin.urlSubmission.update({
       where: { id: submissionId },
       data: {
         indexedByBing: result.isIndexed,
@@ -226,7 +226,7 @@ export async function checkGoogleIndexBatch(
     }
 
     // 从数据库获取 Google 配置（批量检查时只获取一次）
-    const googleConfig = await prisma.searchEngineConfig.findFirst({
+    const googleConfig = await prismaAdmin.searchEngineConfig.findFirst({
       where: { type: 'google', isEnabled: true },
     })
 
@@ -264,7 +264,7 @@ export async function checkGoogleIndexBatch(
       }
     }
 
-    const submissions = await prisma.urlSubmission.findMany({
+    const submissions = await prismaAdmin.urlSubmission.findMany({
       where: { id: { in: submissionIds } },
     })
 
@@ -278,7 +278,7 @@ export async function checkGoogleIndexBatch(
 
         const previousIndexed = submission.indexedByGoogle
 
-        await prisma.urlSubmission.update({
+        await prismaAdmin.urlSubmission.update({
           where: { id: submission.id },
           data: {
             indexedByGoogle: result.isIndexed,
@@ -359,14 +359,14 @@ export async function checkBingIndexBatch(
     }
 
     // 从数据库获取 Bing 配置（批量检查时只获取一次）
-    const bingConfig = await prisma.searchEngineConfig.findFirst({
+    const bingConfig = await prismaAdmin.searchEngineConfig.findFirst({
       where: { type: 'indexnow', isEnabled: true },
     })
 
     const apiKey = bingConfig?.apiKey || undefined
     const siteUrl = bingConfig?.siteUrl || undefined
 
-    const submissions = await prisma.urlSubmission.findMany({
+    const submissions = await prismaAdmin.urlSubmission.findMany({
       where: { id: { in: submissionIds } },
     })
 
@@ -382,7 +382,7 @@ export async function checkBingIndexBatch(
 
         const previousIndexed = submission.indexedByBing
 
-        await prisma.urlSubmission.update({
+        await prismaAdmin.urlSubmission.update({
           where: { id: submission.id },
           data: {
             indexedByBing: result.isIndexed,

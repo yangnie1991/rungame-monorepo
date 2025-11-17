@@ -10,9 +10,6 @@
 export function validateRequiredEnvVars() {
   const required = [
     'DATABASE_URL',
-    'NEXTAUTH_SECRET',
-    'NEXTAUTH_URL',
-    'ENCRYPTION_KEY',
   ]
 
   const missing: string[] = []
@@ -32,15 +29,9 @@ export function validateRequiredEnvVars() {
 缺少以下环境变量：
 ${missing.map(v => `  • ${v}`).join('\n')}
 
-请在 .env.local 文件中配置这些变量。
+请在根目录的 .env 文件中配置这些变量。
 
 参考 .env.example 文件获取配置示例。
-
-生成 ENCRYPTION_KEY:
-  openssl rand -base64 48
-
-生成 NEXTAUTH_SECRET:
-  openssl rand -base64 32
 
 ========================================
 `
@@ -49,33 +40,15 @@ ${missing.map(v => `  • ${v}`).join('\n')}
 }
 
 /**
- * 验证 ENCRYPTION_KEY 的强度
- * 在生产环境中强制要求强密钥
+ * 验证公共环境变量
+ * Website 端不需要认证和加密相关的环境变量
  */
-export function validateEncryptionKeyStrength() {
-  const key = process.env.ENCRYPTION_KEY!
+export function validatePublicEnvVars() {
+  // Website 端只需要验证必需的数据库连接
+  // 其他变量（如 NEXT_PUBLIC_* 变量）由 Next.js 自动处理
 
-  // 开发环境只警告，不阻止启动
-  if (process.env.NODE_ENV !== 'production') {
-    if (key.length < 32) {
-      console.warn('⚠️ ENCRYPTION_KEY 长度不足 32 个字符，建议使用更强的密钥')
-    }
-    return
-  }
-
-  // 生产环境严格检查
-  if (key.length < 32) {
-    throw new Error('生产环境的 ENCRYPTION_KEY 必须至少 32 个字符')
-  }
-
-  // 检查密钥复杂度
-  const hasUpperCase = /[A-Z]/.test(key)
-  const hasLowerCase = /[a-z]/.test(key)
-  const hasNumber = /[0-9]/.test(key)
-  const hasSpecial = /[^A-Za-z0-9]/.test(key)
-
-  if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecial) {
-    console.warn('⚠️ ENCRYPTION_KEY 复杂度不足，建议包含大小写字母、数字和特殊字符')
+  if (process.env.NODE_ENV === 'development') {
+    console.log('✅ Website 环境变量验证通过')
   }
 }
 
@@ -91,11 +64,7 @@ export function initEnv() {
 
   try {
     validateRequiredEnvVars()
-    validateEncryptionKeyStrength()
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log('✅ 环境变量验证通过')
-    }
+    validatePublicEnvVars()
   } catch (error) {
     console.error(error)
     process.exit(1)

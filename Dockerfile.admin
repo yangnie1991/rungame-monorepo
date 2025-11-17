@@ -12,26 +12,30 @@ WORKDIR /app
 # ============================================
 FROM base AS deps
 
-# 安装必要的系统依赖（仅 libc6-compat，移除不必要的构建工具）
+# 安装必要的系统依赖
 RUN apk add --no-cache libc6-compat
 
-# 复制 package 文件
-COPY package*.json ./
-COPY apps/admin/package*.json ./apps/admin/
-COPY packages/database/package*.json ./packages/database/
+# 安装 pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# 复制 package 文件和 pnpm 配置
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/admin/package.json ./apps/admin/
+COPY packages/database/package.json ./packages/database/
 
 # 安装依赖（包括 devDependencies，构建时需要）
-RUN npm ci
+RUN pnpm install --frozen-lockfile
 
 # ============================================
 # 第三阶段: 构建应用
 # ============================================
 FROM base AS builder
 
-# 复制依赖
+# 安装 pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# 复制依赖（pnpm 会自动处理 workspace 依赖）
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/admin/node_modules ./apps/admin/node_modules
-COPY --from=deps /app/packages/database/node_modules ./packages/database/node_modules
 
 # 复制源代码
 COPY . .
@@ -50,10 +54,10 @@ ENV NODE_ENV=${NODE_ENV}
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # 生成 Prisma Client
-RUN npm run db:generate
+RUN pnpm db:generate
 
 # 构建 admin 应用（使用 Turbopack，生成 standalone 输出）
-RUN npm run build:admin
+RUN pnpm build:admin
 
 # ============================================
 # 第四阶段: 生产运行时（Standalone 优化）
@@ -70,7 +74,7 @@ RUN apk add --no-cache curl
 # 设置环境变量
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=3001
+ENV PORT=4000
 ENV HOSTNAME="0.0.0.0"
 
 # 🔥 关键优化：复制 standalone 输出（而非完整 node_modules）
@@ -86,11 +90,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/packages/database ./packages/data
 USER nextjs
 
 # 暴露端口
-EXPOSE 3001
+EXPOSE 4000
 
 # 健康检查（比官方示例更完善）
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD curl -f http://localhost:3001/api/health || exit 1
+  CMD curl -f http://localhost:4000/api/health || exit 1
 
 # 🔥 使用 standalone 生成的 server.js（性能提升 50%+）
 CMD ["node", "apps/admin/server.js"]

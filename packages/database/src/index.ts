@@ -8,10 +8,15 @@
  */
 
 // ============================================
-// Prisma Client
+// Prisma Clients
 // ============================================
+// 业务数据库 Client（展示端 + 管理端共用）
 export { prisma } from "./client"
 export type { PrismaClient } from "./client"
+
+// 管理数据库 Client（仅管理端使用）
+export { prismaAdmin } from "./client-admin"
+export type { PrismaAdminClient } from "./client-admin"
 
 // ============================================
 // 缓存配置

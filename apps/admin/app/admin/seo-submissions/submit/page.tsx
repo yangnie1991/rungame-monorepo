@@ -4,7 +4,7 @@
  */
 
 import { Suspense } from 'react'
-import { prisma } from "@rungame/database"
+import { prisma, prismaAdmin } from "@rungame/database"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -14,7 +14,7 @@ import { SubmitForm, SubmitButton } from './SubmitForm'
 import { UrlPreviewWrapper } from './UrlPreviewWrapper'
 
 async function getSearchEngineConfigs() {
-  return prisma.searchEngineConfig.findMany({
+  return prismaAdmin.searchEngineConfig.findMany({
     where: { isEnabled: true },
     orderBy: { sortOrder: 'asc' },
     select: {

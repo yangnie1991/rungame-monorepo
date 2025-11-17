@@ -1,6 +1,6 @@
 'use server'
 
-import { prisma } from "@rungame/database"
+import { prismaAdmin } from "@rungame/database"
 import { revalidatePath } from 'next/cache'
 
 /**
@@ -19,13 +19,13 @@ const GAMEPIX_DEFAULT_CONFIG = {
  * 获取或创建 GamePix 平台配置
  */
 export async function getGamePixPlatform() {
-  let platform = await prisma.importPlatform.findUnique({
+  let platform = await prismaAdmin.importPlatform.findUnique({
     where: { slug: 'gamepix' },
   })
 
   // 如果不存在，创建默认配置
   if (!platform) {
-    platform = await prisma.importPlatform.create({
+    platform = await prismaAdmin.importPlatform.create({
       data: {
         name: 'GamePix',
         slug: 'gamepix',
@@ -50,13 +50,13 @@ export async function getGamePixPlatform() {
 export async function updateGamePixSiteId(siteId: string) {
   try {
     // 获取或创建平台配置
-    let platform = await prisma.importPlatform.findUnique({
+    let platform = await prismaAdmin.importPlatform.findUnique({
       where: { slug: 'gamepix' },
     })
 
     if (!platform) {
       // 创建新配置
-      platform = await prisma.importPlatform.create({
+      platform = await prismaAdmin.importPlatform.create({
         data: {
           name: 'GamePix',
           slug: 'gamepix',
@@ -72,7 +72,7 @@ export async function updateGamePixSiteId(siteId: string) {
       })
     } else {
       // 更新现有配置
-      platform = await prisma.importPlatform.update({
+      platform = await prismaAdmin.importPlatform.update({
         where: { slug: 'gamepix' },
         data: {
           apiConfig: {
@@ -106,7 +106,7 @@ export async function updateGamePixDefaultConfig(config: {
   category?: string
 }) {
   try {
-    const platform = await prisma.importPlatform.findUnique({
+    const platform = await prismaAdmin.importPlatform.findUnique({
       where: { slug: 'gamepix' },
     })
 
@@ -123,7 +123,7 @@ export async function updateGamePixDefaultConfig(config: {
       ...config,
     }
 
-    await prisma.importPlatform.update({
+    await prismaAdmin.importPlatform.update({
       where: { slug: 'gamepix' },
       data: {
         defaultConfig: updatedConfig,

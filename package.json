@@ -2,7 +2,7 @@
   "name": "rungame-online",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "npm@10.9.2",
+  "packageManager": "pnpm@9.15.4",
   "workspaces": [
     "packages/*",
     "apps/*"
@@ -15,14 +15,14 @@
     "build:database": "turbo run build --filter=@rungame/database",
     "build:admin": "turbo run build --filter=@rungame/admin",
     "build:website": "turbo run build --filter=@rungame/website",
-    "start": "npm run start -w @rungame/website",
-    "start:admin": "npm run start -w @rungame/admin",
-    "start:website": "npm run start -w @rungame/website",
+    "start": "pnpm --filter @rungame/website start",
+    "start:admin": "pnpm --filter @rungame/admin start",
+    "start:website": "pnpm --filter @rungame/website start",
     "lint": "turbo run lint",
-    "db:push": "npm run db:push -w @rungame/database",
-    "db:seed": "npm run db:seed -w @rungame/database",
-    "db:generate": "npm run generate -w @rungame/database",
-    "db:studio": "npm run db:studio -w @rungame/database"
+    "db:push": "pnpm --filter @rungame/database db:push",
+    "db:seed": "pnpm --filter @rungame/database db:seed",
+    "db:generate": "pnpm --filter @rungame/database generate",
+    "db:studio": "pnpm --filter @rungame/database db:studio"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

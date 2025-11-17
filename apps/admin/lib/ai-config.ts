@@ -1,5 +1,5 @@
 import { unstable_cache } from 'next/cache'
-import { prisma } from '@rungame/database'
+import { prismaAdmin } from '@rungame/database'
 import { decrypt } from './crypto'
 import { CACHE_TAGS, REVALIDATE_TIME } from '@rungame/database'
 
@@ -15,7 +15,7 @@ export async function getAiConfig() {
   // 使用 unstable_cache 缓存 AI 配置，1小时过期
   const getCachedConfig = unstable_cache(
     async () => {
-      const config = await prisma.aiConfig.findFirst({
+      const config = await prismaAdmin.aiConfig.findFirst({
         where: {
           isActive: true,
           isEnabled: true
@@ -80,7 +80,7 @@ export async function getAllAiConfigs() {
         console.log(`[Cache] 💾 getAllAiConfigs - 执行数据库查询`)
       }
 
-      const configs = await prisma.aiConfig.findMany({
+      const configs = await prismaAdmin.aiConfig.findMany({
         orderBy: [{ isActive: "desc" }, { createdAt: "desc" }],
       })
 

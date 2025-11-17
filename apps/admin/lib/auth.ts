@@ -1,7 +1,7 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { PrismaAdapter } from "@auth/prisma-adapter"
-import { prisma } from "@rungame/database"
+import { prisma, prismaAdmin } from "@rungame/database"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
 
@@ -31,7 +31,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         try {
           const { email, password } = loginSchema.parse(credentials)
 
-          const admin = await prisma.admin.findUnique({
+          const admin = await prismaAdmin.admin.findUnique({
             where: { email },
             select: {
               id: true,
@@ -52,7 +52,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             return null
           }
 
-          await prisma.admin.update({
+          await prismaAdmin.admin.update({
             where: { id: admin.id },
             data: { lastLoginAt: new Date() },
           })

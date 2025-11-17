@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath, revalidateTag } from "next/cache"
-import { prisma } from "@rungame/database"
+import { prismaAdmin } from "@rungame/database"
 import { encrypt, decrypt } from "@/lib/crypto"
 import type { AiConfig, AiModelConfig } from "@/types/ai-config"
 import { CACHE_TAGS } from "@rungame/database"
@@ -30,7 +30,7 @@ export async function getAiConfigs() {
  */
 export async function getAiConfigById(id: string) {
   try {
-    const config = await prisma.aiConfig.findUnique({
+    const config = await prismaAdmin.aiConfig.findUnique({
       where: { id },
     })
 
@@ -53,7 +53,7 @@ export async function getAiConfigById(id: string) {
  */
 export async function getActiveAiConfig() {
   try {
-    const config = await prisma.aiConfig.findFirst({
+    const config = await prismaAdmin.aiConfig.findFirst({
       where: { isActive: true, isEnabled: true },
     })
 
@@ -89,12 +89,12 @@ export async function createAiConfig(data: {
 
     // 如果设置为激活，先将其他配置设为非激活
     if (data.isActive) {
-      await prisma.aiConfig.updateMany({
+      await prismaAdmin.aiConfig.updateMany({
         data: { isActive: false },
       })
     }
 
-    const config = await prisma.aiConfig.create({
+    const config = await prismaAdmin.aiConfig.create({
       data: {
         name: data.name,
         provider: data.provider,
@@ -140,13 +140,13 @@ export async function updateAiConfig(
 
     // 如果设置为激活，先将其他配置设为非激活
     if (data.isActive) {
-      await prisma.aiConfig.updateMany({
+      await prismaAdmin.aiConfig.updateMany({
         where: { id: { not: id } },
         data: { isActive: false },
       })
     }
 
-    const config = await prisma.aiConfig.update({
+    const config = await prismaAdmin.aiConfig.update({
       where: { id },
       data: updateData,
     })
@@ -166,7 +166,7 @@ export async function updateAiConfig(
  */
 export async function deleteAiConfig(id: string) {
   try {
-    await prisma.aiConfig.delete({
+    await prismaAdmin.aiConfig.delete({
       where: { id },
     })
 
@@ -186,12 +186,12 @@ export async function deleteAiConfig(id: string) {
 export async function toggleAiConfigActive(id: string) {
   try {
     // 先将所有配置设为非激活
-    await prisma.aiConfig.updateMany({
+    await prismaAdmin.aiConfig.updateMany({
       data: { isActive: false },
     })
 
     // 激活指定配置
-    const config = await prisma.aiConfig.update({
+    const config = await prismaAdmin.aiConfig.update({
       where: { id },
       data: { isActive: true, isEnabled: true },
     })
@@ -211,7 +211,7 @@ export async function toggleAiConfigActive(id: string) {
  */
 export async function toggleAiConfigEnabled(id: string) {
   try {
-    const config = await prisma.aiConfig.findUnique({
+    const config = await prismaAdmin.aiConfig.findUnique({
       where: { id },
     })
 
@@ -224,7 +224,7 @@ export async function toggleAiConfigEnabled(id: string) {
       return { success: false, error: "激活的配置不能禁用，请先激活其他配置" }
     }
 
-    const updated = await prisma.aiConfig.update({
+    const updated = await prismaAdmin.aiConfig.update({
       where: { id },
       data: { isEnabled: !config.isEnabled },
     })
@@ -244,7 +244,7 @@ export async function toggleAiConfigEnabled(id: string) {
  */
 export async function testAiConfig(id: string) {
   try {
-    const config = await prisma.aiConfig.findUnique({
+    const config = await prismaAdmin.aiConfig.findUnique({
       where: { id },
     })
 
@@ -309,7 +309,7 @@ export async function testAiConfig(id: string) {
  */
 export async function getDecryptedApiKey(id: string) {
   try {
-    const config = await prisma.aiConfig.findUnique({
+    const config = await prismaAdmin.aiConfig.findUnique({
       where: { id },
       select: { apiKey: true },
     })
@@ -369,7 +369,7 @@ export async function getAiConfigsWithModels() {
  */
 export async function testAiModel(configId: string, modelId: string, modelName: string) {
   try {
-    const config = await prisma.aiConfig.findUnique({
+    const config = await prismaAdmin.aiConfig.findUnique({
       where: { id: configId },
     })
 
