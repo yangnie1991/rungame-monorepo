@@ -98,10 +98,15 @@ export function initEnv() {
     return
   }
 
+  // 如果显式设置跳过验证，则完全跳过（用于 Docker 构建）
+  if (process.env.SKIP_ENV_VALIDATION === 'true') {
+    console.log('⏭️ 跳过环境变量验证（SKIP_ENV_VALIDATION=true）')
+    return
+  }
+
   // 检测是否为构建阶段
   const isBuildTime =
     process.env.NEXT_PHASE === 'phase-production-build' ||
-    process.env.SKIP_ENV_VALIDATION === 'true' ||
     process.argv.some(arg => arg.includes('build'))
 
   try {
