@@ -90,7 +90,7 @@ export function validateEncryptionKeyStrength() {
 
 /**
  * 初始化环境变量验证
- * 在应用启动时调用
+ * 只在应用实际运行时调用（不在构建时调用）
  */
 export function initEnv() {
   // 只在服务器端运行
@@ -98,30 +98,13 @@ export function initEnv() {
     return
   }
 
-  // 如果显式设置跳过验证，则完全跳过（用于 Docker 构建）
-  if (process.env.SKIP_ENV_VALIDATION === 'true') {
-    console.log('⏭️ 跳过环境变量验证（SKIP_ENV_VALIDATION=true）')
-    return
-  }
-
-  // 检测是否为构建阶段
-  const isBuildTime =
-    process.env.NEXT_PHASE === 'phase-production-build' ||
-    process.argv.some(arg => arg.includes('build'))
-
+  // 验证所有运行时必需的环境变量
   try {
-    if (isBuildTime) {
-      // 构建阶段：只验证构建时必需的环境变量
-      console.log('🔨 构建阶段：验证构建时环境变量')
-      validateRequiredEnvVars(true) // 只验证 DATABASE_URL
-    } else {
-      // 运行时阶段：验证所有环境变量
-      validateRequiredEnvVars(false) // 验证所有变量
-      validateEncryptionKeyStrength()
+    validateRequiredEnvVars(false) // 验证所有变量
+    validateEncryptionKeyStrength()
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log('✅ 环境变量验证通过')
-      }
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ 环境变量验证通过')
     }
   } catch (error) {
     console.error(error)
@@ -129,5 +112,7 @@ export function initEnv() {
   }
 }
 
-// 自动执行验证
-initEnv()
+// ⚠️ 不再自动执行验证！
+// 验证将在应用实际启动时进行（在 middleware.ts 或 layout.tsx 中调用）
+// 这样可以避免在 Docker 构建阶段执行验证
+// initEnv()

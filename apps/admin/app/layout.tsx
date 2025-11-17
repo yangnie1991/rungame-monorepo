@@ -2,6 +2,8 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./admin.css"
 import { Toaster } from "@/components/ui/sonner"
+// 导入环境变量验证（只在应用运行时执行，不在构建时执行）
+import "@/lib/env-init"
 
 const inter = Inter({ subsets: ["latin"] })
 
