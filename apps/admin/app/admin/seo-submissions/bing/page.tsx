@@ -4,25 +4,25 @@
  */
 
 import { Suspense } from 'react'
-import { prisma } from "@rungame/database"
+import { prismaAdmin } from "@rungame/database"
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { CheckCircle2, XCircle, Clock } from 'lucide-react'
 import { BingSubmissionsClient } from './BingSubmissionsClient'
 
 export async function getBingStats() {
   const [total, indexed, notIndexed, unchecked] = await Promise.all([
-    prisma.urlSubmission.count(),
-    prisma.urlSubmission.count({
+    prismaAdmin.urlSubmission.count(),
+    prismaAdmin.urlSubmission.count({
       where: {
         indexedByBing: true,
       },
     }),
-    prisma.urlSubmission.count({
+    prismaAdmin.urlSubmission.count({
       where: {
         indexedByBing: false,
       },
     }),
-    prisma.urlSubmission.count({
+    prismaAdmin.urlSubmission.count({
       where: {
         indexedByBing: null,
       },
@@ -41,7 +41,7 @@ export async function getBingStats() {
 }
 
 async function getBingConfig() {
-  return prisma.searchEngineConfig.findFirst({
+  return prismaAdmin.searchEngineConfig.findFirst({
     where: { type: 'indexnow' },
     select: {
       id: true,
@@ -56,7 +56,7 @@ async function getBingConfig() {
 }
 
 async function getBingSubmissions() {
-  return prisma.urlSubmission.findMany({
+  return prismaAdmin.urlSubmission.findMany({
     orderBy: { createdAt: 'desc' },
     select: {
       id: true,

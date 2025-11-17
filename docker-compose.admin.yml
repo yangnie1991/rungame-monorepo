@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # 管理端应用
+  # 管理端应用（使用外部数据库，不包含本地数据库容器）
   admin:
     build:
       context: .
@@ -13,10 +13,14 @@ services:
     container_name: rungame-admin
     restart: unless-stopped
     ports:
-      - "3001:3001"
+      - "4000:4000"
     environment:
       - NODE_ENV=production
+      # 业务数据库（外部托管，从 GitHub Secrets 读取）
       - DATABASE_URL=${DATABASE_URL}
+      # 管理数据库（外部托管，从 GitHub Secrets 读取）
+      - CACHE_DATABASE_URL=${CACHE_DATABASE_URL}
+      # NextAuth 配置
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - NEXTAUTH_URL=${NEXTAUTH_URL}
       - NEXTAUTH_TRUST_HOST=true
@@ -26,10 +30,8 @@ services:
       - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY}
       - R2_BUCKET_NAME=${R2_BUCKET_NAME}
       - R2_PUBLIC_URL=${R2_PUBLIC_URL}
-    networks:
-      - rungame-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:4000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -42,8 +44,3 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-networks:
-  rungame-network:
-    name: rungame-network
-    driver: bridge

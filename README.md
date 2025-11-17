@@ -50,7 +50,7 @@ cd rungame-nextjs
 2. **安装依赖**
 
 ```bash
-npm install
+pnpm install
 ```
 
 3. **配置环境变量**
@@ -77,23 +77,30 @@ openssl rand -base64 32
 
 ```bash
 # 推送数据库架构
-npm run db:push
+pnpm db:push
 
 # 填充初始数据
-npm run db:seed
+pnpm db:seed
 ```
 
 5. **启动开发服务器**
 
 ```bash
-npm run dev
+# 同时启动管理端和网站端
+pnpm dev
+
+# 或分别启动
+pnpm dev:admin    # 管理端: http://localhost:4000
+pnpm dev:website  # 网站端: http://localhost:3000
 ```
 
-访问 http://localhost:3000 查看网站
+访问应用：
+- **网站端**: http://localhost:3000
+- **管理后台**: http://localhost:4000/login
 
-### 管理后台
+### 管理后台登录
 
-- **URL**: http://localhost:3000/login
+- **URL**: http://localhost:4000/login
 - **邮箱**: admin@rungame.online
 - **密码**: admin123
 

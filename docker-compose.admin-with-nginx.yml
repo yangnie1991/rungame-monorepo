@@ -1,0 +1,113 @@
+version: '3.8'
+
+# ============================================================
+# Docker Compose 配置（包含 nginx 容器）
+# ============================================================
+# 说明：此配置包含 nginx 反向代理容器，适合完全容器化部署
+# 文件名：docker-compose.admin-with-nginx.yml
+# 使用方法：docker-compose -f docker-compose.admin-with-nginx.yml up -d
+# ============================================================
+
+services:
+  # ============================================
+  # Nginx 反向代理容器
+  # ============================================
+  nginx:
+    image: nginx:alpine
+    container_name: rungame-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # nginx 配置
+      - ./nginx/admin.conf:/etc/nginx/conf.d/admin.conf:ro
+      # SSL 证书（Let's Encrypt）
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro
+      # 日志
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - admin
+    networks:
+      - rungame-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "com.docker.compose.project=rungame"
+      - "com.docker.compose.service=nginx"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # 管理端应用（使用外部数据库）
+  # ============================================
+  admin:
+    build:
+      context: .
+      dockerfile: Dockerfile.admin
+      args:
+        DATABASE_URL: ${DATABASE_URL}
+        NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+        NEXTAUTH_URL: ${NEXTAUTH_URL}
+    container_name: rungame-admin
+    restart: unless-stopped
+    expose:
+      - "4000"  # 只在内部网络暴露，不对外
+    environment:
+      - NODE_ENV=production
+      # 业务数据库（外部托管，从 GitHub Secrets 读取）
+      - DATABASE_URL=${DATABASE_URL}
+      # 管理数据库（外部托管，从 GitHub Secrets 读取）
+      - CACHE_DATABASE_URL=${CACHE_DATABASE_URL}
+      # NextAuth 配置
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - NEXTAUTH_TRUST_HOST=true
+      # R2 存储配置（如果使用）
+      - R2_ACCOUNT_ID=${R2_ACCOUNT_ID}
+      - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID}
+      - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY}
+      - R2_BUCKET_NAME=${R2_BUCKET_NAME}
+      - R2_PUBLIC_URL=${R2_PUBLIC_URL}
+    networks:
+      - rungame-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.docker.compose.project=rungame"
+      - "com.docker.compose.service=admin"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # Certbot（SSL 证书自动续期）
+  # ============================================
+  certbot:
+    image: certbot/certbot:latest
+    container_name: rungame-certbot
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
+      - /var/www/certbot:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    labels:
+      - "com.docker.compose.project=rungame"
+      - "com.docker.compose.service=certbot"
+
+networks:
+  rungame-network:
+    name: rungame-network
+    driver: bridge

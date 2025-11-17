@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath, revalidateTag } from 'next/cache'
-import { prisma } from "@rungame/database"
+import { prismaAdmin } from "@rungame/database"
 import { z } from 'zod'
 import { CACHE_TAGS } from "@rungame/database"
 
@@ -46,7 +46,7 @@ export async function getAllImportPlatforms() {
  */
 export async function getImportPlatformById(id: string) {
   try {
-    const platform = await prisma.importPlatform.findUnique({
+    const platform = await prismaAdmin.importPlatform.findUnique({
       where: { id },
     })
 
@@ -75,7 +75,7 @@ export async function getImportPlatformById(id: string) {
  */
 export async function getImportPlatformBySlug(slug: string) {
   try {
-    const platform = await prisma.importPlatform.findUnique({
+    const platform = await prismaAdmin.importPlatform.findUnique({
       where: { slug },
     })
 
@@ -107,7 +107,7 @@ export async function createImportPlatform(config: PlatformConfig) {
     const validated = platformConfigSchema.parse(config)
 
     // 检查 slug 是否已存在
-    const existing = await prisma.importPlatform.findUnique({
+    const existing = await prismaAdmin.importPlatform.findUnique({
       where: { slug: validated.slug },
     })
 
@@ -118,7 +118,7 @@ export async function createImportPlatform(config: PlatformConfig) {
       }
     }
 
-    const platform = await prisma.importPlatform.create({
+    const platform = await prismaAdmin.importPlatform.create({
       data: {
         name: validated.name,
         slug: validated.slug,
@@ -161,7 +161,7 @@ export async function createImportPlatform(config: PlatformConfig) {
 export async function updateImportPlatform(id: string, config: Partial<PlatformConfig>) {
   try {
     // 检查平台是否存在
-    const existing = await prisma.importPlatform.findUnique({
+    const existing = await prismaAdmin.importPlatform.findUnique({
       where: { id },
     })
 
@@ -174,7 +174,7 @@ export async function updateImportPlatform(id: string, config: Partial<PlatformC
 
     // 如果更新 slug，检查是否冲突
     if (config.slug && config.slug !== existing.slug) {
-      const slugExists = await prisma.importPlatform.findUnique({
+      const slugExists = await prismaAdmin.importPlatform.findUnique({
         where: { slug: config.slug },
       })
       if (slugExists) {
@@ -185,7 +185,7 @@ export async function updateImportPlatform(id: string, config: Partial<PlatformC
       }
     }
 
-    const platform = await prisma.importPlatform.update({
+    const platform = await prismaAdmin.importPlatform.update({
       where: { id },
       data: config,
     })
@@ -213,7 +213,7 @@ export async function updateImportPlatform(id: string, config: Partial<PlatformC
  */
 export async function deleteImportPlatform(id: string) {
   try {
-    await prisma.importPlatform.delete({
+    await prismaAdmin.importPlatform.delete({
       where: { id },
     })
 
@@ -239,7 +239,7 @@ export async function deleteImportPlatform(id: string) {
  */
 export async function togglePlatformEnabled(id: string) {
   try {
-    const platform = await prisma.importPlatform.findUnique({
+    const platform = await prismaAdmin.importPlatform.findUnique({
       where: { id },
     })
 
@@ -250,7 +250,7 @@ export async function togglePlatformEnabled(id: string) {
       }
     }
 
-    await prisma.importPlatform.update({
+    await prismaAdmin.importPlatform.update({
       where: { id },
       data: { isEnabled: !platform.isEnabled },
     })
@@ -277,7 +277,7 @@ export async function togglePlatformEnabled(id: string) {
  */
 export async function updatePlatformStats(id: string, importedCount: number) {
   try {
-    await prisma.importPlatform.update({
+    await prismaAdmin.importPlatform.update({
       where: { id },
       data: {
         totalImported: {

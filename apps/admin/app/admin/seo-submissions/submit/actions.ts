@@ -5,7 +5,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { prisma } from "@rungame/database"
+import { prisma, prismaAdmin } from "@rungame/database"
 import { submitUrls as submitToIndexNow } from '@/lib/seo-submissions/indexnow'
 import {
   generateGameUrls,
@@ -136,7 +136,7 @@ export async function submitSelectedUrls(
     }
 
     // 2. 获取搜索引擎配置
-    const engineConfigs = await prisma.searchEngineConfig.findMany({
+    const engineConfigs = await prismaAdmin.searchEngineConfig.findMany({
       where: {
         id: { in: input.engines },
         isEnabled: true,
@@ -166,7 +166,7 @@ export async function submitSelectedUrls(
 
       // 为当前引擎创建提交记录
       const submissionPromises = allUrls.map(async (urlInfo) => {
-        return prisma.urlSubmission.create({
+        return prismaAdmin.urlSubmission.create({
           data: {
             url: urlInfo.url,
             urlType: urlInfo.type,
@@ -205,7 +205,7 @@ export async function submitSelectedUrls(
             const submission = submissions[i]
 
             if (submission) {
-              await prisma.urlSubmission.update({
+              await prismaAdmin.urlSubmission.update({
                 where: { id: submission.id },
                 data: {
                   status: result.success ? 'SUCCESS' : 'FAILED',
@@ -226,7 +226,7 @@ export async function submitSelectedUrls(
           }
 
           // 更新搜索引擎统计
-          await prisma.searchEngineConfig.update({
+          await prismaAdmin.searchEngineConfig.update({
             where: { id: engineConfig.id },
             data: {
               totalSubmitted: { increment: submissions.length },
@@ -247,7 +247,7 @@ export async function submitSelectedUrls(
           // 标记所有提交为失败
           await Promise.all(
             submissions.map((submission) =>
-              prisma.urlSubmission.update({
+              prismaAdmin.urlSubmission.update({
                 where: { id: submission.id },
                 data: {
                   status: 'FAILED',
@@ -270,7 +270,7 @@ export async function submitSelectedUrls(
         // 标记为 PENDING
         await Promise.all(
           submissions.map((submission) =>
-            prisma.urlSubmission.update({
+            prismaAdmin.urlSubmission.update({
               where: { id: submission.id },
               data: {
                 status: 'PENDING',

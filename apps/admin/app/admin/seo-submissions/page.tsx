@@ -4,7 +4,7 @@
  */
 
 import Link from 'next/link'
-import { prisma } from "@rungame/database"
+import { prismaAdmin } from "@rungame/database"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -13,10 +13,10 @@ import { ExternalLink, Settings, Send } from 'lucide-react'
 async function getSearchEnginesStats() {
   // 获取 Google 和 Bing 配置
   const [googleConfig, bingConfig] = await Promise.all([
-    prisma.searchEngineConfig.findFirst({
+    prismaAdmin.searchEngineConfig.findFirst({
       where: { type: 'google' },
     }),
-    prisma.searchEngineConfig.findFirst({
+    prismaAdmin.searchEngineConfig.findFirst({
       where: { type: 'indexnow' },
     }),
   ])
@@ -25,10 +25,10 @@ async function getSearchEnginesStats() {
   let googleStats = null
   if (googleConfig) {
     const [total, indexed] = await Promise.all([
-      prisma.urlSubmission.count({
+      prismaAdmin.urlSubmission.count({
         where: { searchEngineConfigId: googleConfig.id },
       }),
-      prisma.urlSubmission.count({
+      prismaAdmin.urlSubmission.count({
         where: {
           searchEngineConfigId: googleConfig.id,
           indexedByGoogle: true,
@@ -46,10 +46,10 @@ async function getSearchEnginesStats() {
   let bingStats = null
   if (bingConfig) {
     const [total, indexed] = await Promise.all([
-      prisma.urlSubmission.count({
+      prismaAdmin.urlSubmission.count({
         where: { searchEngineConfigId: bingConfig.id },
       }),
-      prisma.urlSubmission.count({
+      prismaAdmin.urlSubmission.count({
         where: {
           searchEngineConfigId: bingConfig.id,
           indexedByBing: true,

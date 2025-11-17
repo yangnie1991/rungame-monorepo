@@ -6,7 +6,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { prisma } from "@rungame/database"
+import { prismaAdmin } from "@rungame/database"
 import { generateAllUrls } from '@/lib/seo-submissions/url-generator'
 
 export interface GenerateUrlsResult {
@@ -39,7 +39,7 @@ export async function generateAllUrlsToDatabase(): Promise<GenerateUrlsResult> {
     console.log(`[URL生成] 共生成 ${allUrls.length} 个 URL`)
 
     // 2. 检查哪些 URL 已存在
-    const existingUrls = await prisma.urlSubmission.findMany({
+    const existingUrls = await prismaAdmin.urlSubmission.findMany({
       where: {
         url: { in: allUrls.map((u) => u.url) },
       },
@@ -54,7 +54,7 @@ export async function generateAllUrlsToDatabase(): Promise<GenerateUrlsResult> {
 
     // 4. 批量插入新 URL
     if (newUrls.length > 0) {
-      await prisma.urlSubmission.createMany({
+      await prismaAdmin.urlSubmission.createMany({
         data: newUrls.map((urlInfo) => ({
           url: urlInfo.url,
           urlType: urlInfo.type as any,
@@ -130,7 +130,7 @@ export async function clearAllUrls(): Promise<{
   message: string
 }> {
   try {
-    const result = await prisma.urlSubmission.deleteMany({})
+    const result = await prismaAdmin.urlSubmission.deleteMany({})
 
     revalidatePath('/admin/seo-submissions')
 

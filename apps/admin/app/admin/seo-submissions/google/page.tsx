@@ -4,25 +4,25 @@
  */
 
 import { Suspense } from 'react'
-import { prisma } from "@rungame/database"
+import { prismaAdmin } from "@rungame/database"
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { CheckCircle2, XCircle, Clock } from 'lucide-react'
 import { GoogleSubmissionsClient } from './GoogleSubmissionsClient'
 
 export async function getGoogleStats() {
   const [total, indexed, notIndexed, unchecked] = await Promise.all([
-    prisma.urlSubmission.count(),
-    prisma.urlSubmission.count({
+    prismaAdmin.urlSubmission.count(),
+    prismaAdmin.urlSubmission.count({
       where: {
         indexedByGoogle: true,
       },
     }),
-    prisma.urlSubmission.count({
+    prismaAdmin.urlSubmission.count({
       where: {
         indexedByGoogle: false,
       },
     }),
-    prisma.urlSubmission.count({
+    prismaAdmin.urlSubmission.count({
       where: {
         indexedByGoogle: null,
       },
@@ -41,7 +41,7 @@ export async function getGoogleStats() {
 }
 
 async function getGoogleConfig() {
-  return prisma.searchEngineConfig.findFirst({
+  return prismaAdmin.searchEngineConfig.findFirst({
     where: { type: 'google' },
     select: {
       id: true,
@@ -56,7 +56,7 @@ async function getGoogleConfig() {
 }
 
 async function getGoogleSubmissions() {
-  return prisma.urlSubmission.findMany({
+  return prismaAdmin.urlSubmission.findMany({
     orderBy: { createdAt: 'desc' },
     select: {
       id: true,

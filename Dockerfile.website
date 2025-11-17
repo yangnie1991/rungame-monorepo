@@ -1,0 +1,91 @@
+# RunGame Website - 优化的多阶段 Docker 构建
+# 基于 Next.js 官方最佳实践 + Monorepo 架构
+
+# ============================================
+# 第一阶段: 基础镜像
+# ============================================
+FROM node:20-alpine AS base
+WORKDIR /app
+
+# ============================================
+# 第二阶段: 依赖安装
+# ============================================
+FROM base AS deps
+
+# 安装必要的系统依赖（仅 libc6-compat）
+RUN apk add --no-cache libc6-compat
+
+# 复制 package 文件
+COPY package*.json ./
+COPY apps/website/package*.json ./apps/website/
+COPY packages/database/package*.json ./packages/database/
+
+# 安装依赖
+RUN npm ci
+
+# ============================================
+# 第三阶段: 构建应用
+# ============================================
+FROM base AS builder
+
+# 复制依赖
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/website/node_modules ./apps/website/node_modules
+COPY --from=deps /app/packages/database/node_modules ./packages/database/node_modules
+
+# 复制源代码
+COPY . .
+
+# 构建参数
+ARG DATABASE_URL
+ARG NODE_ENV=production
+
+# 设置环境变量
+ENV DATABASE_URL=${DATABASE_URL}
+ENV NODE_ENV=${NODE_ENV}
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# 生成 Prisma Client
+RUN npm run db:generate
+
+# 构建 website 应用（使用 Turbopack，生成 standalone 输出）
+RUN npm run build:website
+
+# ============================================
+# 第四阶段: 生产运行时（Standalone 优化）
+# ============================================
+FROM base AS runner
+
+# 创建非 root 用户
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# 安装运行时依赖（仅 curl 用于健康检查）
+RUN apk add --no-cache curl
+
+# 设置环境变量
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# 🔥 关键优化：复制 standalone 输出
+COPY --from=builder --chown=nextjs:nodejs /app/apps/website/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/website/.next/static ./apps/website/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/website/public ./apps/website/public
+
+# Monorepo 特殊需求：复制数据库包
+COPY --from=builder --chown=nextjs:nodejs /app/packages/database ./packages/database
+
+# 切换到非 root 用户
+USER nextjs
+
+# 暴露端口
+EXPOSE 3000
+
+# 健康检查（检查首页）
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:3000/ || exit 1
+
+# 🔥 使用 standalone 生成的 server.js
+CMD ["node", "apps/website/server.js"]

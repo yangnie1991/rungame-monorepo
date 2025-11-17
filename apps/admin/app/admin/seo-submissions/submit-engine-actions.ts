@@ -7,7 +7,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { prisma } from "@rungame/database"
+import { prisma, prismaAdmin } from "@rungame/database"
 import { submitUrls as submitToIndexNow } from '@/lib/seo-submissions/indexnow'
 import {
   generateGameUrls,
@@ -157,7 +157,7 @@ export async function markGoogleUrlsAsSubmittedByIds(
     }
 
     // 批量更新提交记录
-    const result = await prisma.urlSubmission.updateMany({
+    const result = await prismaAdmin.urlSubmission.updateMany({
       where: {
         id: { in: submissionIds },
       },
@@ -193,7 +193,7 @@ export async function markGoogleUrlsAsSubmitted(
     // 创建或更新提交记录
     const submissions = await Promise.all(
       urls.map((urlInfo) =>
-        prisma.urlSubmission.upsert({
+        prismaAdmin.urlSubmission.upsert({
           where: { url: urlInfo.url },
           create: {
             url: urlInfo.url,
@@ -244,7 +244,7 @@ export async function submitBingUrlsDirect(
     }
 
     // 获取 Bing IndexNow 配置
-    const bingConfig = await prisma.searchEngineConfig.findFirst({
+    const bingConfig = await prismaAdmin.searchEngineConfig.findFirst({
       where: { type: 'indexnow' },
     })
 
@@ -263,7 +263,7 @@ export async function submitBingUrlsDirect(
     }
 
     // 1. 从数据库获取所有选中的 submissions
-    const submissions = await prisma.urlSubmission.findMany({
+    const submissions = await prismaAdmin.urlSubmission.findMany({
       where: { id: { in: submissionIds } },
       select: { id: true, url: true },
     })
@@ -276,7 +276,7 @@ export async function submitBingUrlsDirect(
     }
 
     // 2. 更新状态为 PENDING
-    await prisma.urlSubmission.updateMany({
+    await prismaAdmin.urlSubmission.updateMany({
       where: { id: { in: submissionIds } },
       data: { bingSubmitStatus: 'PENDING' },
     })
@@ -305,7 +305,7 @@ export async function submitBingUrlsDirect(
         const submission = submissions[i]
 
         if (submission) {
-          await prisma.urlSubmission.update({
+          await prismaAdmin.urlSubmission.update({
             where: { id: submission.id },
             data: {
               bingSubmitStatus: result.success ? 'SUCCESS' : 'FAILED',
@@ -339,7 +339,7 @@ export async function submitBingUrlsDirect(
       console.error('[Bing推送] IndexNow API 错误:', error)
 
       // 标记所有为失败
-      await prisma.urlSubmission.updateMany({
+      await prismaAdmin.urlSubmission.updateMany({
         where: { id: { in: submissionIds } },
         data: {
           bingSubmitStatus: 'FAILED',
@@ -370,7 +370,7 @@ export async function submitBingUrls(
 ): Promise<{ success: boolean; message: string; stats?: any }> {
   try {
     // 获取 Bing IndexNow 配置
-    const bingConfig = await prisma.searchEngineConfig.findFirst({
+    const bingConfig = await prismaAdmin.searchEngineConfig.findFirst({
       where: { type: 'indexnow' },
     })
 
@@ -466,7 +466,7 @@ export async function submitBingUrls(
     // 2. 创建或更新提交记录（PENDING 状态）
     const submissions = await Promise.all(
       allUrls.map((urlInfo) =>
-        prisma.urlSubmission.upsert({
+        prismaAdmin.urlSubmission.upsert({
           where: { url: urlInfo.url },
           create: {
             url: urlInfo.url,
@@ -506,7 +506,7 @@ export async function submitBingUrls(
         const submission = submissions[i]
 
         if (submission) {
-          await prisma.urlSubmission.update({
+          await prismaAdmin.urlSubmission.update({
             where: { id: submission.id },
             data: {
               bingSubmitStatus: result.success ? 'SUCCESS' : 'FAILED',
@@ -543,7 +543,7 @@ export async function submitBingUrls(
       // 标记所有为失败
       await Promise.all(
         submissions.map((submission) =>
-          prisma.urlSubmission.update({
+          prismaAdmin.urlSubmission.update({
             where: { id: submission.id },
             data: {
               bingSubmitStatus: 'FAILED',

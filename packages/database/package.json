@@ -16,9 +16,13 @@
     "build": "tsc || exit 0",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
-    "generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "generate": "npm run generate:business && npm run generate:admin",
+    "generate:business": "prisma generate --schema=./prisma/schema.prisma",
+    "generate:admin": "prisma generate --schema=./prisma/schema-admin.prisma",
+    "db:push": "prisma db push --schema=./prisma/schema.prisma",
+    "db:push:admin": "prisma db push --schema=./prisma/schema-admin.prisma",
+    "db:studio": "prisma studio --schema=./prisma/schema.prisma",
+    "db:studio:admin": "prisma studio --schema=./prisma/schema-admin.prisma"
   },
   "dependencies": {
     "@prisma/client": "^6.17.1"
