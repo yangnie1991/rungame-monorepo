@@ -41,13 +41,18 @@ jobs:
           ref: ${{ github.event.inputs.branch || github.ref }}
 
       # ==========================================
-      # 2. 设置 Node.js 环境（可选，用于构建检查）
+      # 2. 设置 pnpm 和 Node.js 环境
       # ==========================================
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
 
       # ==========================================
       # 3. 获取分支信息
