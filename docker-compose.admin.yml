@@ -3,8 +3,8 @@ version: '3.8'
 services:
   # 管理端应用（使用外部数据库，不包含本地数据库容器）
   admin:
-    # 使用从 GHCR 拉取的预构建镜像（在 GitHub Actions 上构建）
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-yangnie1991}/rungame-admin:latest
+    # 使用从 GitHub Actions 传输并加载的镜像（在 GitHub Actions 上构建，避免 VPS 内存不足）
+    image: rungame-admin:latest
     container_name: rungame-admin
     restart: unless-stopped
     ports:
