@@ -6,20 +6,19 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: '../..',
   },
-  // 将 Prisma 和 database 包标记为外部包，避免 Webpack 打包
-  // 解决 "node:fs", "node:os" 等 Node.js 内置模块的导入问题
+  // 转译内部 monorepo 包（JIT 模式下的 TypeScript 源文件）
+  transpilePackages: ['@rungame/database'],
+  // 仅将 Prisma Client 标记为外部包
   serverComponentsExternalPackages: [
     '@prisma/client',
-    '@rungame/database',
   ],
-  // Webpack 配置：处理 node: 协议和外部化 Prisma
+  // Webpack 配置：外部化 Prisma Client
   webpack: (config, { isServer }) => {
     if (isServer) {
-      // 外部化 Prisma 相关包，避免 Webpack 打包
+      // 仅外部化 Prisma Client（@rungame/database 由 transpilePackages 处理）
       config.externals = config.externals || []
       config.externals.push({
         '@prisma/client': 'commonjs @prisma/client',
-        '@rungame/database': 'commonjs @rungame/database',
       })
     }
     return config
