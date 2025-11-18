@@ -1,9 +1,18 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": [
+    "tsconfig.json",
+    "turbo.json"
+  ],
+  "globalEnv": [
+    "NODE_ENV"
+  ],
+  "ui": "tui",
   "tasks": {
     "build": {
       "dependsOn": ["^build", "^db:generate"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"],
+      "inputs": ["$TURBO_DEFAULT$", "!README.md", "!**/*.md", "!docs/**"],
       "env": [
         "DATABASE_URL",
         "CACHE_DATABASE_URL",
@@ -40,6 +49,11 @@
     },
     "db:studio": {
       "cache": false
+    },
+    "type-check": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "cache": true
     }
   }
 }
