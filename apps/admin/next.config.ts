@@ -12,6 +12,18 @@ const nextConfig: NextConfig = {
     '@prisma/client',
     '@rungame/database',
   ],
+  // Webpack 配置：处理 node: 协议和外部化 Prisma
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // 外部化 Prisma 相关包，避免 Webpack 打包
+      config.externals = config.externals || []
+      config.externals.push({
+        '@prisma/client': 'commonjs @prisma/client',
+        '@rungame/database': 'commonjs @rungame/database',
+      })
+    }
+    return config
+  },
   typescript: {
     ignoreBuildErrors: true,
   },
