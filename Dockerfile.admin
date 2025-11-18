@@ -67,7 +67,12 @@ RUN pnpm db:generate
 # turbo 会自动先构建 @rungame/database，再构建 @rungame/admin
 RUN NODE_OPTIONS="--max-old-space-size=2048" \
     SKIP_ENV_VALIDATION=true \
-    pnpm turbo build --verbosity=2
+    pnpm turbo build 2>&1 | tee build.log; \
+    if [ $? -ne 0 ]; then \
+      echo "=== BUILD FAILED ==="; \
+      echo "Attempting direct build for more details..."; \
+      cd apps/admin && pnpm run build; \
+    fi
 
 # ============================================
 # 第四阶段: 生产运行时（Standalone 优化）
