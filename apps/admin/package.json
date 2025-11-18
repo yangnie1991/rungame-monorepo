@@ -64,6 +64,8 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@rungame/tailwind-config": "workspace:*",
+    "@rungame/typescript-config": "workspace:*",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.19",
     "@types/bcryptjs": "^2.4.6",
