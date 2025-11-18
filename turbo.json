@@ -41,6 +41,13 @@
     "generate": {
       "cache": false
     },
+    "db:generate": {
+      "cache": false,
+      "outputs": [
+        "node_modules/.pnpm/@prisma+client@*/**",
+        "packages/database/src/generated/**"
+      ]
+    },
     "db:push": {
       "cache": false
     },
