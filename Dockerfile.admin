@@ -59,10 +59,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm db:generate
 
 # 使用 turbo 构建（自动处理依赖顺序）
+# 注意：turbo prune 已经修剪了 monorepo，无需使用 --filter
 # turbo 会自动先构建 @rungame/database，再构建 @rungame/admin
 RUN NODE_OPTIONS="--max-old-space-size=2048" \
     SKIP_ENV_VALIDATION=true \
-    pnpm turbo build --filter=@rungame/admin
+    pnpm turbo build
 
 # ============================================
 # 第四阶段: 生产运行时（Standalone 优化）
