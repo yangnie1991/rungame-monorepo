@@ -7,7 +7,7 @@
 import { initEnv } from './env'
 
 // 在服务器启动时执行验证
-// 不会在 Docker 构建时执行（因为构建时不会运行这个文件）
-if (typeof window === 'undefined') {
+// Docker 构建时跳过（SKIP_ENV_VALIDATION=true）
+if (typeof window === 'undefined' && process.env.SKIP_ENV_VALIDATION !== 'true') {
   initEnv()
 }
