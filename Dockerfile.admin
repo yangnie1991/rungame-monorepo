@@ -16,17 +16,14 @@ FROM base AS prepare
 # 安装 pnpm
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
-# 安装全局 turbo (使用项目中的版本)
-RUN pnpm add -g turbo@2.6.1
-
 # 复制整个 monorepo
 COPY . .
 
-# 使用 turbo prune 生成优化的输出
+# 使用 pnpm dlx 运行 turbo prune（无需全局安装）
 # --docker 标志会生成两个目录:
 #   - out/json/  只包含 package.json 和 lockfile
 #   - out/full/  包含完整的源代码
-RUN turbo prune @rungame/admin --docker
+RUN pnpm dlx turbo@2.6.1 prune @rungame/admin --docker
 
 # ============================================
 # 第三阶段: 安装依赖
