@@ -289,7 +289,7 @@ importers:
         specifier: ^1.2.8
         version: 1.2.8(@types/react-dom@19.2.3(@types/react@19.2.5))(@types/react@19.2.5)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@rungame/database':
-        specifier: file:../../packages/database
+        specifier: workspace:*
         version: link:../../packages/database
       '@tanstack/react-table':
         specifier: ^8.21.3
@@ -485,7 +485,7 @@ importers:
         specifier: ^1.2.8
         version: 1.2.8(@types/react-dom@19.2.3(@types/react@19.2.5))(@types/react@19.2.5)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@rungame/database':
-        specifier: file:../../packages/database
+        specifier: workspace:*
         version: link:../../packages/database
       '@vercel/analytics':
         specifier: ^1.5.0
@@ -600,6 +600,17 @@ importers:
       typescript:
         specifier: ^5
         version: 5.9.3
+
+  packages/tailwind-config:
+    devDependencies:
+      '@tailwindcss/postcss':
+        specifier: ^4
+        version: 4.1.17
+      tailwindcss:
+        specifier: ^4
+        version: 4.1.17
+
+  packages/typescript-config: {}
 
 packages:
 
