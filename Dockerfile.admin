@@ -56,6 +56,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # 生成 Prisma Client
 RUN pnpm db:generate
 
+# 构建 database 包（Monorepo 依赖）
+RUN pnpm build:database
+
 # 构建 admin 应用（生成 standalone 输出）
 # 内存优化：限制 Node.js 堆内存为 2GB，避免 OOM
 # SKIP_ENV_VALIDATION=true: 跳过构建时的环境变量验证
