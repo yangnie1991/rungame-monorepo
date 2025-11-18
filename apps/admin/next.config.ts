@@ -1,14 +1,17 @@
 import type { NextConfig } from "next"
 
-// 验证必需的环境变量
-import './lib/env'
-
 const nextConfig: NextConfig = {
   output: 'standalone',
   // 设置 Turbopack 根目录为 Monorepo 根目录
   turbopack: {
     root: '../..',
   },
+  // 将 Prisma 和 database 包标记为外部包，避免 Webpack 打包
+  // 解决 "node:fs", "node:os" 等 Node.js 内置模块的导入问题
+  serverComponentsExternalPackages: [
+    '@prisma/client',
+    '@rungame/database',
+  ],
   typescript: {
     ignoreBuildErrors: true,
   },
