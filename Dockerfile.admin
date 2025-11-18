@@ -1,46 +1,62 @@
-# RunGame Admin - 优化的多阶段 Docker 构建
-# 基于 Next.js 官方最佳实践 + Monorepo 架构
+# RunGame Admin - Turborepo 官方推荐的 Docker 构建方式
+# 参考: https://turborepo.com/docs/guides/tools/docker
 
 # ============================================
 # 第一阶段: 基础镜像
 # ============================================
 FROM node:20-alpine AS base
+RUN apk update && apk add --no-cache libc6-compat
 WORKDIR /app
 
 # ============================================
-# 第二阶段: 依赖安装
+# 第二阶段: Turbo Prune - 修剪 Monorepo
 # ============================================
-FROM base AS deps
-
-# 安装必要的系统依赖
-RUN apk add --no-cache libc6-compat
+FROM base AS prepare
 
 # 安装 pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
-# 复制 package 文件和 pnpm 配置
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY apps/admin/package.json ./apps/admin/
-COPY packages/database/package.json ./packages/database/
+# 安装全局 turbo (使用项目中的版本)
+RUN pnpm add -g turbo@2.6.1
 
-# 安装依赖（包括 devDependencies，构建时需要）
+# 复制整个 monorepo
+COPY . .
+
+# 使用 turbo prune 生成优化的输出
+# --docker 标志会生成两个目录:
+#   - out/json/  只包含 package.json 和 lockfile
+#   - out/full/  包含完整的源代码
+RUN turbo prune @rungame/admin --docker
+
+# ============================================
+# 第三阶段: 安装依赖
+# ============================================
+FROM base AS installer
+
+# 安装 pnpm
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+
+# 先复制 package.json 和 lockfile（更好的 Docker 层缓存）
+COPY --from=prepare /app/out/json/ .
+
+# 安装依赖
 RUN pnpm install --frozen-lockfile
 
 # ============================================
-# 第三阶段: 构建应用
+# 第四阶段: 构建应用
 # ============================================
 FROM base AS builder
 
 # 安装 pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
-# 复制依赖（pnpm 会自动处理 workspace 依赖）
-COPY --from=deps /app/node_modules ./node_modules
+# 复制已安装的依赖
+COPY --from=installer /app/ .
 
-# 复制源代码
-COPY . .
+# 复制完整源代码
+COPY --from=prepare /app/out/full/ .
 
-# 构建参数（可在构建时传入）
+# 构建参数
 ARG DATABASE_URL
 ARG NEXTAUTH_SECRET
 ARG NEXTAUTH_URL
@@ -56,18 +72,14 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # 生成 Prisma Client
 RUN pnpm db:generate
 
-# 构建 database 包（Monorepo 依赖）
-RUN pnpm build:database
-
-# 构建 admin 应用（生成 standalone 输出）
-# 内存优化：限制 Node.js 堆内存为 2GB，避免 OOM
-# SKIP_ENV_VALIDATION=true: 跳过构建时的环境变量验证
+# 使用 turbo 构建（自动处理依赖顺序）
+# turbo 会自动先构建 @rungame/database，再构建 @rungame/admin
 RUN NODE_OPTIONS="--max-old-space-size=2048" \
     SKIP_ENV_VALIDATION=true \
-    pnpm build:admin
+    pnpm turbo build --filter=@rungame/admin
 
 # ============================================
-# 第四阶段: 生产运行时（Standalone 优化）
+# 第五阶段: 生产运行时（Standalone 优化）
 # ============================================
 FROM base AS runner
 
@@ -84,8 +96,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=4000
 ENV HOSTNAME="0.0.0.0"
 
-# 🔥 关键优化：复制 standalone 输出（而非完整 node_modules）
-# Next.js standalone 模式会自动生成最小化的依赖树
+# 复制 standalone 输出（Next.js 15 自动生成的最小化依赖树）
 COPY --from=builder --chown=nextjs:nodejs /app/apps/admin/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/admin/.next/static ./apps/admin/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/admin/public ./apps/admin/public
@@ -99,10 +110,9 @@ USER nextjs
 # 暴露端口
 EXPOSE 4000
 
-# 健康检查（比官方示例更完善）
+# 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD curl -f http://localhost:4000/api/health || exit 1
 
-# 🔥 使用 standalone 生成的 server.js（性能提升 50%+）
+# 启动应用（使用 standalone 生成的 server.js）
 CMD ["node", "apps/admin/server.js"]
-# Deployment test at Tue Nov 18 01:36:22 CST 2025

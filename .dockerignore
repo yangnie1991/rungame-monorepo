@@ -1,20 +1,28 @@
-# Node modules
+# Turborepo 推荐的 .dockerignore 配置
+# turbo prune 会自动处理依赖修剪，保持简洁即可
+
+# Node modules（会在 Docker 内重新安装）
 node_modules
 **/node_modules
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# Next.js
+# Next.js 构建输出（会在 Docker 内重新构建）
 .next
 out
 dist
 build
+**/dist
+**/.next
 
 # 环境变量（不要打包进镜像）
 .env
 .env.local
 .env.*.local
-.env.vercel
-.env.vercel.local
+.env.production.local
+.env.development.local
 
 # Git
 .git
@@ -24,7 +32,7 @@ build
 # 文档
 *.md
 docs
-CLEANUP-SUMMARY.md
+README.md
 
 # IDE
 .vscode
@@ -53,22 +61,11 @@ tmp
 temp
 *.tmp
 
-# Prisma
-prisma/migrations
-
-# 开发工具
-scripts/
-*.config.js
-!next.config.ts
-!turbo.json
-
-# GitHub
+# GitHub Actions（不需要在 Docker 内）
 .github
 
 # 备份文件
 *.backup
 *.bak
-backup_*
 
-# 其他应用（仅构建管理端）
-apps/website
+# 注意：不要排除 apps/website，turbo prune 需要完整的 monorepo 结构
