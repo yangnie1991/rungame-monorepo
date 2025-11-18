@@ -41,19 +41,23 @@ jobs:
           ref: ${{ github.event.inputs.branch || github.ref }}
 
       # ==========================================
-      # 2. 设置 pnpm 和 Node.js 环境
+      # 2. 设置 Docker Buildx（多平台构建）
       # ==========================================
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      # ==========================================
+      # 3. 登录到 GitHub Container Registry
+      # ==========================================
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       # ==========================================
-      # 3. 获取分支信息
+      # 4. 获取分支信息
       # ==========================================
       - name: Get branch info
         id: branch
@@ -65,7 +69,26 @@ jobs:
           echo "部署环境: ${{ github.event.inputs.environment || 'production' }}"
 
       # ==========================================
-      # 4. SSH 部署到 VPS
+      # 5. 构建并推送 Docker 镜像到 GHCR
+      # ==========================================
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.admin
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/rungame-admin:latest
+            ghcr.io/${{ github.repository_owner }}/rungame-admin:${{ github.sha }}
+          build-args: |
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
+            NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ==========================================
+      # 6. SSH 部署到 VPS（拉取镜像并运行）
       # ==========================================
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.3
@@ -164,11 +187,15 @@ jobs:
             echo "🧹 清理未使用的镜像..."
             docker image prune -f || true
 
-            # 构建新镜像（利用 Docker 层缓存，加快构建速度）
-            echo "🔨 构建新镜像..."
-            docker-compose -f docker-compose.admin.yml build
+            # 登录到 GitHub Container Registry
+            echo "🔐 登录到 GHCR..."
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # 启动新容器
+            # 拉取最新镜像（在 GitHub Actions 上构建，内存充足）
+            echo "⬇️ 拉取最新镜像..."
+            docker pull ghcr.io/${{ github.repository_owner }}/rungame-admin:latest
+
+            # 启动新容器（使用拉取的镜像）
             echo "🚀 启动新容器..."
             docker-compose -f docker-compose.admin.yml up -d
 
