@@ -96,9 +96,8 @@ jobs:
           # 创建日志目录结构（避免 PM2 启动时报错）
           mkdir -p logs
 
-          # 打包必需文件
+          # 打包必需文件（先打包 typescript，再排除其他 node_modules）
           tar -czf rungame-pm2-admin.tar.gz \
-            --exclude='apps/*/node_modules' \
             --exclude='.git' \
             --exclude='.env*' \
             --exclude='*.log' \
@@ -106,6 +105,7 @@ jobs:
             apps/admin/public \
             apps/admin/package.json \
             apps/admin/next.config.ts \
+            apps/admin/node_modules/typescript \
             packages/database/src \
             packages/database/package.json \
             packages/database/prisma \
@@ -207,13 +207,18 @@ jobs:
             echo "🔧 启用 corepack..."
             corepack enable || echo "⚠️  corepack 已启用或不可用"
 
+            # 验证 TypeScript（从 GitHub Actions 打包）
+            echo "🔍 验证 TypeScript..."
+            if [ -d "apps/admin/node_modules/typescript" ]; then
+              echo "✅ TypeScript 已存在（从构建环境打包）"
+              ls -lh apps/admin/node_modules/typescript/lib/typescript.js
+            else
+              echo "⚠️  警告: TypeScript 未打包，Next.js 将尝试自动安装"
+            fi
+
             # 安装生产依赖（仅运行时库，不含 prisma CLI）
             echo "📥 安装生产依赖..."
             pnpm install --prod --frozen-lockfile
-
-            # 安装 TypeScript（Next.js 加载 .ts 配置文件时需要）
-            echo "📥 安装 TypeScript（用于加载 next.config.ts）..."
-            cd apps/admin && pnpm add -D typescript && cd ../..
 
             # 再次验证 Prisma Client（确保 pnpm install 没有影响）
             echo "🔍 再次验证 Prisma Client..."
@@ -222,6 +227,14 @@ jobs:
             else
               echo "❌ 错误: Prisma Client 被清除"
               exit 1
+            fi
+
+            # 再次验证 TypeScript（确保 pnpm install 没有影响）
+            echo "🔍 再次验证 TypeScript..."
+            if [ -d "apps/admin/node_modules/typescript" ]; then
+              echo "✅ TypeScript 仍然存在（未被 pnpm install 清除）"
+            else
+              echo "⚠️  警告: TypeScript 被清除"
             fi
 
             # 配置环境变量
