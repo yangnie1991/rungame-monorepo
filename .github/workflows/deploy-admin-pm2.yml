@@ -113,7 +113,7 @@ jobs:
             apps/admin/public \
             apps/admin/package.json \
             apps/admin/next.config.ts \
-            packages/database/dist \
+            packages/database/src \
             packages/database/package.json \
             packages/database/prisma \
             packages/database/node_modules/.prisma \
