@@ -3,6 +3,10 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { routing } from "./i18n/routing"
 import { shouldExcludeFromI18n } from "./lib/static-files"
+import { initEnv } from "./lib/env"
+
+// 在应用启动时验证环境变量（仅运行时，不在构建时）
+initEnv()
 
 // 创建next-intl中间件 - 使用routing配置
 const intlMiddleware = createMiddleware(routing)

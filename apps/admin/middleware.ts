@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { auth } from "@/lib/auth"
+import { initEnv } from "@/lib/env"
+
+// 在应用启动时验证环境变量（仅运行时，不在构建时）
+initEnv()
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl

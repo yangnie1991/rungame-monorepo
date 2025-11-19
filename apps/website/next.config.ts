@@ -1,8 +1,9 @@
 import type { NextConfig } from "next"
 import createNextIntlPlugin from "next-intl/plugin"
 
-// 验证必需的环境变量
-import './lib/env'
+// ⚠️ 环境变量验证已移至运行时（在 middleware.ts 中调用）
+// 不再在构建时验证，避免 Docker 构建阶段需要真实的数据库地址
+// import './lib/env'
 
 const withNextIntl = createNextIntlPlugin("./i18n/config.ts")
 

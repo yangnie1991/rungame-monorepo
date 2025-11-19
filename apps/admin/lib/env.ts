@@ -98,17 +98,27 @@ export function initEnv() {
     return
   }
 
-  // 验证所有运行时必需的环境变量
-  try {
-    validateRequiredEnvVars(false) // 验证所有变量
-    validateEncryptionKeyStrength()
+  // 构建阶段跳过验证
+  // Next.js 构建时会设置这些环境变量
+  if (
+    process.env.NEXT_PHASE === 'phase-production-build' ||
+    process.env.NEXT_PHASE === 'phase-development-build' ||
+    // Turbo 构建标识
+    process.env.TURBOPACK === '1' ||
+    // CI 环境但没有运行时环境变量的情况
+    (process.env.CI && !process.env.DATABASE_URL)
+  ) {
+    console.log('⏭️  构建阶段，跳过环境变量验证')
+    return
+  }
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('✅ 环境变量验证通过')
-    }
-  } catch (error) {
-    console.error(error)
-    process.exit(1)
+  // 直接执行验证，让错误向上抛出
+  // 不使用 process.exit()，因为它在 Edge Runtime（middleware）中不被支持
+  validateRequiredEnvVars(false) // 验证所有变量
+  validateEncryptionKeyStrength()
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log('✅ 环境变量验证通过')
   }
 }
 

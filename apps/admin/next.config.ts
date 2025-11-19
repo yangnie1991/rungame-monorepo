@@ -8,10 +8,6 @@ const nextConfig: NextConfig = {
   },
   // 转译内部 monorepo 包（JIT 模式下的 TypeScript 源文件）
   transpilePackages: ['@rungame/database'],
-  // 仅将 Prisma Client 标记为外部包
-  serverComponentsExternalPackages: [
-    '@prisma/client',
-  ],
   // Webpack 配置：外部化 Prisma Client
   webpack: (config, { isServer }) => {
     if (isServer) {
