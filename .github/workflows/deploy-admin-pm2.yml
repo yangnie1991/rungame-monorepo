@@ -59,15 +59,98 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # ==========================================
-      # 5. 生成优化的 Prisma Client（仅 native）
+      # 4.5. 检测 VPS 平台（优化 Prisma 二进制）
+      # ==========================================
+      - name: 🔍 Detect VPS Platform
+        id: detect-platform
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            echo "=========================================="
+            echo "🔍 检测服务器平台信息"
+            echo "=========================================="
+
+            # 检测操作系统
+            if [ -f /etc/os-release ]; then
+              . /etc/os-release
+              OS_ID="$ID"
+              OS_VERSION="$VERSION_ID"
+              echo "操作系统: $NAME $VERSION"
+            else
+              OS_ID="unknown"
+              echo "⚠️  无法检测操作系统"
+            fi
+
+            # 检测 OpenSSL 版本
+            OPENSSL_VERSION=$(openssl version | grep -oP 'OpenSSL \K[0-9]+\.[0-9]+' || echo "unknown")
+            echo "OpenSSL 版本: $OPENSSL_VERSION"
+
+            # 确定 Prisma binaryTarget
+            if [[ "$OS_ID" == "debian" || "$OS_ID" == "ubuntu" ]]; then
+              BASE_PLATFORM="debian-openssl"
+            elif [[ "$OS_ID" == "rhel" || "$OS_ID" == "centos" || "$OS_ID" == "rocky" || "$OS_ID" == "almalinux" ]]; then
+              BASE_PLATFORM="rhel-openssl"
+            elif [[ "$OS_ID" == "alpine" ]]; then
+              BASE_PLATFORM="linux-musl-openssl"
+            else
+              BASE_PLATFORM="debian-openssl"  # 默认
+              echo "⚠️  未识别的系统，使用默认: debian-openssl"
+            fi
+
+            # 确定 OpenSSL 版本后缀
+            if [[ "$OPENSSL_VERSION" == "1.1"* ]]; then
+              OPENSSL_SUFFIX="1.1.x"
+            elif [[ "$OPENSSL_VERSION" == "3.0"* ]]; then
+              OPENSSL_SUFFIX="3.0.x"
+            else
+              OPENSSL_SUFFIX="3.0.x"  # 默认使用 3.0.x
+              echo "⚠️  未识别的 OpenSSL 版本，使用默认: 3.0.x"
+            fi
+
+            # 组合完整的 binaryTarget
+            BINARY_TARGET="${BASE_PLATFORM}-${OPENSSL_SUFFIX}"
+
+            echo "=========================================="
+            echo "✅ 检测结果"
+            echo "=========================================="
+            echo "平台: $BASE_PLATFORM"
+            echo "OpenSSL: $OPENSSL_SUFFIX"
+            echo "Prisma binaryTarget: $BINARY_TARGET"
+            echo "=========================================="
+
+            # 输出到 GitHub Actions（注意：ssh-action 不支持 $GITHUB_OUTPUT）
+            # 我们将通过输出文本让下一步解析
+            echo "BINARY_TARGET=$BINARY_TARGET"
+
+      - name: 📋 Save Detected Platform
+        id: platform
+        run: |
+          # 从上一步的输出中提取 BINARY_TARGET
+          BINARY_TARGET=$(echo "${{ steps.detect-platform.outputs.stdout }}" | grep "BINARY_TARGET=" | cut -d'=' -f2)
+
+          if [ -z "$BINARY_TARGET" ]; then
+            echo "⚠️  未能检测到平台，使用默认值: debian-openssl-3.0.x"
+            BINARY_TARGET="debian-openssl-3.0.x"
+          fi
+
+          echo "检测到的平台: $BINARY_TARGET"
+          echo "BINARY_TARGET=$BINARY_TARGET" >> $GITHUB_OUTPUT
+
+      # ==========================================
+      # 5. 生成优化的 Prisma Client（单平台）
       # ==========================================
       - name: 🔧 Generate Optimized Prisma Client
+        env:
+          BINARY_TARGET: ${{ steps.platform.outputs.BINARY_TARGET }}
         run: |
           echo "=========================================="
-          echo "🔧 生成优化的 Prisma Client（仅 native 平台）"
+          echo "🔧 生成优化的 Prisma Client"
           echo "=========================================="
-          echo "ℹ️  使用 GitHub Actions runner 的 native 平台"
-          echo "   runner: ubuntu-22.04 (debian-openssl-3.0.x)"
+          echo "目标平台: $BINARY_TARGET"
           echo ""
 
           # 备份原始 schema 文件
@@ -81,26 +164,23 @@ jobs:
           echo "✅ 旧文件已删除"
           echo ""
 
-          # 动态修改 binaryTargets（只保留 native）
+          # 动态修改 binaryTargets（只保留 native 和检测到的平台）
           echo "📝 修改 schema.prisma 的 binaryTargets..."
-          sed -i 's/binaryTargets = \[.*\]/binaryTargets = ["native"]/' \
+          sed -i "s/binaryTargets = \[.*\]/binaryTargets = [\"native\", \"$BINARY_TARGET\"]/" \
             packages/database/prisma/schema.prisma
 
           echo "📝 修改 schema-admin.prisma 的 binaryTargets..."
-          sed -i 's/binaryTargets = \[.*\]/binaryTargets = ["native"]/' \
+          sed -i "s/binaryTargets = \[.*\]/binaryTargets = [\"native\", \"$BINARY_TARGET\"]/" \
             packages/database/prisma/schema-admin.prisma
 
-          # 显示修改后的配置（验证sed是否成功）
+          # 显示修改后的配置
           echo ""
-          echo "📋 修改后的 schema.prisma binaryTargets:"
-          grep "binaryTargets" packages/database/prisma/schema.prisma
-          echo ""
-          echo "📋 修改后的 schema-admin.prisma binaryTargets:"
-          grep "binaryTargets" packages/database/prisma/schema-admin.prisma
+          echo "📋 修改后的 binaryTargets 配置:"
+          grep -A 5 "generator client" packages/database/prisma/schema.prisma
           echo ""
 
           # 生成 Prisma Client
-          echo "⏳ 生成 Prisma Client（仅 native 平台）..."
+          echo "⏳ 生成 Prisma Client..."
           pnpm db:generate
 
           # 验证生成的二进制文件
