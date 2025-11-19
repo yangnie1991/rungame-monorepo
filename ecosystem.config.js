@@ -14,13 +14,13 @@
 module.exports = {
   apps: [
     // ============================================
-    // Admin 应用 - 管理后台
+    // Admin 应用 - 管理后台（Standalone 模式）
     // ============================================
     {
       name: 'rungame-admin',
-      cwd: './apps/admin',
-      script: 'npm',
-      args: 'run start -- -p 4000',
+      cwd: './',                                                        // Monorepo 根目录
+      script: 'apps/admin/.next/standalone/apps/admin/server.js',      // Standalone server 完整路径
+      interpreter: 'node',                                              // 使用 node 解释器
 
       // 进程配置
       instances: 1,           // 管理后台使用单实例即可
@@ -30,6 +30,7 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 4000,
+        HOSTNAME: '0.0.0.0',
       },
 
       // 自动重启配置

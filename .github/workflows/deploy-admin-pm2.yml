@@ -86,37 +86,38 @@ jobs:
           ls -la apps/admin/.next
           echo "产物大小: $(du -sh apps/admin/.next | cut -f1)"
 
+          # 复制静态资源到 standalone 目录（Next.js Standalone 模式必需）
+          echo "📋 复制静态资源到 standalone 目录..."
+          cp -r apps/admin/public apps/admin/.next/standalone/apps/admin/
+          cp -r apps/admin/.next/static apps/admin/.next/standalone/apps/admin/.next/
+
+          echo "✅ Standalone 目录准备完成:"
+          ls -la apps/admin/.next/standalone/apps/admin/
+          echo "Standalone 大小: $(du -sh apps/admin/.next/standalone | cut -f1)"
+
       # ==========================================
-      # 7. 打包部署文件
+      # 7. 打包部署文件（Standalone 模式）
       # ==========================================
       - name: 📦 Package build artifacts
         run: |
-          echo "打包部署文件..."
+          echo "打包 Standalone 部署文件..."
 
           # 创建日志目录结构（避免 PM2 启动时报错）
           mkdir -p logs
 
-          # 打包必需文件（先打包 typescript，再排除其他 node_modules）
+          # 打包 standalone 目录（已包含最小化的 node_modules 和所有必需文件）
           tar -czf rungame-pm2-admin.tar.gz \
-            --exclude='.git' \
-            --exclude='.env*' \
             --exclude='*.log' \
-            apps/admin/.next \
-            apps/admin/public \
-            apps/admin/package.json \
-            apps/admin/next.config.ts \
-            apps/admin/node_modules/typescript \
-            packages/database/src \
-            packages/database/package.json \
-            packages/database/prisma \
-            package.json \
-            pnpm-lock.yaml \
-            turbo.json \
+            apps/admin/.next/standalone \
             ecosystem.config.js \
             logs
 
           echo "✅ 打包完成"
           echo "📊 压缩包大小: $(du -h rungame-pm2-admin.tar.gz | cut -f1)"
+
+          # 显示打包内容
+          echo "📋 打包内容:"
+          tar -tzf rungame-pm2-admin.tar.gz | head -20
 
       # ==========================================
       # 8. 传输到 VPS
@@ -159,7 +160,8 @@ jobs:
             set -e
 
             echo "=========================================="
-            echo "🚀 RunGame Admin PM2 部署开始"
+            echo "🚀 RunGame Admin Standalone 部署开始"
+            echo "模式: Next.js Standalone (无需依赖安装)"
             echo "时间: $(date '+%Y-%m-%d %H:%M:%S')"
             echo "=========================================="
 
@@ -170,76 +172,31 @@ jobs:
             mkdir -p $DEPLOY_DIR
             cd $DEPLOY_DIR
 
-            # 解压新构建
-            echo "📦 解压构建产物..."
+            # 解压新构建（Standalone 包含所有依赖）
+            echo "📦 解压 Standalone 构建产物..."
             tar -xzf /tmp/rungame-pm2-admin.tar.gz
             rm -f /tmp/rungame-pm2-admin.tar.gz
 
-            # 安装 pnpm（如果未安装）
-            if ! command -v pnpm &> /dev/null; then
-              echo "📥 安装 pnpm..."
-              npm install -g pnpm
-
-              # 重新加载命令哈希表，使 pnpm 命令立即可用
-              hash -r
-
-              # 添加 npm 全局包路径到 PATH（兼容不同系统）
-              export PATH="$PATH:$(npm config get prefix)/bin"
-            fi
-
-            # 验证 pnpm 安装
-            echo "✅ pnpm 版本: $(pnpm -v)"
-
-            # 验证预生成的 Prisma Client（从 GitHub Actions 打包）
-            echo "🔍 验证预生成的 Prisma Client..."
-            if [ -d "packages/database/src/generated/client" ] && [ -d "packages/database/src/generated/prisma-admin" ]; then
-              echo "✅ Prisma Client 已存在:"
-              ls -lh packages/database/src/generated/client/*.node 2>/dev/null || echo "  - Business Client: *.node files"
-              ls -lh packages/database/src/generated/prisma-admin/*.node 2>/dev/null || echo "  - Admin Client: *.node files"
+            # 验证 Standalone 目录结构
+            echo "🔍 验证 Standalone 目录..."
+            if [ -f "apps/admin/.next/standalone/apps/admin/server.js" ]; then
+              echo "✅ Standalone server.js 存在"
             else
-              echo "❌ 错误: 预生成的 Prisma Client 不存在"
-              echo "检查目录结构:"
-              ls -la packages/database/src/ || true
+              echo "❌ 错误: server.js 不存在"
+              ls -la apps/admin/.next/standalone/apps/admin/ || true
               exit 1
             fi
 
-            # 启用 corepack（支持 packageManager 字段）
-            echo "🔧 启用 corepack..."
-            corepack enable || echo "⚠️  corepack 已启用或不可用"
-
-            # 验证 TypeScript（从 GitHub Actions 打包）
-            echo "🔍 验证 TypeScript..."
-            if [ -d "apps/admin/node_modules/typescript" ]; then
-              echo "✅ TypeScript 已存在（从构建环境打包）"
-              ls -lh apps/admin/node_modules/typescript/lib/typescript.js
+            # 验证静态资源
+            if [ -d "apps/admin/.next/standalone/apps/admin/public" ] && [ -d "apps/admin/.next/standalone/apps/admin/.next/static" ]; then
+              echo "✅ 静态资源已复制（public + .next/static）"
             else
-              echo "⚠️  警告: TypeScript 未打包，Next.js 将尝试自动安装"
+              echo "⚠️  警告: 静态资源可能缺失"
             fi
 
-            # 安装生产依赖（仅运行时库，不含 prisma CLI）
-            echo "📥 安装生产依赖..."
-            pnpm install --prod --frozen-lockfile
-
-            # 再次验证 Prisma Client（确保 pnpm install 没有影响）
-            echo "🔍 再次验证 Prisma Client..."
-            if [ -d "packages/database/src/generated/client" ]; then
-              echo "✅ Prisma Client 仍然存在（未被 pnpm install 清除）"
-            else
-              echo "❌ 错误: Prisma Client 被清除"
-              exit 1
-            fi
-
-            # 再次验证 TypeScript（确保 pnpm install 没有影响）
-            echo "🔍 再次验证 TypeScript..."
-            if [ -d "apps/admin/node_modules/typescript" ]; then
-              echo "✅ TypeScript 仍然存在（未被 pnpm install 清除）"
-            else
-              echo "⚠️  警告: TypeScript 被清除"
-            fi
-
-            # 配置环境变量
+            # 配置环境变量（写入 standalone 目录）
             echo "⚙️  配置环境变量..."
-            cat > .env << EOF
+            cat > apps/admin/.next/standalone/apps/admin/.env << EOF
             # 数据库配置
             DATABASE_URL="${DATABASE_URL}"
             CACHE_DATABASE_URL="${CACHE_DATABASE_URL}"
@@ -261,14 +218,11 @@ jobs:
 
             # 运行环境
             NODE_ENV=production
+            PORT=4000
+            HOSTNAME=0.0.0.0
             EOF
 
-            echo "✅ 环境变量已配置（根目录）"
-
-            # 复制 .env 到 apps/admin（PM2 工作目录）
-            echo "📋 复制 .env 到 apps/admin 目录..."
-            cp .env apps/admin/.env
-            echo "✅ 环境变量已配置（apps/admin）"
+            echo "✅ 环境变量已配置（standalone 目录）"
 
             # 检查 PM2 是否安装
             if ! command -v pm2 &> /dev/null; then

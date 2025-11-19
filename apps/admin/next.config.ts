@@ -1,7 +1,10 @@
 import type { NextConfig } from "next"
+import path from "path"
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  // Monorepo: 设置文件追踪根目录（Standalone 模式必需）
+  outputFileTracingRoot: path.join(__dirname, '../../'),
   // 设置 Turbopack 根目录为 Monorepo 根目录
   turbopack: {
     root: '../..',
