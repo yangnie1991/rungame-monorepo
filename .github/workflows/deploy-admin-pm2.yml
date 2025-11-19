@@ -237,17 +237,20 @@ jobs:
           echo "🔍 验证数据库 URL 格式..."
           echo "=========================================="
 
+          # 🐛 调试模式：显示完整 URL 内容（仅 GitHub Actions 私有日志）
+          echo "📋 DATABASE_URL 完整内容（调试用）:"
+          echo "$DATABASE_URL"
+          echo ""
+          echo "📋 CACHE_DATABASE_URL 完整内容（调试用）:"
+          echo "$CACHE_DATABASE_URL"
+          echo ""
+          echo "=========================================="
+
           # 验证 DATABASE_URL
           if [[ "$DATABASE_URL" =~ ^postgresql:// ]] || [[ "$DATABASE_URL" =~ ^postgres:// ]]; then
             echo "✅ DATABASE_URL: 格式正确（以 postgresql:// 开头）"
-
-            # 解析并显示 URL 结构（隐藏密码）
-            # 格式: postgresql://user:password@host:port/database?params
-            DB_STRUCTURE=$(echo "$DATABASE_URL" | sed -E 's/(postgresql:\/\/[^:]+:)[^@]+(@.*)/\1***\2/')
-            echo "   结构: $DB_STRUCTURE"
           else
             echo "❌ DATABASE_URL: 格式错误！"
-            echo "   当前前缀: ${DATABASE_URL:0:15}***"
             echo "   必须以 postgresql:// 或 postgres:// 开头"
             echo "   正确格式示例: postgresql://user:password@host:port/database?schema=public"
             ALL_SET=false
@@ -256,13 +259,8 @@ jobs:
           # 验证 CACHE_DATABASE_URL
           if [[ "$CACHE_DATABASE_URL" =~ ^postgresql:// ]] || [[ "$CACHE_DATABASE_URL" =~ ^postgres:// ]]; then
             echo "✅ CACHE_DATABASE_URL: 格式正确（以 postgresql:// 开头）"
-
-            # 解析并显示 URL 结构（隐藏密码）
-            CACHE_DB_STRUCTURE=$(echo "$CACHE_DATABASE_URL" | sed -E 's/(postgresql:\/\/[^:]+:)[^@]+(@.*)/\1***\2/')
-            echo "   结构: $CACHE_DB_STRUCTURE"
           else
             echo "❌ CACHE_DATABASE_URL: 格式错误！"
-            echo "   当前前缀: ${CACHE_DATABASE_URL:0:15}***"
             echo "   必须以 postgresql:// 或 postgres:// 开头"
             echo "   正确格式示例: postgresql://user:password@host:port/database?schema=public"
             ALL_SET=false
@@ -393,17 +391,22 @@ jobs:
             echo "🔍 验证数据库 URL 格式（VPS 端）..."
             echo "=========================================="
 
+            # 🐛 调试模式：显示完整 URL 内容
+            echo "📋 DATABASE_URL 完整内容（调试用）:"
+            echo "$DATABASE_URL"
+            echo ""
+            echo "📋 CACHE_DATABASE_URL 完整内容（调试用）:"
+            echo "$CACHE_DATABASE_URL"
+            echo ""
+            echo "=========================================="
+
             FORMAT_ERROR=false
 
             # 验证 DATABASE_URL
             if [[ "$DATABASE_URL" =~ ^postgresql:// ]] || [[ "$DATABASE_URL" =~ ^postgres:// ]]; then
               echo "✅ DATABASE_URL: 格式正确"
-              # 显示 URL 结构（隐藏密码）
-              DB_STRUCTURE=$(echo "$DATABASE_URL" | sed -E 's/(postgresql:\/\/[^:]+:)[^@]+(@.*)/\1***\2/')
-              echo "   结构: $DB_STRUCTURE"
             else
               echo "❌ DATABASE_URL: 格式错误！"
-              echo "   当前值前 15 字符: ${DATABASE_URL:0:15}***"
               echo "   必须以 postgresql:// 或 postgres:// 开头"
               echo "   示例: postgresql://user:password@host:5432/database?schema=public"
               FORMAT_ERROR=true
@@ -412,12 +415,8 @@ jobs:
             # 验证 CACHE_DATABASE_URL
             if [[ "$CACHE_DATABASE_URL" =~ ^postgresql:// ]] || [[ "$CACHE_DATABASE_URL" =~ ^postgres:// ]]; then
               echo "✅ CACHE_DATABASE_URL: 格式正确"
-              # 显示 URL 结构（隐藏密码）
-              CACHE_DB_STRUCTURE=$(echo "$CACHE_DATABASE_URL" | sed -E 's/(postgresql:\/\/[^:]+:)[^@]+(@.*)/\1***\2/')
-              echo "   结构: $CACHE_DB_STRUCTURE"
             else
               echo "❌ CACHE_DATABASE_URL: 格式错误！"
-              echo "   当前值前 15 字符: ${CACHE_DATABASE_URL:0:15}***"
               echo "   必须以 postgresql:// 或 postgres:// 开头"
               echo "   示例: postgresql://user:password@host:5432/database?schema=public"
               FORMAT_ERROR=true
