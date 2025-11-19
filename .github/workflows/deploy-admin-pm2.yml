@@ -147,13 +147,13 @@ jobs:
           echo "✅ 旧文件已删除"
           echo ""
 
-          # 动态修改 binaryTargets（只保留 native 和检测到的平台）
+          # 动态修改 binaryTargets（只生成 VPS 目标平台，不生成 native）
           echo "📝 修改 schema.prisma 的 binaryTargets..."
-          sed -i "s/binaryTargets = \[.*\]/binaryTargets = [\"native\", \"$BINARY_TARGET\"]/" \
+          sed -i "s/binaryTargets = \[.*\]/binaryTargets = [\"$BINARY_TARGET\"]/" \
             packages/database/prisma/schema.prisma
 
           echo "📝 修改 schema-admin.prisma 的 binaryTargets..."
-          sed -i "s/binaryTargets = \[.*\]/binaryTargets = [\"native\", \"$BINARY_TARGET\"]/" \
+          sed -i "s/binaryTargets = \[.*\]/binaryTargets = [\"$BINARY_TARGET\"]/" \
             packages/database/prisma/schema-admin.prisma
 
           # 显示修改后的配置
