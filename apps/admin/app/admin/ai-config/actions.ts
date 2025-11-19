@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath, revalidateTag } from "next/cache"
-import { prismaAdmin } from "@rungame/database"
+import { prismaAdmin } from "@/lib/prisma"
 import { encrypt, decrypt } from "@/lib/crypto"
 import type { AiConfig, AiModelConfig } from "@/types/ai-config"
 import { CACHE_TAGS } from "@rungame/database"

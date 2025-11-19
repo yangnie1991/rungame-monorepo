@@ -4,7 +4,8 @@
  */
 
 import { Suspense } from 'react'
-import { prisma, prismaAdmin } from "@rungame/database"
+import { prisma } from "@rungame/database"
+import { prismaAdmin } from "@/lib/prisma"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'

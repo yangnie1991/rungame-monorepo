@@ -1,59 +1,33 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from './generated/prisma-client'
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: ReturnType<typeof prismaClientSingleton> | undefined
+/**
+ * ============================================
+ * Admin 管理数据库 Prisma Client 单例实例
+ * ============================================
+ *
+ * 功能：
+ * - 全局单例模式，避免开发环境热重载时创建多个连接
+ * - 连接到管理数据库（CACHE_DATABASE_URL）
+ * - 包含：管理配置表 + 缓存数据表
+ * - 开发环境启用查询日志，生产环境仅记录错误
+ */
+
+const globalForPrismaAdmin = globalThis as unknown as {
+  prismaAdmin: PrismaClient | undefined
 }
 
-const prismaClientSingleton = () => {
-  const baseClient = new PrismaClient({
+const prismaAdminClientSingleton = () => {
+  return new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   })
-
-  // 使用 Prisma Client Extensions 替代已废弃的 $use 中间件
-  const client = baseClient.$extends({
-    name: 'mainCategoryIdAutoFill',
-    query: {
-      gameCategory: {
-        async create({ args, query }) {
-          // 自动维护 mainCategoryId
-          if (args.data.categoryId) {
-            const category = await baseClient.category.findUnique({
-              where: { id: args.data.categoryId },
-              select: { id: true, parentId: true },
-            })
-            if (category) {
-              // 如果有父分类，使用父分类ID；否则使用自己的ID
-              args.data.mainCategoryId = category.parentId || category.id
-            }
-          }
-          return query(args)
-        },
-        async update({ args, query }) {
-          // 如果更新了 categoryId，也要更新 mainCategoryId
-          if (args.data.categoryId) {
-            const categoryId = typeof args.data.categoryId === 'string'
-              ? args.data.categoryId
-              : args.data.categoryId.set
-
-            if (categoryId) {
-              const category = await baseClient.category.findUnique({
-                where: { id: categoryId },
-                select: { id: true, parentId: true },
-              })
-              if (category) {
-                args.data.mainCategoryId = category.parentId || category.id
-              }
-            }
-          }
-          return query(args)
-        },
-      },
-    },
-  })
-
-  return client
 }
 
-export const prisma = globalForPrisma.prisma ?? prismaClientSingleton()
+/**
+ * 导出管理数据库 Prisma Client 实例
+ *
+ * - 生产环境：每次都创建新实例
+ * - 开发环境：使用全局单例，避免热重载时重复创建
+ */
+export const prismaAdmin = globalForPrismaAdmin.prismaAdmin ?? prismaAdminClientSingleton()
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+if (process.env.NODE_ENV !== 'production') globalForPrismaAdmin.prismaAdmin = prismaAdmin

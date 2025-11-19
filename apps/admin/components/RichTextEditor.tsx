@@ -11,7 +11,7 @@ import Underline from '@tiptap/extension-underline'
 import Highlight from '@tiptap/extension-highlight'
 import { TextStyle } from '@tiptap/extension-text-style'
 import { Color } from '@tiptap/extension-color'
-import { CharacterCount } from '@tiptap/extensions'
+import CharacterCount from '@tiptap/extension-character-count'
 import { customTextCounter } from '@/lib/character-count-helpers'
 import { Button } from '@/components/ui/button'
 import {

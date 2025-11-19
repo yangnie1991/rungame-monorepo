@@ -1,6 +1,6 @@
 'use server'
 
-import { prismaAdmin } from "@rungame/database"
+import { prismaAdmin } from "@/lib/prisma"
 import { revalidatePath } from 'next/cache'
 
 /**

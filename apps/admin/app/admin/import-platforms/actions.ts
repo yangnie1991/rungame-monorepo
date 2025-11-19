@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath, revalidateTag } from 'next/cache'
-import { prismaAdmin } from "@rungame/database"
+import { prismaAdmin } from "@/lib/prisma"
 import { z } from 'zod'
 import { CACHE_TAGS } from "@rungame/database"
 

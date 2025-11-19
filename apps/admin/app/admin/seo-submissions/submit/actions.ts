@@ -5,7 +5,8 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { prisma, prismaAdmin } from "@rungame/database"
+import { prisma } from "@rungame/database"
+import { prismaAdmin } from "@/lib/prisma"
 import { submitUrls as submitToIndexNow } from '@/lib/seo-submissions/indexnow'
 import {
   generateGameUrls,

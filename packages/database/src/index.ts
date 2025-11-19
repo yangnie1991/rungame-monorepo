@@ -3,20 +3,18 @@
  * @rungame/database - 共享数据库包
  * ============================================
  *
- * 提供 Admin 和 Website 应用共享的数据库访问层
+ * 提供 Website 应用共享的数据库访问层
  * 包含：Prisma Client、缓存配置、i18n 工具和数据查询函数
+ *
+ * 注意：Admin 应用有独立的 Prisma 客户端配置 (apps/admin/lib/prisma.ts)
  */
 
 // ============================================
-// Prisma Clients
+// Prisma Client
 // ============================================
-// 业务数据库 Client（展示端 + 管理端共用）
+// 业务数据库 Client（展示端使用，管理端仅用于业务数据查询）
 export { prisma } from "./client"
 export type { PrismaClient } from "./client"
-
-// 管理数据库 Client（仅管理端使用）
-export { prismaAdmin } from "./client-admin"
-export type { PrismaAdminClient } from "./client-admin"
 
 // ============================================
 // 缓存配置

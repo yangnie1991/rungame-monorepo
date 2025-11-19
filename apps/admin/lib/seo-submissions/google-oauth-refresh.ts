@@ -6,7 +6,7 @@
 
 import { google } from 'googleapis'
 import type { OAuth2Client } from 'google-auth-library'
-import { prismaAdmin } from "@rungame/database"
+import { prismaAdmin } from "@/lib/prisma"
 
 /**
  * 从数据库配置创建 OAuth2 客户端

@@ -6,7 +6,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { prismaAdmin } from "@rungame/database"
+import { prismaAdmin } from "@/lib/prisma"
 import { generateAllUrls } from '@/lib/seo-submissions/url-generator'
 
 export interface GenerateUrlsResult {

@@ -4,7 +4,7 @@
  */
 
 import { Suspense } from 'react'
-import { prismaAdmin } from "@rungame/database"
+import { prismaAdmin } from "@/lib/prisma"
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { CheckCircle2, XCircle, Clock } from 'lucide-react'
 import { BingSubmissionsClient } from './BingSubmissionsClient'

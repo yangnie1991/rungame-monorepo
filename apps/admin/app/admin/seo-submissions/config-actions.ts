@@ -5,7 +5,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { prismaAdmin } from "@rungame/database"
+import { prismaAdmin } from "@/lib/prisma"
 import { z } from 'zod'
 import { checkGoogleIndexWithAPI } from '@/lib/seo-submissions/google-index-check'
 import { checkBingIndexWithAPI } from '@/lib/seo-submissions/bing-index-check'

@@ -1,5 +1,5 @@
 import { unstable_cache } from 'next/cache'
-import { prismaAdmin } from '@rungame/database'
+import { prismaAdmin } from "@/lib/prisma"
 import { decrypt } from './crypto'
 import { CACHE_TAGS, REVALIDATE_TIME } from '@rungame/database'
 
