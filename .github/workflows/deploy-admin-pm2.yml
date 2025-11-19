@@ -172,9 +172,22 @@ jobs:
           echo "目标平台: $BINARY_TARGET"
           echo ""
 
+          # 检查变量是否为空
+          if [ -z "$BINARY_TARGET" ]; then
+            echo "❌ 错误: BINARY_TARGET 变量为空，使用默认值"
+            BINARY_TARGET="debian-openssl-3.0.x"
+          fi
+
           # 备份原始 schema 文件
           cp packages/database/prisma/schema.prisma packages/database/prisma/schema.prisma.backup
           cp packages/database/prisma/schema-admin.prisma packages/database/prisma/schema-admin.prisma.backup
+
+          # 🔥 关键：删除旧的生成文件（防止缓存干扰）
+          echo "🗑️  删除旧的 Prisma Client 生成文件..."
+          rm -rf packages/database/src/generated/client
+          rm -rf packages/database/src/generated/prisma-admin
+          echo "✅ 旧文件已删除"
+          echo ""
 
           # 动态修改 binaryTargets（只保留 native 和检测到的平台）
           echo "📝 修改 schema.prisma 的 binaryTargets..."
@@ -185,14 +198,17 @@ jobs:
           sed -i 's/binaryTargets = \[.*\]/binaryTargets = ["native", "'"$BINARY_TARGET"'"]/' \
             packages/database/prisma/schema-admin.prisma
 
-          # 显示修改后的配置
+          # 显示修改后的配置（验证sed是否成功）
           echo ""
-          echo "📋 修改后的 binaryTargets 配置:"
-          grep -A 5 "generator client" packages/database/prisma/schema.prisma
+          echo "📋 修改后的 schema.prisma binaryTargets:"
+          grep "binaryTargets" packages/database/prisma/schema.prisma
+          echo ""
+          echo "📋 修改后的 schema-admin.prisma binaryTargets:"
+          grep "binaryTargets" packages/database/prisma/schema-admin.prisma
           echo ""
 
           # 生成 Prisma Client
-          echo "⏳ 生成 Prisma Client..."
+          echo "⏳ 生成 Prisma Client（仅 $BINARY_TARGET 平台）..."
           pnpm db:generate
 
           # 验证生成的二进制文件
