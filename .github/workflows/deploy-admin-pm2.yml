@@ -199,17 +199,19 @@ jobs:
             # 验证 pnpm 安装
             echo "✅ pnpm 版本: $(pnpm -v)"
 
-            # 安装生产依赖（prisma CLI 已在 dependencies 中）
+            # 安装生产依赖（仅运行时库，不含 prisma CLI）
             echo "📥 安装生产依赖..."
             pnpm install --prod --frozen-lockfile
 
-            # 重新生成 Prisma Client（确保平台匹配）
-            echo "🔧 重新生成 Prisma Client（确保 Linux 平台兼容）..."
-            pnpm db:generate
-
-            # 验证 Prisma Client
-            echo "✅ 验证 Prisma Client:"
-            ls -lh packages/database/node_modules/.prisma/client/*.node 2>/dev/null || echo "⚠️  未找到 .node 文件"
+            # 验证预生成的 Prisma Client（在 GitHub Actions 已生成）
+            echo "🔍 验证预生成的 Prisma Client:"
+            if ls packages/database/node_modules/.prisma/client/*.node 1> /dev/null 2>&1; then
+              echo "✅ Prisma Client 二进制文件已存在:"
+              ls -lh packages/database/node_modules/.prisma/client/*.node
+            else
+              echo "❌ 错误: Prisma Client 未找到，部署失败"
+              exit 1
+            fi
 
             # 配置环境变量
             echo "⚙️  配置环境变量..."
