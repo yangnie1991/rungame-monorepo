@@ -120,7 +120,68 @@ jobs:
           tar -tzf rungame-pm2-admin.tar.gz | head -20
 
       # ==========================================
-      # 8. 传输到 VPS
+      # 8. 验证环境变量（调试用）
+      # ==========================================
+      - name: 🔍 Verify Environment Variables
+        run: |
+          echo "=========================================="
+          echo "🔍 验证 GitHub Secrets 环境变量"
+          echo "=========================================="
+
+          # 定义必需的环境变量列表
+          REQUIRED_VARS=(
+            "DATABASE_URL"
+            "CACHE_DATABASE_URL"
+            "NEXTAUTH_SECRET"
+            "NEXTAUTH_URL"
+            "ENCRYPTION_KEY"
+            "R2_ACCOUNT_ID"
+            "R2_ACCESS_KEY_ID"
+            "R2_SECRET_ACCESS_KEY"
+            "R2_BUCKET_NAME"
+            "R2_PUBLIC_URL"
+          )
+
+          # 检查每个变量
+          ALL_SET=true
+          for var_name in "${REQUIRED_VARS[@]}"; do
+            # 使用间接引用检查变量是否设置
+            var_value="${!var_name:-}"
+
+            if [ -z "$var_value" ]; then
+              echo "❌ $var_name: 未设置或为空"
+              ALL_SET=false
+            else
+              # 安全打印：只显示长度和前3个字符
+              var_length=${#var_value}
+              var_prefix="${var_value:0:3}"
+              echo "✅ $var_name: 已设置 (长度: $var_length, 前缀: ${var_prefix}***)"
+            fi
+          done
+
+          echo "=========================================="
+          if [ "$ALL_SET" = false ]; then
+            echo "❌ 部分环境变量缺失，部署可能失败"
+            echo "请检查 GitHub Secrets 配置"
+            exit 1
+          else
+            echo "✅ 所有环境变量已正确设置"
+          fi
+          echo "=========================================="
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CACHE_DATABASE_URL: ${{ secrets.CACHE_DATABASE_URL }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+
+      # ==========================================
+      # 9. 传输到 VPS
       # ==========================================
       - name: 🚚 Transfer to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -164,6 +225,59 @@ jobs:
             echo "模式: Next.js Standalone (无需依赖安装)"
             echo "时间: $(date '+%Y-%m-%d %H:%M:%S')"
             echo "=========================================="
+
+            # ==========================================
+            # 🔍 验证环境变量传递（VPS 端）
+            # ==========================================
+            echo ""
+            echo "🔍 验证环境变量是否正确传递到 VPS..."
+            echo "=========================================="
+
+            # 定义必需的环境变量列表
+            REQUIRED_VARS=(
+              "DATABASE_URL"
+              "CACHE_DATABASE_URL"
+              "NEXTAUTH_SECRET"
+              "NEXTAUTH_URL"
+              "ENCRYPTION_KEY"
+              "R2_ACCOUNT_ID"
+              "R2_ACCESS_KEY_ID"
+              "R2_SECRET_ACCESS_KEY"
+              "R2_BUCKET_NAME"
+              "R2_PUBLIC_URL"
+            )
+
+            # 检查每个变量
+            MISSING_VARS=()
+            for var_name in "${REQUIRED_VARS[@]}"; do
+              var_value=$(eval echo \$$var_name)
+
+              if [ -z "$var_value" ]; then
+                echo "❌ $var_name: 未传递到 VPS"
+                MISSING_VARS+=("$var_name")
+              else
+                # 安全打印：只显示长度和前3个字符
+                var_length=${#var_value}
+                var_prefix="${var_value:0:3}"
+                echo "✅ $var_name: 已接收 (长度: $var_length, 前缀: ${var_prefix}***)"
+              fi
+            done
+
+            echo "=========================================="
+            if [ ${#MISSING_VARS[@]} -gt 0 ]; then
+              echo "❌ 以下环境变量未传递到 VPS:"
+              printf '   - %s\n' "${MISSING_VARS[@]}"
+              echo ""
+              echo "请检查 GitHub Actions 配置："
+              echo "1. GitHub Secrets 是否正确设置"
+              echo "2. workflow yml 的 'env' 部分是否包含所有变量"
+              echo "3. workflow yml 的 'envs' 参数是否包含所有变量名"
+              exit 1
+            else
+              echo "✅ 所有环境变量已成功传递到 VPS"
+            fi
+            echo "=========================================="
+            echo ""
 
             # 部署目录
             DEPLOY_DIR="/www/wwwroot/rungame"
@@ -222,7 +336,57 @@ jobs:
             HOSTNAME=0.0.0.0
             EOF
 
-            echo "✅ 环境变量已配置（standalone 目录）"
+            echo "✅ 环境变量已写入 .env 文件"
+
+            # ==========================================
+            # 🔍 验证 .env 文件内容
+            # ==========================================
+            echo ""
+            echo "🔍 验证 .env 文件内容..."
+            echo "=========================================="
+
+            ENV_FILE="apps/admin/.next/standalone/apps/admin/.env"
+
+            # 检查文件是否存在
+            if [ ! -f "$ENV_FILE" ]; then
+              echo "❌ .env 文件不存在: $ENV_FILE"
+              exit 1
+            fi
+
+            # 检查关键变量是否在文件中
+            MISSING_IN_FILE=()
+            for var_name in "${REQUIRED_VARS[@]}"; do
+              if grep -q "^${var_name}=" "$ENV_FILE"; then
+                # 获取变量值（去除引号和前后空格）
+                var_value=$(grep "^${var_name}=" "$ENV_FILE" | cut -d'=' -f2- | tr -d '"' | xargs)
+
+                if [ -z "$var_value" ]; then
+                  echo "❌ $var_name: 在 .env 中为空"
+                  MISSING_IN_FILE+=("$var_name")
+                else
+                  var_length=${#var_value}
+                  var_prefix="${var_value:0:3}"
+                  echo "✅ $var_name: 已写入 (长度: $var_length, 前缀: ${var_prefix}***)"
+                fi
+              else
+                echo "❌ $var_name: 未找到"
+                MISSING_IN_FILE+=("$var_name")
+              fi
+            done
+
+            echo "=========================================="
+            if [ ${#MISSING_IN_FILE[@]} -gt 0 ]; then
+              echo "❌ .env 文件中缺失或为空的变量:"
+              printf '   - %s\n' "${MISSING_IN_FILE[@]}"
+              echo ""
+              echo "📄 .env 文件内容预览（隐藏敏感信息）:"
+              sed 's/\(=\).*/\1***/' "$ENV_FILE"
+              exit 1
+            else
+              echo "✅ .env 文件所有变量验证通过"
+            fi
+            echo "=========================================="
+            echo ""
 
             # 检查 PM2 是否安装
             if ! command -v pm2 &> /dev/null; then
