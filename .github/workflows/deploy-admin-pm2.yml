@@ -246,11 +246,13 @@ jobs:
         id: platform
         run: |
           # 从上一步的输出中提取 BINARY_TARGET
-          BINARY_TARGET=$(echo "${{ steps.detect-platform.outputs.stdout }}" | grep "BINARY_TARGET=" | cut -d'=' -f2)
+          BINARY_TARGET=$(echo "${{ steps.detect-platform.outputs.stdout }}" | grep "BINARY_TARGET=" | tail -1 | cut -d'=' -f2 | tr -d ' \r\n')
 
+          # 如果提取失败，根据 VPS 实际情况使用正确的默认值
+          # VPS: Alibaba Cloud Linux 3 (基于 RHEL) + OpenSSL 1.1.1k
           if [ -z "$BINARY_TARGET" ]; then
-            echo "⚠️  未能检测到平台，使用默认值: debian-openssl-3.0.x"
-            BINARY_TARGET="debian-openssl-3.0.x"
+            echo "⚠️  SSH 输出提取失败，使用 VPS 检测到的值: rhel-openssl-1.1.x"
+            BINARY_TARGET="rhel-openssl-1.1.x"
           fi
 
           echo "检测到的平台: $BINARY_TARGET"
