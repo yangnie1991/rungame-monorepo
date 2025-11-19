@@ -199,17 +199,36 @@ jobs:
             # 验证 pnpm 安装
             echo "✅ pnpm 版本: $(pnpm -v)"
 
+            # 备份预生成的 Prisma Client（避免被 pnpm install 清除）
+            echo "💾 备份预生成的 Prisma Client..."
+            if [ -d "packages/database/node_modules/.prisma" ]; then
+              cp -r packages/database/node_modules/.prisma /tmp/.prisma-backup
+              cp -r packages/database/node_modules/@prisma /tmp/@prisma-backup
+              echo "✅ Prisma Client 已备份到 /tmp"
+            else
+              echo "❌ 错误: 预生成的 Prisma Client 不存在"
+              exit 1
+            fi
+
             # 安装生产依赖（仅运行时库，不含 prisma CLI）
             echo "📥 安装生产依赖..."
             pnpm install --prod --frozen-lockfile
 
-            # 验证预生成的 Prisma Client（在 GitHub Actions 已生成）
-            echo "🔍 验证预生成的 Prisma Client:"
+            # 恢复预生成的 Prisma Client
+            echo "♻️  恢复预生成的 Prisma Client..."
+            mkdir -p packages/database/node_modules/.prisma
+            mkdir -p packages/database/node_modules/@prisma
+            cp -r /tmp/.prisma-backup/* packages/database/node_modules/.prisma/
+            cp -r /tmp/@prisma-backup/* packages/database/node_modules/@prisma/
+            rm -rf /tmp/.prisma-backup /tmp/@prisma-backup
+
+            # 验证恢复的 Prisma Client
+            echo "🔍 验证 Prisma Client:"
             if ls packages/database/node_modules/.prisma/client/*.node 1> /dev/null 2>&1; then
-              echo "✅ Prisma Client 二进制文件已存在:"
+              echo "✅ Prisma Client 二进制文件已恢复:"
               ls -lh packages/database/node_modules/.prisma/client/*.node
             else
-              echo "❌ 错误: Prisma Client 未找到，部署失败"
+              echo "❌ 错误: Prisma Client 恢复失败"
               exit 1
             fi
 
