@@ -692,7 +692,7 @@ jobs:
             # NextAuth 配置
             NEXTAUTH_SECRET="${NEXTAUTH_SECRET}"
             NEXTAUTH_URL="${NEXTAUTH_URL}"
-            NEXTAUTH_TRUST_HOST=true
+            AUTH_TRUST_HOST=true
 
             # 加密密钥
             ENCRYPTION_KEY="${ENCRYPTION_KEY}"
@@ -712,8 +712,17 @@ jobs:
 
             echo "✅ 环境变量已写入根目录 .env 文件"
 
-            # 同时在 standalone 目录也创建一份（作为备份）
-            cp .env apps/admin/.next/standalone/apps/admin/.env 2>/dev/null || true
+            # 🔄 强制复制到 standalone 目录（确保两个文件一致）
+            cp -f .env apps/admin/.next/standalone/apps/admin/.env
+            echo "✅ 已同步 .env 到 standalone 目录"
+
+            # 验证复制是否成功
+            if [ -f "apps/admin/.next/standalone/apps/admin/.env" ]; then
+              echo "✅ Standalone .env 文件已确认存在"
+            else
+              echo "❌ 错误：Standalone .env 文件复制失败"
+              exit 1
+            fi
 
             # ==========================================
             # 🔍 验证 .env 文件内容
