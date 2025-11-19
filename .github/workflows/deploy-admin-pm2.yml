@@ -188,7 +188,16 @@ jobs:
             if ! command -v pnpm &> /dev/null; then
               echo "📥 安装 pnpm..."
               npm install -g pnpm
+
+              # 重新加载命令哈希表，使 pnpm 命令立即可用
+              hash -r
+
+              # 添加 npm 全局包路径到 PATH（兼容不同系统）
+              export PATH="$PATH:$(npm config get prefix)/bin"
             fi
+
+            # 验证 pnpm 安装
+            echo "✅ pnpm 版本: $(pnpm -v)"
 
             # 安装生产依赖（会自动下载正确平台的二进制文件）
             echo "📥 安装生产依赖..."
