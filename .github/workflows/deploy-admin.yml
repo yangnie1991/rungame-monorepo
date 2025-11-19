@@ -1,21 +1,15 @@
-name: Deploy Admin to VPS
+name: Deploy Admin to VPS (Docker - Manual Only)
 
 on:
-  push:
-    branches:
-      - main                        # 仅主分支触发自动部署
-    paths:
-      - 'apps/admin/**'
-      - 'packages/database/**'
-      - 'packages/typescript-config/**'
-      - 'packages/tailwind-config/**'
-      - 'pnpm-lock.yaml'
-      - 'package.json'
-      - 'turbo.json'
-      - 'Dockerfile.admin'
-      - 'docker-compose.admin.yml'
-      - '.github/workflows/deploy-admin.yml'
-  workflow_dispatch:  # 允许手动触发
+  # 🚫 自动部署已禁用，改用 deploy-admin-pm2.yml
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - 'apps/admin/**'
+  #     - 'packages/database/**'
+
+  workflow_dispatch:  # 仅允许手动触发
     inputs:
       branch:
         description: '要部署的分支（留空则使用当前分支）'

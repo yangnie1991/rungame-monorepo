@@ -1,0 +1,313 @@
+name: Deploy Admin to VPS (PM2 - Auto)
+
+on:
+  push:
+    branches:
+      - main                        # 主分支自动触发
+    paths:
+      - 'apps/admin/**'
+      - 'packages/database/**'
+      - 'packages/typescript-config/**'
+      - 'packages/tailwind-config/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - 'turbo.json'
+      - 'ecosystem.config.js'
+      - '.github/workflows/deploy-admin-pm2.yml'
+
+  workflow_dispatch:  # 也支持手动触发
+    inputs:
+      branch:
+        description: '要部署的分支（留空则使用当前分支）'
+        required: false
+        default: ''
+
+jobs:
+  build-and-deploy:
+    name: Build on GitHub and Deploy via PM2
+    runs-on: ubuntu-22.04  # 使用 Ubuntu 22.04 (与大多数 VPS 一致)
+
+    steps:
+      # ==========================================
+      # 1. 检出代码
+      # ==========================================
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
+
+      # ==========================================
+      # 2. 设置 Node.js 环境
+      # ==========================================
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      # ==========================================
+      # 3. 安装 pnpm
+      # ==========================================
+      - name: 📦 Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      # ==========================================
+      # 4. 安装依赖
+      # ==========================================
+      - name: 📚 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ==========================================
+      # 5. 配置多平台 Prisma Client
+      # ==========================================
+      - name: 🔧 Generate Prisma Client (multi-platform)
+        run: |
+          echo "生成支持多平台的 Prisma Client..."
+
+          # 备份原始 schema
+          cp packages/database/prisma/schema.prisma packages/database/prisma/schema.prisma.bak
+
+          # 临时修改 schema 支持多平台（Debian、RHEL、Alpine）
+          sed -i 's/provider[[:space:]]*=[[:space:]]*"prisma-client-js"/provider = "prisma-client-js"\n  binaryTargets = ["native", "debian-openssl-3.0.x", "rhel-openssl-3.0.x", "linux-musl-openssl-3.0.x"]/' packages/database/prisma/schema.prisma
+
+          # 生成 Prisma Client
+          pnpm db:generate
+
+          # 验证生成的二进制文件
+          echo "✅ 已生成以下平台的 Prisma Client:"
+          ls -lh packages/database/node_modules/.prisma/client/ | grep -E "\.(so|dylib|dll)" || true
+
+          # 恢复原始 schema（保持代码库干净）
+          mv packages/database/prisma/schema.prisma.bak packages/database/prisma/schema.prisma
+
+      # ==========================================
+      # 6. 构建应用
+      # ==========================================
+      - name: 🔨 Build applications
+        run: |
+          echo "开始构建 Admin 应用..."
+          pnpm build:admin
+
+          echo "✅ 构建完成，检查产物:"
+          ls -la apps/admin/.next
+          echo "产物大小: $(du -sh apps/admin/.next | cut -f1)"
+
+      # ==========================================
+      # 7. 打包部署文件
+      # ==========================================
+      - name: 📦 Package build artifacts
+        run: |
+          echo "打包部署文件..."
+
+          # 创建日志目录结构（避免 PM2 启动时报错）
+          mkdir -p logs
+
+          # 打包必需文件
+          tar -czf rungame-pm2-admin.tar.gz \
+            --exclude='node_modules' \
+            --exclude='.git' \
+            --exclude='.env*' \
+            --exclude='*.log' \
+            apps/admin/.next \
+            apps/admin/public \
+            apps/admin/package.json \
+            apps/admin/next.config.ts \
+            packages/database/dist \
+            packages/database/package.json \
+            packages/database/prisma \
+            packages/database/node_modules/.prisma \
+            packages/database/node_modules/@prisma \
+            package.json \
+            pnpm-lock.yaml \
+            turbo.json \
+            ecosystem.config.js \
+            logs
+
+          echo "✅ 打包完成"
+          echo "📊 压缩包大小: $(du -h rungame-pm2-admin.tar.gz | cut -f1)"
+
+      # ==========================================
+      # 8. 传输到 VPS
+      # ==========================================
+      - name: 🚚 Transfer to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          source: "rungame-pm2-admin.tar.gz"
+          target: "/tmp/"
+          timeout: 10m
+
+      # ==========================================
+      # 9. 部署到 VPS
+      # ==========================================
+      - name: 🚀 Deploy on VPS via PM2
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CACHE_DATABASE_URL: ${{ secrets.CACHE_DATABASE_URL }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          envs: DATABASE_URL,CACHE_DATABASE_URL,NEXTAUTH_SECRET,NEXTAUTH_URL,ENCRYPTION_KEY,R2_ACCOUNT_ID,R2_ACCESS_KEY_ID,R2_SECRET_ACCESS_KEY,R2_BUCKET_NAME,R2_PUBLIC_URL
+          command_timeout: 30m
+          script: |
+            set -e
+
+            echo "=========================================="
+            echo "🚀 RunGame Admin PM2 部署开始"
+            echo "时间: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "=========================================="
+
+            # 部署目录
+            DEPLOY_DIR="/www/wwwroot/rungame"
+
+            # 创建部署目录
+            mkdir -p $DEPLOY_DIR
+            cd $DEPLOY_DIR
+
+            # 解压新构建
+            echo "📦 解压构建产物..."
+            tar -xzf /tmp/rungame-pm2-admin.tar.gz
+            rm -f /tmp/rungame-pm2-admin.tar.gz
+
+            # 安装 pnpm（如果未安装）
+            if ! command -v pnpm &> /dev/null; then
+              echo "📥 安装 pnpm..."
+              npm install -g pnpm
+            fi
+
+            # 安装生产依赖（会自动下载正确平台的二进制文件）
+            echo "📥 安装生产依赖..."
+            pnpm install --prod --frozen-lockfile
+
+            # 重新生成 Prisma Client（确保平台匹配）
+            echo "🔧 重新生成 Prisma Client（确保 Linux 平台兼容）..."
+            pnpm db:generate
+
+            # 验证 Prisma Client
+            echo "✅ 验证 Prisma Client:"
+            ls -lh packages/database/node_modules/.prisma/client/*.node 2>/dev/null || echo "⚠️  未找到 .node 文件"
+
+            # 配置环境变量
+            echo "⚙️  配置环境变量..."
+            cat > .env << EOF
+            # 数据库配置
+            DATABASE_URL="${DATABASE_URL}"
+            CACHE_DATABASE_URL="${CACHE_DATABASE_URL}"
+
+            # NextAuth 配置
+            NEXTAUTH_SECRET="${NEXTAUTH_SECRET}"
+            NEXTAUTH_URL="${NEXTAUTH_URL}"
+            NEXTAUTH_TRUST_HOST=true
+
+            # 加密密钥
+            ENCRYPTION_KEY="${ENCRYPTION_KEY}"
+
+            # R2 存储配置
+            R2_ACCOUNT_ID="${R2_ACCOUNT_ID}"
+            R2_ACCESS_KEY_ID="${R2_ACCESS_KEY_ID}"
+            R2_SECRET_ACCESS_KEY="${R2_SECRET_ACCESS_KEY}"
+            R2_BUCKET_NAME="${R2_BUCKET_NAME}"
+            R2_PUBLIC_URL="${R2_PUBLIC_URL}"
+
+            # 运行环境
+            NODE_ENV=production
+            EOF
+
+            echo "✅ 环境变量已配置"
+
+            # 检查 PM2 是否安装
+            if ! command -v pm2 &> /dev/null; then
+              echo "📥 安装 PM2..."
+              npm install -g pm2
+
+              # 设置 PM2 开机自启（仅首次）
+              pm2 startup || true
+            fi
+
+            # 重启 PM2 应用
+            echo "🔄 重启 PM2 应用..."
+            if pm2 list | grep -q "rungame-admin"; then
+              # 应用已存在，重启
+              pm2 restart ecosystem.config.js --only rungame-admin --update-env
+            else
+              # 首次部署，启动
+              pm2 start ecosystem.config.js --only rungame-admin
+            fi
+
+            # 保存 PM2 配置
+            pm2 save
+
+            # 等待服务启动
+            echo "⏳ 等待服务启动..."
+            sleep 8
+
+            # 健康检查
+            echo "🔍 执行健康检查..."
+            for i in {1..15}; do
+              if curl -f http://localhost:4000/api/health > /dev/null 2>&1; then
+                echo "✅ 服务健康检查通过！"
+                break
+              fi
+              if [ $i -eq 15 ]; then
+                echo "❌ 健康检查失败，查看日志:"
+                pm2 logs rungame-admin --lines 30 --nostream
+                exit 1
+              fi
+              echo "等待服务就绪... ($i/15)"
+              sleep 2
+            done
+
+            # 显示 PM2 状态
+            echo "📊 PM2 进程状态:"
+            pm2 list
+
+            # 显示内存使用
+            echo "💾 内存使用情况:"
+            pm2 describe rungame-admin | grep -E "(memory|cpu)" || true
+
+            echo "=========================================="
+            echo "✅ 部署完成！"
+            echo "🌐 访问地址: ${NEXTAUTH_URL}"
+            echo "时间: $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "=========================================="
+
+      # ==========================================
+      # 10. 部署成功通知
+      # ==========================================
+      - name: ✅ Deployment Success
+        if: success()
+        run: |
+          echo "=========================================="
+          echo "✅ PM2 部署成功！"
+          echo "应用: RunGame Admin"
+          echo "模式: PM2 (自动部署)"
+          echo "分支: ${{ github.ref_name }}"
+          echo "提交: ${{ github.sha }}"
+          echo "=========================================="
+
+      # ==========================================
+      # 11. 部署失败通知
+      # ==========================================
+      - name: ❌ Deployment Failed
+        if: failure()
+        run: |
+          echo "=========================================="
+          echo "❌ PM2 部署失败！"
+          echo "请检查 GitHub Actions 日志"
+          echo "=========================================="
