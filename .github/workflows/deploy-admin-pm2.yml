@@ -308,9 +308,11 @@ jobs:
               echo "⚠️  警告: 静态资源可能缺失"
             fi
 
-            # 配置环境变量（写入 standalone 目录）
+            # 配置环境变量
             echo "⚙️  配置环境变量..."
-            cat > apps/admin/.next/standalone/apps/admin/.env << EOF
+
+            # 🔑 重要：在 Monorepo 根目录创建 .env 文件（PM2 工作目录）
+            cat > .env << EOF
             # 数据库配置
             DATABASE_URL="${DATABASE_URL}"
             CACHE_DATABASE_URL="${CACHE_DATABASE_URL}"
@@ -336,7 +338,10 @@ jobs:
             HOSTNAME=0.0.0.0
             EOF
 
-            echo "✅ 环境变量已写入 .env 文件"
+            echo "✅ 环境变量已写入根目录 .env 文件"
+
+            # 同时在 standalone 目录也创建一份（作为备份）
+            cp .env apps/admin/.next/standalone/apps/admin/.env 2>/dev/null || true
 
             # ==========================================
             # 🔍 验证 .env 文件内容
@@ -345,11 +350,17 @@ jobs:
             echo "🔍 验证 .env 文件内容..."
             echo "=========================================="
 
-            ENV_FILE="apps/admin/.next/standalone/apps/admin/.env"
+            ENV_FILE=".env"  # 验证根目录的 .env 文件
+            ENV_FILE_FULL_PATH="$DEPLOY_DIR/.env"
+
+            echo "📍 .env 文件位置:"
+            echo "   - 主文件: $ENV_FILE_FULL_PATH"
+            echo "   - 备份: $DEPLOY_DIR/apps/admin/.next/standalone/apps/admin/.env"
+            echo ""
 
             # 检查文件是否存在
             if [ ! -f "$ENV_FILE" ]; then
-              echo "❌ .env 文件不存在: $ENV_FILE"
+              echo "❌ .env 文件不存在: $ENV_FILE_FULL_PATH"
               exit 1
             fi
 
@@ -397,15 +408,23 @@ jobs:
               pm2 startup || true
             fi
 
-            # 重启 PM2 应用
-            echo "🔄 重启 PM2 应用..."
+            # 🔥 强制删除旧进程并重新启动（确保使用新配置）
+            echo "🔄 更新 PM2 应用配置..."
             if pm2 list | grep -q "rungame-admin"; then
-              # 应用已存在，重启
-              pm2 restart ecosystem.config.js --only rungame-admin --update-env
-            else
-              # 首次部署，启动
-              pm2 start ecosystem.config.js --only rungame-admin
+              echo "⚠️  检测到旧进程，完全删除并重新创建..."
+
+              # 删除旧进程（确保旧配置不残留）
+              pm2 delete rungame-admin || true
+
+              # 等待进程完全停止
+              sleep 2
+
+              echo "✅ 旧进程已删除"
             fi
+
+            # 使用新配置启动
+            echo "🚀 使用最新配置启动应用..."
+            pm2 start ecosystem.config.js --only rungame-admin
 
             # 保存 PM2 配置
             pm2 save
