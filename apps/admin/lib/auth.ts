@@ -1,7 +1,6 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import { prisma, prismaAdmin } from "@rungame/database"
+import { prismaAdmin } from "@rungame/database"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
 
@@ -11,14 +10,14 @@ const loginSchema = z.object({
 })
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  // Credentials Provider 不使用 adapter（无状态 JWT）
   session: {
     strategy: "jwt",
     maxAge: 7 * 24 * 60 * 60, // 7 天
   },
   pages: {
-    signIn: "/admin/login",
-    error: "/admin/login",
+    signIn: "/login",
+    error: "/login",
   },
   providers: [
     CredentialsProvider({
