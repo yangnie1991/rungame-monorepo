@@ -3,8 +3,9 @@
 // 包含：管理表（6个）+ 缓存表（3个）= 共 9 个表
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/prisma-admin"
+  provider      = "prisma-client-js"
+  output        = "../src/generated/prisma-admin"
+  binaryTargets = ["native", "debian-openssl-3.0.x", "rhel-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {

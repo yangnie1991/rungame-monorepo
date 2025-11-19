@@ -59,27 +59,20 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # ==========================================
-      # 5. 配置多平台 Prisma Client
+      # 5. 生成多平台 Prisma Client
       # ==========================================
       - name: 🔧 Generate Prisma Client (multi-platform)
         run: |
           echo "生成支持多平台的 Prisma Client..."
+          echo "📋 Schema 已配置 binaryTargets: native, debian, rhel, alpine"
 
-          # 备份原始 schema
-          cp packages/database/prisma/schema.prisma packages/database/prisma/schema.prisma.bak
-
-          # 临时修改 schema 支持多平台（Debian、RHEL、Alpine）
-          sed -i 's/provider[[:space:]]*=[[:space:]]*"prisma-client-js"/provider = "prisma-client-js"\n  binaryTargets = ["native", "debian-openssl-3.0.x", "rhel-openssl-3.0.x", "linux-musl-openssl-3.0.x"]/' packages/database/prisma/schema.prisma
-
-          # 生成 Prisma Client
+          # 生成 Prisma Client 到自定义路径（src/generated/）
           pnpm db:generate
 
           # 验证生成的二进制文件
           echo "✅ 已生成以下平台的 Prisma Client:"
-          ls -lh packages/database/node_modules/.prisma/client/ | grep -E "\.(so|dylib|dll)" || true
-
-          # 恢复原始 schema（保持代码库干净）
-          mv packages/database/prisma/schema.prisma.bak packages/database/prisma/schema.prisma
+          ls -lh packages/database/src/generated/client/ | grep -E "\.(so|node)" || true
+          ls -lh packages/database/src/generated/prisma-admin/ | grep -E "\.(so|node)" || true
 
       # ==========================================
       # 6. 构建应用
@@ -105,7 +98,7 @@ jobs:
 
           # 打包必需文件
           tar -czf rungame-pm2-admin.tar.gz \
-            --exclude='node_modules' \
+            --exclude='apps/*/node_modules' \
             --exclude='.git' \
             --exclude='.env*' \
             --exclude='*.log' \
@@ -116,8 +109,6 @@ jobs:
             packages/database/src \
             packages/database/package.json \
             packages/database/prisma \
-            packages/database/node_modules/.prisma \
-            packages/database/node_modules/@prisma \
             package.json \
             pnpm-lock.yaml \
             turbo.json \
@@ -199,14 +190,16 @@ jobs:
             # 验证 pnpm 安装
             echo "✅ pnpm 版本: $(pnpm -v)"
 
-            # 备份预生成的 Prisma Client（避免被 pnpm install 清除）
-            echo "💾 备份预生成的 Prisma Client..."
-            if [ -d "packages/database/node_modules/.prisma" ]; then
-              cp -r packages/database/node_modules/.prisma /tmp/.prisma-backup
-              cp -r packages/database/node_modules/@prisma /tmp/@prisma-backup
-              echo "✅ Prisma Client 已备份到 /tmp"
+            # 验证预生成的 Prisma Client（从 GitHub Actions 打包）
+            echo "🔍 验证预生成的 Prisma Client..."
+            if [ -d "packages/database/src/generated/client" ] && [ -d "packages/database/src/generated/prisma-admin" ]; then
+              echo "✅ Prisma Client 已存在:"
+              ls -lh packages/database/src/generated/client/*.node 2>/dev/null || echo "  - Business Client: *.node files"
+              ls -lh packages/database/src/generated/prisma-admin/*.node 2>/dev/null || echo "  - Admin Client: *.node files"
             else
               echo "❌ 错误: 预生成的 Prisma Client 不存在"
+              echo "检查目录结构:"
+              ls -la packages/database/src/ || true
               exit 1
             fi
 
@@ -214,21 +207,12 @@ jobs:
             echo "📥 安装生产依赖..."
             pnpm install --prod --frozen-lockfile
 
-            # 恢复预生成的 Prisma Client
-            echo "♻️  恢复预生成的 Prisma Client..."
-            mkdir -p packages/database/node_modules/.prisma
-            mkdir -p packages/database/node_modules/@prisma
-            cp -r /tmp/.prisma-backup/* packages/database/node_modules/.prisma/
-            cp -r /tmp/@prisma-backup/* packages/database/node_modules/@prisma/
-            rm -rf /tmp/.prisma-backup /tmp/@prisma-backup
-
-            # 验证恢复的 Prisma Client
-            echo "🔍 验证 Prisma Client:"
-            if ls packages/database/node_modules/.prisma/client/*.node 1> /dev/null 2>&1; then
-              echo "✅ Prisma Client 二进制文件已恢复:"
-              ls -lh packages/database/node_modules/.prisma/client/*.node
+            # 再次验证 Prisma Client（确保 pnpm install 没有影响）
+            echo "🔍 再次验证 Prisma Client..."
+            if [ -d "packages/database/src/generated/client" ]; then
+              echo "✅ Prisma Client 仍然存在（未被 pnpm install 清除）"
             else
-              echo "❌ 错误: Prisma Client 恢复失败"
+              echo "❌ 错误: Prisma Client 被清除"
               exit 1
             fi
 
