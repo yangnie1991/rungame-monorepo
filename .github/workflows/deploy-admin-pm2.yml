@@ -91,6 +91,18 @@ jobs:
           cp -r apps/admin/public apps/admin/.next/standalone/apps/admin/
           cp -r apps/admin/.next/static apps/admin/.next/standalone/apps/admin/.next/
 
+          # 🔑 复制 Prisma 引擎文件到 standalone 目录（修复 Prisma Client 引擎找不到问题）
+          echo "📋 复制 Prisma 引擎文件到 standalone 目录..."
+
+          # 创建目标目录
+          mkdir -p apps/admin/.next/standalone/apps/admin/src/generated/client
+
+          # 复制整个 Prisma Client 生成目录（包含所有平台的二进制文件）
+          cp -r packages/database/src/generated/client/* apps/admin/.next/standalone/apps/admin/src/generated/client/
+
+          echo "✅ Prisma 引擎文件已复制:"
+          ls -lh apps/admin/.next/standalone/apps/admin/src/generated/client/*.node 2>/dev/null || echo "警告: 未找到 .node 文件"
+
           echo "✅ Standalone 目录准备完成:"
           ls -la apps/admin/.next/standalone/apps/admin/
           echo "Standalone 大小: $(du -sh apps/admin/.next/standalone | cut -f1)"
