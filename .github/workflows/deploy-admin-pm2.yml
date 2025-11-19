@@ -237,12 +237,66 @@ jobs:
           echo "🔍 验证数据库 URL 格式..."
           echo "=========================================="
 
-          # 🐛 调试模式：显示完整 URL 内容（仅 GitHub Actions 私有日志）
-          echo "📋 DATABASE_URL 完整内容（调试用）:"
-          echo "$DATABASE_URL"
+          # 🐛 调试模式：解析并显示 URL 各部分（绕过 GitHub Actions 自动隐藏）
+          echo "📋 DATABASE_URL 解析（各部分）:"
+          # 提取协议
+          DB_PROTOCOL=$(echo "$DATABASE_URL" | sed -E 's|^([^:]+)://.*|\1|')
+          echo "  协议: $DB_PROTOCOL"
+
+          # 提取用户名
+          DB_USER=$(echo "$DATABASE_URL" | sed -E 's|^[^:]+://([^:]+):.*|\1|')
+          echo "  用户名: $DB_USER"
+
+          # 提取密码（仅显示长度和前后2字符）
+          DB_PASS=$(echo "$DATABASE_URL" | sed -E 's|^[^:]+://[^:]+:([^@]+)@.*|\1|')
+          DB_PASS_LEN=${#DB_PASS}
+          DB_PASS_PREFIX="${DB_PASS:0:2}"
+          DB_PASS_SUFFIX="${DB_PASS: -2}"
+          echo "  密码: ${DB_PASS_PREFIX}***${DB_PASS_SUFFIX} (长度: $DB_PASS_LEN)"
+
+          # 提取主机
+          DB_HOST=$(echo "$DATABASE_URL" | sed -E 's|^[^:]+://[^@]+@([^:/]+).*|\1|')
+          echo "  主机: $DB_HOST"
+
+          # 提取端口
+          DB_PORT=$(echo "$DATABASE_URL" | sed -E 's|^[^:]+://[^@]+@[^:]+:([0-9]+)/.*|\1|')
+          echo "  端口: $DB_PORT"
+
+          # 提取数据库名
+          DB_NAME=$(echo "$DATABASE_URL" | sed -E 's|^[^:]+://[^@]+@[^/]+/([^?]+).*|\1|')
+          echo "  数据库: $DB_NAME"
+
+          # 提取参数
+          DB_PARAMS=$(echo "$DATABASE_URL" | sed -E 's|^[^?]+\?(.*)|\1|')
+          echo "  参数: $DB_PARAMS"
+
           echo ""
-          echo "📋 CACHE_DATABASE_URL 完整内容（调试用）:"
-          echo "$CACHE_DATABASE_URL"
+          echo "📋 CACHE_DATABASE_URL 解析（各部分）:"
+          # 同样处理 CACHE_DATABASE_URL
+          CACHE_PROTOCOL=$(echo "$CACHE_DATABASE_URL" | sed -E 's|^([^:]+)://.*|\1|')
+          echo "  协议: $CACHE_PROTOCOL"
+
+          CACHE_USER=$(echo "$CACHE_DATABASE_URL" | sed -E 's|^[^:]+://([^:]+):.*|\1|')
+          echo "  用户名: $CACHE_USER"
+
+          CACHE_PASS=$(echo "$CACHE_DATABASE_URL" | sed -E 's|^[^:]+://[^:]+:([^@]+)@.*|\1|')
+          CACHE_PASS_LEN=${#CACHE_PASS}
+          CACHE_PASS_PREFIX="${CACHE_PASS:0:2}"
+          CACHE_PASS_SUFFIX="${CACHE_PASS: -2}"
+          echo "  密码: ${CACHE_PASS_PREFIX}***${CACHE_PASS_SUFFIX} (长度: $CACHE_PASS_LEN)"
+
+          CACHE_HOST=$(echo "$CACHE_DATABASE_URL" | sed -E 's|^[^:]+://[^@]+@([^:/]+).*|\1|')
+          echo "  主机: $CACHE_HOST"
+
+          CACHE_PORT=$(echo "$CACHE_DATABASE_URL" | sed -E 's|^[^:]+://[^@]+@[^:]+:([0-9]+)/.*|\1|')
+          echo "  端口: $CACHE_PORT"
+
+          CACHE_NAME=$(echo "$CACHE_DATABASE_URL" | sed -E 's|^[^:]+://[^@]+@[^/]+/([^?]+).*|\1|')
+          echo "  数据库: $CACHE_NAME"
+
+          CACHE_PARAMS=$(echo "$CACHE_DATABASE_URL" | sed -E 's|^[^?]+\?(.*)|\1|')
+          echo "  参数: $CACHE_PARAMS"
+
           echo ""
           echo "=========================================="
 
@@ -391,12 +445,58 @@ jobs:
             echo "🔍 验证数据库 URL 格式（VPS 端）..."
             echo "=========================================="
 
-            # 🐛 调试模式：显示完整 URL 内容
-            echo "📋 DATABASE_URL 完整内容（调试用）:"
-            echo "$DATABASE_URL"
+            # 🐛 调试模式：解析并显示 URL 各部分
+            echo "📋 DATABASE_URL 解析（VPS 端）:"
+            DB_PROTOCOL=$(echo "$DATABASE_URL" | sed -E 's|^([^:]+)://.*|\1|')
+            echo "  协议: $DB_PROTOCOL"
+
+            DB_USER=$(echo "$DATABASE_URL" | sed -E 's|^[^:]+://([^:]+):.*|\1|')
+            echo "  用户名: $DB_USER"
+
+            DB_PASS=$(echo "$DATABASE_URL" | sed -E 's|^[^:]+://[^:]+:([^@]+)@.*|\1|')
+            DB_PASS_LEN=${#DB_PASS}
+            DB_PASS_PREFIX="${DB_PASS:0:2}"
+            DB_PASS_SUFFIX="${DB_PASS: -2}"
+            echo "  密码: ${DB_PASS_PREFIX}***${DB_PASS_SUFFIX} (长度: $DB_PASS_LEN)"
+
+            DB_HOST=$(echo "$DATABASE_URL" | sed -E 's|^[^:]+://[^@]+@([^:/]+).*|\1|')
+            echo "  主机: $DB_HOST"
+
+            DB_PORT=$(echo "$DATABASE_URL" | sed -E 's|^[^:]+://[^@]+@[^:]+:([0-9]+)/.*|\1|')
+            echo "  端口: $DB_PORT"
+
+            DB_NAME=$(echo "$DATABASE_URL" | sed -E 's|^[^:]+://[^@]+@[^/]+/([^?]+).*|\1|')
+            echo "  数据库: $DB_NAME"
+
+            DB_PARAMS=$(echo "$DATABASE_URL" | sed -E 's|^[^?]+\?(.*)|\1|')
+            echo "  参数: $DB_PARAMS"
+
             echo ""
-            echo "📋 CACHE_DATABASE_URL 完整内容（调试用）:"
-            echo "$CACHE_DATABASE_URL"
+            echo "📋 CACHE_DATABASE_URL 解析（VPS 端）:"
+            CACHE_PROTOCOL=$(echo "$CACHE_DATABASE_URL" | sed -E 's|^([^:]+)://.*|\1|')
+            echo "  协议: $CACHE_PROTOCOL"
+
+            CACHE_USER=$(echo "$CACHE_DATABASE_URL" | sed -E 's|^[^:]+://([^:]+):.*|\1|')
+            echo "  用户名: $CACHE_USER"
+
+            CACHE_PASS=$(echo "$CACHE_DATABASE_URL" | sed -E 's|^[^:]+://[^:]+:([^@]+)@.*|\1|')
+            CACHE_PASS_LEN=${#CACHE_PASS}
+            CACHE_PASS_PREFIX="${CACHE_PASS:0:2}"
+            CACHE_PASS_SUFFIX="${CACHE_PASS: -2}"
+            echo "  密码: ${CACHE_PASS_PREFIX}***${CACHE_PASS_SUFFIX} (长度: $CACHE_PASS_LEN)"
+
+            CACHE_HOST=$(echo "$CACHE_DATABASE_URL" | sed -E 's|^[^:]+://[^@]+@([^:/]+).*|\1|')
+            echo "  主机: $CACHE_HOST"
+
+            CACHE_PORT=$(echo "$CACHE_DATABASE_URL" | sed -E 's|^[^:]+://[^@]+@[^:]+:([0-9]+)/.*|\1|')
+            echo "  端口: $CACHE_PORT"
+
+            CACHE_NAME=$(echo "$CACHE_DATABASE_URL" | sed -E 's|^[^:]+://[^@]+@[^/]+/([^?]+).*|\1|')
+            echo "  数据库: $CACHE_NAME"
+
+            CACHE_PARAMS=$(echo "$CACHE_DATABASE_URL" | sed -E 's|^[^?]+\?(.*)|\1|')
+            echo "  参数: $CACHE_PARAMS"
+
             echo ""
             echo "=========================================="
 
