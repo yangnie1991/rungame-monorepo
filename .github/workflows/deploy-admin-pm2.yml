@@ -37,21 +37,21 @@ jobs:
           ref: ${{ github.event.inputs.branch || github.ref }}
 
       # ==========================================
-      # 2. 设置 Node.js 环境
+      # 2. 安装 pnpm（必须在 setup-node 之前）
+      # ==========================================
+      - name: 📦 Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      # ==========================================
+      # 3. 设置 Node.js 环境
       # ==========================================
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
-
-      # ==========================================
-      # 3. 安装 pnpm
-      # ==========================================
-      - name: 📦 Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8
 
       # ==========================================
       # 4. 安装依赖
