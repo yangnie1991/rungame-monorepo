@@ -263,7 +263,12 @@ jobs:
             NODE_ENV=production
             EOF
 
-            echo "✅ 环境变量已配置"
+            echo "✅ 环境变量已配置（根目录）"
+
+            # 复制 .env 到 apps/admin（PM2 工作目录）
+            echo "📋 复制 .env 到 apps/admin 目录..."
+            cp .env apps/admin/.env
+            echo "✅ 环境变量已配置（apps/admin）"
 
             # 检查 PM2 是否安装
             if ! command -v pm2 &> /dev/null; then
