@@ -199,9 +199,9 @@ jobs:
             # 验证 pnpm 安装
             echo "✅ pnpm 版本: $(pnpm -v)"
 
-            # 安装依赖（包含 prisma CLI，部署时需要运行 prisma generate）
-            echo "📥 安装依赖..."
-            pnpm install --frozen-lockfile
+            # 安装生产依赖（prisma CLI 已在 dependencies 中）
+            echo "📥 安装生产依赖..."
+            pnpm install --prod --frozen-lockfile
 
             # 重新生成 Prisma Client（确保平台匹配）
             echo "🔧 重新生成 Prisma Client（确保 Linux 平台兼容）..."
