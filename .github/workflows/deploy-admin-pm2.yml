@@ -59,203 +59,68 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # ==========================================
-      # 4.5. 检测 VPS 平台（优化 Prisma 二进制）
+      # 4.5. 检测 VPS 平台（优化 Prisma 二进制）- 使用可靠的输出捕获
       # ==========================================
       - name: 🔍 Detect VPS Platform
-        id: detect-platform
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT || 22 }}
-          script: |
-            echo "=========================================="
-            echo "🔍 深度检测服务器平台信息"
-            echo "=========================================="
-
-            # 🔍 方法1: 检测操作系统（/etc/os-release）
-            OS_ID="unknown"
-            if [ -f /etc/os-release ]; then
-              . /etc/os-release
-              OS_ID="$ID"
-              OS_VERSION="${VERSION_ID:-unknown}"
-              echo "✅ /etc/os-release: $NAME $VERSION"
-            else
-              echo "⚠️  /etc/os-release 不存在"
-            fi
-
-            # 🔍 方法2: 检测发行版特定文件
-            if [ "$OS_ID" = "unknown" ]; then
-              echo ""
-              echo "尝试其他检测方法..."
-
-              if [ -f /etc/redhat-release ]; then
-                REDHAT_RELEASE=$(cat /etc/redhat-release)
-                echo "✅ /etc/redhat-release: $REDHAT_RELEASE"
-
-                # 判断具体发行版
-                if echo "$REDHAT_RELEASE" | grep -qi "centos"; then
-                  OS_ID="centos"
-                elif echo "$REDHAT_RELEASE" | grep -qi "red hat"; then
-                  OS_ID="rhel"
-                elif echo "$REDHAT_RELEASE" | grep -qi "rocky"; then
-                  OS_ID="rocky"
-                elif echo "$REDHAT_RELEASE" | grep -qi "almalinux"; then
-                  OS_ID="almalinux"
-                else
-                  OS_ID="rhel"  # 默认认为是 RHEL 系
-                fi
-              elif [ -f /etc/debian_version ]; then
-                DEBIAN_VERSION=$(cat /etc/debian_version)
-                echo "✅ /etc/debian_version: $DEBIAN_VERSION"
-                OS_ID="debian"
-              elif [ -f /etc/alpine-release ]; then
-                ALPINE_VERSION=$(cat /etc/alpine-release)
-                echo "✅ /etc/alpine-release: $ALPINE_VERSION"
-                OS_ID="alpine"
-              fi
-            fi
-
-            # 🔍 方法3: 通过包管理器判断系统类型
-            if [ "$OS_ID" = "unknown" ]; then
-              echo ""
-              echo "通过包管理器检测系统类型..."
-
-              if command -v rpm &> /dev/null; then
-                echo "✅ 检测到 rpm（RHEL 系）"
-                OS_ID="rhel"
-              elif command -v dpkg &> /dev/null; then
-                echo "✅ 检测到 dpkg（Debian 系）"
-                OS_ID="debian"
-              elif command -v apk &> /dev/null; then
-                echo "✅ 检测到 apk（Alpine）"
-                OS_ID="alpine"
-              fi
-            fi
-
-            # 🔍 方法4: uname 信息（最后的备用方法）
-            if [ "$OS_ID" = "unknown" ]; then
-              echo ""
-              echo "通过 uname 检测..."
-              UNAME_INFO=$(uname -a)
-              echo "系统信息: $UNAME_INFO"
-
-              if echo "$UNAME_INFO" | grep -qi "debian"; then
-                OS_ID="debian"
-              elif echo "$UNAME_INFO" | grep -qi "ubuntu"; then
-                OS_ID="ubuntu"
-              elif echo "$UNAME_INFO" | grep -qi "centos\|rhel\|red.hat"; then
-                OS_ID="centos"
-              fi
-            fi
-
-            echo ""
-            echo "=========================================="
-            echo "📋 系统信息汇总"
-            echo "=========================================="
-            echo "检测到的系统 ID: $OS_ID"
-            echo "完整的 uname 输出: $(uname -a)"
-            echo "内核版本: $(uname -r)"
-
-            # 显示所有可用的系统信息文件
-            echo ""
-            echo "可用的系统信息文件:"
-            [ -f /etc/os-release ] && echo "  ✓ /etc/os-release"
-            [ -f /etc/redhat-release ] && echo "  ✓ /etc/redhat-release: $(cat /etc/redhat-release)"
-            [ -f /etc/centos-release ] && echo "  ✓ /etc/centos-release: $(cat /etc/centos-release)"
-            [ -f /etc/debian_version ] && echo "  ✓ /etc/debian_version: $(cat /etc/debian_version)"
-            [ -f /etc/alpine-release ] && echo "  ✓ /etc/alpine-release: $(cat /etc/alpine-release)"
-
-            echo ""
-            echo "可用的包管理器:"
-            command -v rpm &> /dev/null && echo "  ✓ rpm"
-            command -v dpkg &> /dev/null && echo "  ✓ dpkg"
-            command -v apk &> /dev/null && echo "  ✓ apk"
-            echo "=========================================="
-
-            # 检测 OpenSSL 版本
-            echo ""
-            echo "🔍 检测 OpenSSL 版本..."
-            OPENSSL_FULL=$(openssl version)
-            echo "OpenSSL 完整版本: $OPENSSL_FULL"
-
-            OPENSSL_VERSION=$(echo "$OPENSSL_FULL" | grep -oP 'OpenSSL \K[0-9]+\.[0-9]+' || echo "unknown")
-            echo "OpenSSL 主版本: $OPENSSL_VERSION"
-
-            # 🎯 确定 Prisma binaryTarget 平台部分
-            echo ""
-            echo "=========================================="
-            echo "🎯 确定 Prisma 平台"
-            echo "=========================================="
-
-            if [[ "$OS_ID" == "debian" || "$OS_ID" == "ubuntu" ]]; then
-              BASE_PLATFORM="debian-openssl"
-              echo "识别为: Debian/Ubuntu 系统"
-            elif [[ "$OS_ID" == "rhel" || "$OS_ID" == "centos" || "$OS_ID" == "rocky" || "$OS_ID" == "almalinux" ]]; then
-              BASE_PLATFORM="rhel-openssl"
-              echo "识别为: RHEL/CentOS 系统"
-            elif [[ "$OS_ID" == "alpine" ]]; then
-              BASE_PLATFORM="linux-musl-openssl"
-              echo "识别为: Alpine 系统"
-            else
-              # 仍然无法识别，根据包管理器最后判断
-              if command -v rpm &> /dev/null; then
-                BASE_PLATFORM="rhel-openssl"
-                echo "⚠️  系统未识别，但检测到 rpm，使用: rhel-openssl"
-              elif command -v dpkg &> /dev/null; then
-                BASE_PLATFORM="debian-openssl"
-                echo "⚠️  系统未识别，但检测到 dpkg，使用: debian-openssl"
-              else
-                BASE_PLATFORM="debian-openssl"
-                echo "⚠️  完全无法识别系统，使用默认: debian-openssl"
-              fi
-            fi
-
-            # 确定 OpenSSL 版本后缀
-            if [[ "$OPENSSL_VERSION" == "1.1"* ]]; then
-              OPENSSL_SUFFIX="1.1.x"
-            elif [[ "$OPENSSL_VERSION" == "1.0"* ]]; then
-              OPENSSL_SUFFIX="1.0.x"
-            elif [[ "$OPENSSL_VERSION" == "3.0"* ]]; then
-              OPENSSL_SUFFIX="3.0.x"
-            elif [[ "$OPENSSL_VERSION" == "3"* ]]; then
-              OPENSSL_SUFFIX="3.0.x"  # OpenSSL 3.x 统一使用 3.0.x
-            else
-              OPENSSL_SUFFIX="3.0.x"  # 默认使用 3.0.x
-              echo "⚠️  未识别的 OpenSSL 版本 ($OPENSSL_VERSION)，使用默认: 3.0.x"
-            fi
-
-            # 组合完整的 binaryTarget
-            BINARY_TARGET="${BASE_PLATFORM}-${OPENSSL_SUFFIX}"
-
-            echo ""
-            echo "=========================================="
-            echo "✅ 最终检测结果"
-            echo "=========================================="
-            echo "系统 ID: $OS_ID"
-            echo "基础平台: $BASE_PLATFORM"
-            echo "OpenSSL 版本: $OPENSSL_SUFFIX"
-            echo "Prisma binaryTarget: $BINARY_TARGET"
-            echo "=========================================="
-
-            # 输出到 GitHub Actions
-            echo "BINARY_TARGET=$BINARY_TARGET"
-
-      - name: 📋 Save Detected Platform
         id: platform
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USERNAME: ${{ secrets.VPS_USERNAME }}
+          VPS_PORT: ${{ secrets.VPS_PORT || 22 }}
         run: |
-          # 从上一步的输出中提取 BINARY_TARGET
-          BINARY_TARGET=$(echo "${{ steps.detect-platform.outputs.stdout }}" | grep "BINARY_TARGET=" | tail -1 | cut -d'=' -f2 | tr -d ' \r\n')
+          echo "=========================================="
+          echo "🔍 检测 VPS 平台"
+          echo "=========================================="
 
-          # 如果提取失败，根据 VPS 实际情况使用正确的默认值
-          # VPS: Alibaba Cloud Linux 3 (基于 RHEL) + OpenSSL 1.1.1k
-          if [ -z "$BINARY_TARGET" ]; then
-            echo "⚠️  SSH 输出提取失败，使用 VPS 检测到的值: rhel-openssl-1.1.x"
+          # 设置 SSH 私钥
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          # 添加 VPS 到 known_hosts（跳过主机密钥验证）
+          ssh-keyscan -p ${VPS_PORT} -H ${VPS_HOST} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          echo "连接到 VPS: ${VPS_USERNAME}@${VPS_HOST}:${VPS_PORT}"
+
+          # 传输检测脚本到 VPS
+          scp -i ~/.ssh/deploy_key \
+            -P ${VPS_PORT} \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            .github/detect-vps-platform.sh \
+            ${VPS_USERNAME}@${VPS_HOST}:/tmp/detect-platform.sh
+
+          # 执行检测脚本并捕获输出
+          DETECTION_RESULT=$(ssh -i ~/.ssh/deploy_key \
+            -p ${VPS_PORT} \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            ${VPS_USERNAME}@${VPS_HOST} \
+            'bash /tmp/detect-platform.sh')
+
+          # 清理 VPS 上的临时脚本
+          ssh -i ~/.ssh/deploy_key \
+            -p ${VPS_PORT} \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            ${VPS_USERNAME}@${VPS_HOST} \
+            'rm -f /tmp/detect-platform.sh'
+
+          # 清理本地 SSH 密钥
+          rm -f ~/.ssh/deploy_key
+
+          # 处理检测结果
+          BINARY_TARGET=$(echo "$DETECTION_RESULT" | tail -1 | tr -d ' \r\n')
+
+          if [ -z "$BINARY_TARGET" ] || [ "$BINARY_TARGET" = "null" ]; then
+            echo "⚠️  自动检测失败，使用默认值: rhel-openssl-1.1.x"
             BINARY_TARGET="rhel-openssl-1.1.x"
           fi
 
-          echo "检测到的平台: $BINARY_TARGET"
+          echo "=========================================="
+          echo "✅ 检测到的平台: $BINARY_TARGET"
+          echo "=========================================="
+
           echo "BINARY_TARGET=$BINARY_TARGET" >> $GITHUB_OUTPUT
 
       # ==========================================
