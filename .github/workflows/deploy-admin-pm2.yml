@@ -41,8 +41,7 @@ jobs:
       # ==========================================
       - name: 📦 Install pnpm
         uses: pnpm/action-setup@v3
-        with:
-          version: 8
+        # 自动读取 package.json 中的 packageManager 字段（pnpm@9.15.4）
 
       # ==========================================
       # 3. 设置 Node.js 环境
