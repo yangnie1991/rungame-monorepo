@@ -347,16 +347,42 @@ jobs:
           cp -r apps/admin/.next/static apps/admin/.next/standalone/apps/admin/.next/
 
           # 🔑 复制 Prisma 引擎文件到 standalone 目录（修复 Prisma Client 引擎找不到问题）
-          echo "📋 复制 Prisma 引擎文件到 standalone 目录..."
+          echo ""
+          echo "=========================================="
+          echo "📋 复制 Prisma 引擎文件到 standalone 目录"
+          echo "=========================================="
 
           # 创建目标目录
           mkdir -p apps/admin/.next/standalone/apps/admin/src/generated/client
+          mkdir -p apps/admin/.next/standalone/apps/admin/src/generated/prisma-admin
 
-          # 复制整个 Prisma Client 生成目录（包含所有平台的二进制文件）
-          cp -r packages/database/src/generated/client/* apps/admin/.next/standalone/apps/admin/src/generated/client/
+          # 复制 client 目录（用于业务数据库）
+          echo "📦 复制 client 目录..."
+          if [ -d "packages/database/src/generated/client" ]; then
+            cp -r packages/database/src/generated/client/* apps/admin/.next/standalone/apps/admin/src/generated/client/
+            echo "✅ Client 已复制"
+            ls -lh apps/admin/.next/standalone/apps/admin/src/generated/client/*.node 2>/dev/null || echo "⚠️  未找到 client .node 文件"
+          else
+            echo "❌ 错误: packages/database/src/generated/client 不存在"
+            exit 1
+          fi
 
-          echo "✅ Prisma 引擎文件已复制:"
-          ls -lh apps/admin/.next/standalone/apps/admin/src/generated/client/*.node 2>/dev/null || echo "警告: 未找到 .node 文件"
+          # 复制 prisma-admin 目录（用于管理数据库）
+          echo ""
+          echo "📦 复制 prisma-admin 目录..."
+          if [ -d "packages/database/src/generated/prisma-admin" ]; then
+            cp -r packages/database/src/generated/prisma-admin/* apps/admin/.next/standalone/apps/admin/src/generated/prisma-admin/
+            echo "✅ Prisma-admin 已复制"
+            ls -lh apps/admin/.next/standalone/apps/admin/src/generated/prisma-admin/*.node 2>/dev/null || echo "⚠️  未找到 prisma-admin .node 文件"
+          else
+            echo "❌ 错误: packages/database/src/generated/prisma-admin 不存在"
+            exit 1
+          fi
+
+          echo ""
+          echo "=========================================="
+          echo "✅ 所有 Prisma 引擎文件已复制"
+          echo "=========================================="
 
           echo "✅ Standalone 目录准备完成:"
           ls -la apps/admin/.next/standalone/apps/admin/
@@ -738,6 +764,32 @@ jobs:
             # 创建部署目录
             mkdir -p $DEPLOY_DIR
             cd $DEPLOY_DIR
+
+            # 🧹 清理旧的部署文件（防止残留导致的问题）
+            echo ""
+            echo "=========================================="
+            echo "🧹 清理旧的部署文件"
+            echo "=========================================="
+
+            if [ -d "apps/admin/.next" ]; then
+              echo "🗑️  删除旧的 .next 目录..."
+              rm -rf apps/admin/.next
+            fi
+
+            if [ -d "apps/admin/src/generated" ]; then
+              echo "🗑️  删除旧的 Prisma 生成文件..."
+              rm -rf apps/admin/src/generated
+            fi
+
+            # 清理可能的残留 Prisma 引擎文件
+            echo "🗑️  清理可能的 Prisma 引擎残留..."
+            find . -name "libquery_engine*.node" -type f -delete 2>/dev/null || true
+            find . -name "libquery_engine*.dylib.node" -type f -delete 2>/dev/null || true
+            find . -name ".prisma" -type d -exec rm -rf {} + 2>/dev/null || true
+
+            echo "✅ 旧文件清理完成"
+            echo "=========================================="
+            echo ""
 
             # 解压新构建（Standalone 包含所有依赖）
             echo "📦 解压 Standalone 构建产物..."
