@@ -20,6 +20,7 @@ import {
   updateGoogleSearchConfig,
   updateJinaReaderConfig,
   resetApiCallStats,
+  switchJinaUseMode,
 } from "./actions"
 
 export default function ExternalApisPage() {
@@ -36,6 +37,7 @@ export default function ExternalApisPage() {
   // Jina Reader 配置
   const [jinaApiKey, setJinaApiKey] = useState("")
   const [showJinaKey, setShowJinaKey] = useState(false)
+  const [jinaUseMode, setJinaUseMode] = useState<'auto' | 'paid' | 'free'>('auto')
 
   // 加载配置
   useEffect(() => {
@@ -60,6 +62,7 @@ export default function ExternalApisPage() {
     const jinaConfig = data.find(c => c.name === 'jina_reader')
     if (jinaConfig) {
       setJinaApiKey(jinaConfig.apiConfig.apiKey || "")
+      setJinaUseMode(jinaConfig.apiConfig.useMode || 'auto')
     }
 
     setLoading(false)
@@ -102,6 +105,26 @@ export default function ExternalApisPage() {
     } else {
       toast({
         title: "保存失败",
+        description: result.error,
+        variant: "destructive",
+      })
+    }
+  }
+
+  // 切换 Jina 使用模式
+  const handleSwitchJinaMode = async (mode: 'auto' | 'paid' | 'free') => {
+    const result = await switchJinaUseMode(mode)
+
+    if (result.success) {
+      setJinaUseMode(mode)
+      toast({
+        title: "切换成功",
+        description: `已切换到${mode === 'auto' ? '自动' : mode === 'paid' ? '付费' : '免费'}模式`,
+      })
+      loadConfigs()
+    } else {
+      toast({
+        title: "切换失败",
         description: result.error,
         variant: "destructive",
       })
@@ -246,6 +269,45 @@ export default function ExternalApisPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* 使用模式 */}
+              <div>
+                <Label>使用模式</Label>
+                <div className="flex gap-2 mt-2">
+                  <Button
+                    size="sm"
+                    variant={jinaUseMode === 'auto' ? 'default' : 'outline'}
+                    onClick={() => handleSwitchJinaMode('auto')}
+                  >
+                    自动
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={jinaUseMode === 'paid' ? 'default' : 'outline'}
+                    onClick={() => handleSwitchJinaMode('paid')}
+                  >
+                    仅付费
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={jinaUseMode === 'free' ? 'default' : 'outline'}
+                    onClick={() => handleSwitchJinaMode('free')}
+                  >
+                    仅免费
+                  </Button>
+                </div>
+                <div className="mt-2 space-y-1 text-xs text-gray-500">
+                  {jinaUseMode === 'auto' && (
+                    <p>• 优先使用付费 API（如有），遇到配额用完时自动切换到免费 API</p>
+                  )}
+                  {jinaUseMode === 'paid' && (
+                    <p>• 强制使用付费 API，配额用完时直接报错（不回退到免费）</p>
+                  )}
+                  {jinaUseMode === 'free' && (
+                    <p>• 强制使用免费 API，即使配置了 API Key 也不使用</p>
+                  )}
+                </div>
+              </div>
+
               {/* API Key */}
               <div>
                 <Label>API Key（可选）</Label>

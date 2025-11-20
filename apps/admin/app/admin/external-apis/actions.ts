@@ -5,7 +5,9 @@ import { encrypt, decrypt, maskSensitiveData } from "@/lib/crypto"
 import {
   clearConfigCache,
   getAllExternalApiConfigs as getCachedConfigs,
-  getExternalApiConfig
+  getExternalApiConfig,
+  updateJinaUseMode as updateJinaUseModeLib,
+  type JinaUseMode
 } from "@/lib/external-api-config"
 import { z } from "zod"
 
@@ -263,6 +265,24 @@ export async function resetApiCallStats(name: string) {
 }
 
 /**
+ * 切换 Jina Reader 使用模式
+ */
+export async function switchJinaUseMode(useMode: JinaUseMode) {
+  try {
+    const success = await updateJinaUseModeLib(useMode)
+
+    if (success) {
+      return { success: true }
+    } else {
+      return { success: false, error: '更新失败' }
+    }
+  } catch (error: any) {
+    console.error('[External API] 切换 Jina 使用模式失败:', error.message)
+    return { success: false, error: error.message || '操作失败' }
+  }
+}
+
+/**
  * 确保默认配置存在
  * 从缓存中检查配置是否存在，而不是直接查询数据库
  */
@@ -303,6 +323,7 @@ async function ensureDefaultConfigs() {
             apiKey: '',
             endpoint: 'https://r.jina.ai',
             timeout: 20,
+            useMode: 'auto',  // 默认使用 auto 模式
             options: {
               withGeneratedAlt: true,
               withImagesSummary: true,

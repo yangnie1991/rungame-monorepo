@@ -11,7 +11,6 @@
  */
 
 import { unstable_cache } from 'next/cache'
-import { revalidateTag } from 'next/cache'
 import { prismaAdmin } from '@/lib/prisma'
 import { decrypt } from '@/lib/crypto'
 
@@ -30,17 +29,35 @@ export interface GoogleSearchConfig {
 }
 
 /**
+ * Jina Reader API 使用模式
+ */
+export type JinaUseMode = 'auto' | 'paid' | 'free'
+
+/**
  * Jina Reader API 配置类型
  */
 export interface JinaReaderConfig {
   apiKey?: string  // 可选，不配置则使用免费模式
   endpoint?: string
   timeout?: number
+  useMode?: JinaUseMode  // 使用模式：auto（自动切换）、paid（仅付费）、free（仅免费）
   options?: {
     withGeneratedAlt?: boolean
     withImagesSummary?: boolean
     withLinksSummary?: boolean
   }
+}
+
+/**
+ * Cloudflare R2 配置类型
+ */
+export interface R2Config {
+  accountId: string
+  accessKeyId: string
+  secretAccessKey: string
+  bucketName: string
+  publicUrl?: string  // CDN 公共域名，如果不配置则使用 r2.dev 默认域名
+  endpoint?: string   // 自定义端点（通常自动生成）
 }
 
 /**
@@ -129,6 +146,7 @@ export async function getJinaReaderConfig(): Promise<JinaReaderConfig> {
       return {
         endpoint: 'https://r.jina.ai',
         timeout: 20,
+        useMode: 'auto',
         options: {
           withGeneratedAlt: true,
           withImagesSummary: true,
@@ -151,6 +169,7 @@ export async function getJinaReaderConfig(): Promise<JinaReaderConfig> {
       apiKey,
       endpoint: config.apiConfig.endpoint || 'https://r.jina.ai',
       timeout: config.apiConfig.timeout || 20,
+      useMode: (config.apiConfig.useMode as JinaUseMode) || 'auto',
       options: config.apiConfig.options || {
         withGeneratedAlt: true,
         withImagesSummary: true,
@@ -165,12 +184,76 @@ export async function getJinaReaderConfig(): Promise<JinaReaderConfig> {
     return {
       endpoint: 'https://r.jina.ai',
       timeout: 20,
+      useMode: 'auto',
       options: {
         withGeneratedAlt: true,
         withImagesSummary: true,
         withLinksSummary: false
       }
     }
+  }
+}
+
+/**
+ * 获取 Cloudflare R2 配置
+ *
+ * @returns R2 配置，如果未配置则返回 null
+ *
+ * @example
+ * const config = await getR2Config()
+ * if (config) {
+ *   console.log('Account ID:', config.accountId)
+ *   console.log('Bucket:', config.bucketName)
+ *   console.log('Public URL:', config.publicUrl)
+ * } else {
+ *   console.log('R2 未配置')
+ * }
+ */
+export async function getR2Config(): Promise<R2Config | null> {
+  try {
+    const config = await getExternalApiConfig('cloudflare_r2')
+
+    if (!config) {
+      console.warn('[External API] Cloudflare R2 配置未找到')
+      return null
+    }
+
+    // 解密敏感字段
+    const accessKeyId = config.apiConfig.accessKeyId
+      ? decrypt(config.apiConfig.accessKeyId)
+      : null
+    const secretAccessKey = config.apiConfig.secretAccessKey
+      ? decrypt(config.apiConfig.secretAccessKey)
+      : null
+
+    if (!accessKeyId || !secretAccessKey) {
+      console.warn('[External API] R2 访问密钥未配置或解密失败')
+      return null
+    }
+
+    const accountId = config.apiConfig.accountId
+    const bucketName = config.apiConfig.bucketName
+
+    if (!accountId || !bucketName) {
+      console.warn('[External API] R2 Account ID 或 Bucket Name 未配置')
+      return null
+    }
+
+    // 构建 endpoint (通常自动生成)
+    const endpoint = config.apiConfig.endpoint || `https://${accountId}.r2.cloudflarestorage.com`
+
+    return {
+      accountId,
+      accessKeyId,
+      secretAccessKey,
+      bucketName,
+      publicUrl: config.apiConfig.publicUrl,
+      endpoint
+    }
+
+  } catch (error: any) {
+    console.error('[External API] 获取 R2 配置失败:', error.message)
+    return null
   }
 }
 
@@ -274,7 +357,10 @@ export async function recordApiCall(name: string, success: boolean): Promise<voi
  * clearConfigCache('google_search')  // 清除整个表缓存
  * clearConfigCache()                  // 清除整个表缓存
  */
-export function clearConfigCache(_name?: string): void {
+export async function clearConfigCache(_name?: string): Promise<void> {
+  // 动态导入 revalidateTag（仅在服务器端使用）
+  const { revalidateTag } = await import('next/cache')
+
   // 清除整个表的缓存（因为缓存的是整个表，所以无论是否传入 name 都清除整表）
   revalidateTag('external-api-configs')
   console.log('[External API Cache] 已清除配置缓存')
@@ -294,6 +380,51 @@ export function clearConfigCache(_name?: string): void {
 export async function isApiConfigured(name: string): Promise<boolean> {
   const config = await getExternalApiConfig(name)
   return config !== null
+}
+
+/**
+ * 更新 Jina Reader 使用模式
+ *
+ * @param useMode - 新的使用模式
+ * @returns 是否更新成功
+ *
+ * @example
+ * // 切换到免费模式
+ * await updateJinaUseMode('free')
+ *
+ * // 重置回自动模式
+ * await updateJinaUseMode('auto')
+ */
+export async function updateJinaUseMode(useMode: JinaUseMode): Promise<boolean> {
+  try {
+    const config = await getExternalApiConfig('jina_reader')
+
+    if (!config) {
+      console.error('[External API] Jina Reader 配置不存在')
+      return false
+    }
+
+    // 更新 useMode
+    await prismaAdmin.externalApiConfig.update({
+      where: { name: 'jina_reader' },
+      data: {
+        apiConfig: {
+          ...config.apiConfig,
+          useMode
+        }
+      }
+    })
+
+    // 清除缓存
+    await clearConfigCache('jina_reader')
+
+    console.log(`[External API] Jina Reader 使用模式已更新为: ${useMode}`)
+    return true
+
+  } catch (error: any) {
+    console.error('[External API] 更新 Jina Reader 使用模式失败:', error.message)
+    return false
+  }
 }
 
 /**

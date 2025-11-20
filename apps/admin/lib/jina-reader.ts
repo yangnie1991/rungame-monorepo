@@ -15,7 +15,7 @@
  * - 详见: PROXY-QUICKSTART.md
  */
 
-import { getJinaReaderConfig, recordApiCall } from '@/lib/external-api-config'
+import { getJinaReaderConfig, recordApiCall, updateJinaUseMode } from '@/lib/external-api-config'
 
 export interface JinaReaderResult {
   url: string           // 原始 URL
@@ -46,8 +46,7 @@ export async function readWebPage(url: string, truncate: boolean = true, skipApi
     // 从数据库获取配置
     const dbConfig = await getJinaReaderConfig()
 
-    // 如果设置了 skipApiKey，强制不使用 API Key（回退模式）
-    const apiKey = skipApiKey ? undefined : dbConfig.apiKey
+    const useMode = dbConfig.useMode || 'auto'
     const endpoint = dbConfig.endpoint || 'https://r.jina.ai'
     const timeout = dbConfig.timeout || 20
     const options = dbConfig.options || {
@@ -56,12 +55,50 @@ export async function readWebPage(url: string, truncate: boolean = true, skipApi
       withLinksSummary: false
     }
 
+    // 根据 useMode 和 skipApiKey 决定是否使用 API Key
+    let apiKey: string | undefined
+
     if (skipApiKey) {
-      console.log('[Jina Reader] 使用回退模式（免费 API）')
-    } else if (apiKey) {
-      console.log('[Jina Reader] 使用数据库配置（带 API Key）')
+      // 内部回退调用，强制不使用 API Key
+      apiKey = undefined
     } else {
-      console.log('[Jina Reader] 使用数据库配置（免费模式）')
+      // 根据 useMode 决定
+      switch (useMode) {
+        case 'free':
+          // 强制使用免费模式
+          apiKey = undefined
+          break
+        case 'paid':
+          // 强制使用付费模式（如果没有 API Key 会报错）
+          apiKey = dbConfig.apiKey
+          break
+        case 'auto':
+        default:
+          // 自动模式：优先使用付费 API（如果有 API Key）
+          apiKey = dbConfig.apiKey
+          break
+      }
+    }
+
+    // 日志输出
+    if (skipApiKey) {
+      console.log('[Jina Reader] 使用临时回退模式（免费 API）')
+    } else {
+      switch (useMode) {
+        case 'free':
+          console.log('[Jina Reader] 使用免费模式（配置强制）')
+          break
+        case 'paid':
+          console.log('[Jina Reader] 使用付费模式（配置强制）')
+          break
+        case 'auto':
+          if (apiKey) {
+            console.log('[Jina Reader] 使用自动模式（当前：付费 API）')
+          } else {
+            console.log('[Jina Reader] 使用自动模式（当前：免费 API，无 API Key）')
+          }
+          break
+      }
     }
 
     // 构建 Jina Reader URL
@@ -98,22 +135,31 @@ export async function readWebPage(url: string, truncate: boolean = true, skipApi
         throw new Error('Jina API Key 无效或已过期。请在管理后台（外部 API 配置）更新或移除 API Key 使用免费模式')
       }
 
-      // 402 付费要求 / 配额用完 - 实现回退逻辑
+      // 402 付费要求 / 配额用完 - 智能回退逻辑
       if (response.status === 402) {
-        // 如果当前使用的是付费 API 且未在回退模式
-        if (apiKey && !skipApiKey) {
-          console.log('[Jina Reader] 付费 API 返回 402，尝试回退到免费 API')
+        // 情况 1: auto 模式 + 使用付费 API → 切换到 free 模式
+        if (useMode === 'auto' && apiKey && !skipApiKey) {
+          console.log('[Jina Reader] 付费 API 配额用完，自动切换到免费模式')
 
-          // 递归调用自己，但跳过 API Key（回退到免费模式）
+          // 永久切换到 free 模式（后续请求直接使用免费 API）
+          await updateJinaUseMode('free')
+
+          // 本次请求立即重试免费 API
           return await readWebPage(url, truncate, true)
         }
 
-        // 如果已经是免费模式或回退模式
-        if (skipApiKey) {
-          throw new Error('Jina 免费 API 配额已用完。请稍后重试')
-        } else {
-          throw new Error('Jina 免费模式配额已用完。请在管理后台（外部 API 配置）添加有效的 API Key 或稍后重试')
+        // 情况 2: paid 模式 + 付费 API 失败 → 抛出错误（不回退）
+        if (useMode === 'paid') {
+          throw new Error('付费 API 配额已用完。请检查账户余额或在管理后台切换到"自动"或"免费"模式')
         }
+
+        // 情况 3: free 模式 或 回退调用失败 → 抛出错误
+        if (useMode === 'free' || skipApiKey) {
+          throw new Error('免费 API 配额已用完。建议在管理后台添加有效的 API Key 并切换到"自动"模式，或稍后重试')
+        }
+
+        // 默认错误（理论上不应该到这里）
+        throw new Error('Jina API 配额已用完')
       }
 
       // 403 访问被拒绝
