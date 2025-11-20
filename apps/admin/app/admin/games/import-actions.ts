@@ -144,7 +144,7 @@ export async function matchGamePixCategory(gamePixCategory: string) {
 
     if (matched) {
       // 使用缓存层获取主分类信息
-      const { getAllCategoriesForAdmin } = await import('@rungame/database')
+      const { getAllCategoriesForAdmin } = await import('@/lib/queries/categories')
       const allCategories = await getAllCategoriesForAdmin('zh')
       const mainCategory = allCategories.find(cat => cat.id === matched.mainCategoryId)
 
@@ -252,7 +252,7 @@ export async function importSingleGamePixGame(
     }
 
     // 使用缓存层验证分类是否存在并获取父分类ID
-    const { getAllCategoriesForAdmin } = await import('@rungame/database')
+    const { getAllCategoriesForAdmin } = await import('@/lib/queries/categories')
     const allCategories = await getAllCategoriesForAdmin('zh')
     const category = allCategories.find(cat => cat.id === config.categoryId)
 

@@ -178,7 +178,7 @@ export async function uploadGamePixImageToR2(
     const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL
     const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID
     const publicUrl = R2_PUBLIC_URL
-      ? `${R2_PUBLIC_URL}/${hashBasedKey}`
+      ? `https://${R2_PUBLIC_URL}/${hashBasedKey}`
       : `https://pub-${R2_ACCOUNT_ID}.r2.dev/${hashBasedKey}`
 
     return {

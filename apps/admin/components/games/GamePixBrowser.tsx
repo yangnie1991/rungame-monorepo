@@ -102,10 +102,12 @@ export function GamePixBrowser({
   // 单个游戏导入确认弹窗
   const [showSingleImportDialog, setShowSingleImportDialog] = useState(false)
   const [currentGameToImport, setCurrentGameToImport] = useState<GamePixGameItem | null>(null)
+  const [dialogKey, setDialogKey] = useState(0) // 用于强制重新挂载 Dialog
 
   // 取消导入确认弹窗
   const [showUnimportDialog, setShowUnimportDialog] = useState(false)
   const [currentGameToUnimport, setCurrentGameToUnimport] = useState<GamePixGameItem | null>(null)
+  const [unimportDialogKey, setUnimportDialogKey] = useState(0) // 用于强制重新挂载 Dialog
   const [isUnimporting, setIsUnimporting] = useState(false)
 
   const [error, setError] = useState<string | null>(null)
@@ -309,7 +311,7 @@ export function GamePixBrowser({
         return
       }
 
-      // 🎯 成功后再更新 UI 和关闭对话框
+      // 🎯 成功后再更新 UI
       setGames(prevGames =>
         prevGames.map(game =>
           game.id === gameId
@@ -327,9 +329,14 @@ export function GamePixBrowser({
         })
       }
 
-      // 关闭对话框
+      // 先关闭对话框
       setShowUnimportDialog(false)
-      setCurrentGameToUnimport(null)
+
+      // 延迟清理数据，避免 Portal 节点冲突
+      setTimeout(() => {
+        setCurrentGameToUnimport(null)
+        setUnimportDialogKey(prev => prev + 1)
+      }, 500)
 
     } catch (error) {
       console.error('取消导入失败:', error)
@@ -784,15 +791,23 @@ export function GamePixBrowser({
 
       {/* 单个游戏导入确认弹窗 */}
       <GameImportConfirmDialog
+        key={`import-dialog-${dialogKey}`}
         open={showSingleImportDialog}
         onOpenChange={async (open) => {
-          setShowSingleImportDialog(open)
-          // 🎯 弹窗关闭时清理当前游戏数据并刷新列表
           if (!open) {
-            setTimeout(() => setCurrentGameToImport(null), 300)
+            // 先关闭 Dialog
+            setShowSingleImportDialog(false)
+
+            // 等待 Dialog 关闭动画完成（500ms），然后清理数据
+            setTimeout(() => {
+              setCurrentGameToImport(null)
+              setDialogKey(prev => prev + 1) // 更新 key，确保下次打开时重新挂载
+            }, 500)
 
             // 🔄 刷新游戏列表（获取最新的导入状态）
             await handleFetchGames()
+          } else {
+            setShowSingleImportDialog(true)
           }
         }}
         game={currentGameToImport}
@@ -806,8 +821,22 @@ export function GamePixBrowser({
 
       {/* 取消导入确认弹窗 */}
       <UnimportConfirmDialog
+        key={`unimport-dialog-${unimportDialogKey}`}
         open={showUnimportDialog}
-        onOpenChange={setShowUnimportDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            // 先关闭 Dialog
+            setShowUnimportDialog(false)
+
+            // 等待 Dialog 关闭动画完成（500ms），然后清理数据
+            setTimeout(() => {
+              setCurrentGameToUnimport(null)
+              setUnimportDialogKey(prev => prev + 1) // 更新 key，确保下次打开时重新挂载
+            }, 500)
+          } else {
+            setShowUnimportDialog(true)
+          }
+        }}
         gameTitle={currentGameToUnimport?.title}
         gameCount={1}
         onConfirm={handleConfirmUnimport}

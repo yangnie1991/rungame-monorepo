@@ -45,7 +45,7 @@ export async function readWebPage(url: string, truncate: boolean = true): Promis
     const headers: Record<string, string> = {
       'Accept': 'text/markdown',
       'X-Return-Format': 'markdown',
-      'X-Timeout': '8',  // 8秒超时（留 1-2 秒缓冲）
+      'X-Timeout': '20',  // 20秒超时
       'X-With-Generated-Alt': 'true',  // 为图片生成 alt 文本
       'X-With-Images-Summary': 'true',  // 将图片移到文档最后的 "Images:" 部分
       'X-With-Links-Summary': 'false'  // 不需要链接摘要
@@ -59,14 +59,19 @@ export async function readWebPage(url: string, truncate: boolean = true): Promis
     // 调用 Jina Reader API
     const response = await fetch(jinaUrl, {
       headers,
-      signal: AbortSignal.timeout(9000)  // 9秒超时（客户端稍长于服务端）
+      signal: AbortSignal.timeout(21000)  // 21秒超时（客户端稍长于服务端）
     })
 
     // 处理错误响应
     if (!response.ok) {
+      // 401 认证失败
+      if (response.status === 401) {
+        throw new Error('Jina API Key 无效或已过期。请检查 JINA_API_KEY 环境变量，或移除该配置使用免费模式')
+      }
+
       // 429 速率限制
       if (response.status === 429) {
-        throw new Error('Jina Reader 速率限制。建议添加 JINA_API_KEY 到环境变量')
+        throw new Error('Jina Reader 速率限制。建议添加有效的 JINA_API_KEY 到环境变量')
       }
 
       // 403 访问被拒绝

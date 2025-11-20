@@ -3,7 +3,7 @@
  * 独立的缓存数据库客户端，用于管理 GamePix 游戏数据
  */
 
-import { PrismaClient as PrismaCacheClient } from '@/lib/generated/prisma-cache'
+import { PrismaClient as PrismaCacheClient } from '@/lib/generated/prisma-client'
 
 const globalForPrismaCache = globalThis as unknown as {
   prismaCache: PrismaCacheClient | undefined

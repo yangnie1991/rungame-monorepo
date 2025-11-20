@@ -30,18 +30,31 @@ export async function findLocalCategoryByGamePixCategory(
     // 2. 从缓存获取所有分类数据
     const allCategories = await getAllCategoriesForAdmin('zh')
 
+    console.log(`🔍 开始匹配 GamePix 分类: "${gamePixCategory}"`)
+    console.log(`📊 获取到 ${allCategories.length} 个分类`)
+
     // 3. 在内存中进行模糊匹配（只匹配子分类）
     const subCategories = allCategories.filter(cat => cat.parentId !== null && cat.isEnabled)
+
+    console.log(`📊 其中 ${subCategories.length} 个是已启用的子分类`)
+    console.log(`📋 所有子分类名称: ${subCategories.map(c => `${c.name}(${c.slug})`).join(', ')}`)
 
     // 4. 查找匹配的分类
     const matchedCategory = subCategories.find(cat => {
       const nameMatch = cat.name.toLowerCase().includes(normalized)
       const slugMatch = cat.slug.toLowerCase().includes(normalizedSlug)
-      return nameMatch || slugMatch
+      const matched = nameMatch || slugMatch
+
+      if (matched) {
+        console.log(`✓ 找到匹配: ${cat.name} (${cat.slug}) - 名称匹配:${nameMatch}, Slug匹配:${slugMatch}`)
+      }
+
+      return matched
     })
 
     if (!matchedCategory) {
-      console.warn(`未找到 GamePix 分类 "${gamePixCategory}" 的本地子分类匹配`)
+      console.warn(`❌ 未找到与 "${gamePixCategory}" 匹配的本地子分类`)
+      console.warn(`提示: 请检查是否存在包含 "${normalized}" 的子分类，并确保已启用`)
       return null
     }
 

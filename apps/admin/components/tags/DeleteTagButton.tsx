@@ -64,8 +64,8 @@ export function DeleteTagButton({ tagId, tagName }: DeleteTagButtonProps) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>确认删除</DialogTitle>
-            <DialogDescription>
+            <DialogTitle key="title">确认删除</DialogTitle>
+            <DialogDescription key="description">
               你确定要删除标签 <strong>{tagName}</strong> 吗？
               <br />
               此操作无法撤销，关联的游戏将失去该标签。
@@ -73,6 +73,7 @@ export function DeleteTagButton({ tagId, tagName }: DeleteTagButtonProps) {
           </DialogHeader>
           <DialogFooter>
             <Button
+              key="cancel"
               variant="outline"
               onClick={() => setOpen(false)}
               disabled={isDeleting}
@@ -80,6 +81,7 @@ export function DeleteTagButton({ tagId, tagName }: DeleteTagButtonProps) {
               取消
             </Button>
             <Button
+              key="confirm"
               variant="destructive"
               onClick={handleDelete}
               disabled={isDeleting}

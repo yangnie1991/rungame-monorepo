@@ -408,19 +408,23 @@ export async function batchOptimizeContent(
  * @param searchResults - Google 搜索结果（包含 title, url, content）
  * @param gameTitle - 游戏名称
  * @param locale - 语言
+ * @param aiConfigId - AI 配置 ID（可选，不提供则使用激活配置）
+ * @param modelId - 模型 ID（可选，不提供则使用默认模型）
  * @returns 过滤后的游戏网站列表，包含置信度和判断理由
  */
 export async function filterGameWebsites(
   searchResults: Array<{ title: string; url: string; content: string }>,
   gameTitle: string,
-  locale: string
+  locale: string,
+  aiConfigId?: string,
+  modelId?: string
 ): Promise<Array<{ title: string; url: string; content: string; confidence: number; reasoning: string }>> {
   if (searchResults.length === 0) {
     return []
   }
 
-  // 获取 AI 配置
-  const config = await getAiModelConfig()
+  // 获取 AI 配置（使用指定的 configId 和 modelId）
+  const config = await getAiModelConfig(aiConfigId, modelId)
 
   console.log(`[filterGameWebsites] 开始过滤 ${searchResults.length} 个搜索结果...`)
 
@@ -594,7 +598,7 @@ export async function generateGamePixImportContent(
   input: GamePixImportInput,
   onProgress?: (step: number, total: number, message: string) => void
 ): Promise<GamePixImportOutput> {
-  const { gameTitle, mainKeyword, subKeywords, originalDescription, markdownContent, locale, mode, modelProvider, modelName } = input
+  const { gameTitle, mainKeyword, subKeywords, originalDescription, markdownContent, locale, mode, aiConfigId, modelId } = input
 
   console.log(`[generateGamePixImportContent] 开始生成内容...`)
   console.log(`  - 游戏: ${gameTitle}`)
@@ -603,18 +607,8 @@ export async function generateGamePixImportContent(
   console.log(`  - 模式: ${mode}`)
   console.log(`  - Markdown 长度: ${markdownContent.length} 字符`)
 
-  // 获取 AI 配置
-  let config = await getAiModelConfig()
-
-  // 如果用户指定了模型，则覆盖默认配置
-  if (modelProvider && modelName) {
-    console.log(`[generateGamePixImportContent] 使用用户指定的模型: ${modelProvider}/${modelName}`)
-    config = {
-      ...config,
-      provider: modelProvider,
-      model: modelName
-    }
-  }
+  // 获取 AI 配置（使用指定的 configId 和 modelId）
+  const config = await getAiModelConfig(aiConfigId, modelId)
 
   // 步骤 0: 获取竞品网站并过滤
   const totalSteps = mode === 'fast' ? 2 : 5

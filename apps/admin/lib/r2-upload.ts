@@ -126,7 +126,7 @@ export async function uploadToR2(options: UploadOptions): Promise<UploadResult> 
 
     // 构造公共 URL
     const publicUrl = R2_PUBLIC_URL
-      ? `${R2_PUBLIC_URL}/${key}`
+      ? `https://${R2_PUBLIC_URL}/${key}`
       : `https://pub-${R2_ACCOUNT_ID}.r2.dev/${key}` // 回退到 r2.dev 域名
 
     return {

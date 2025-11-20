@@ -152,8 +152,8 @@ export async function updateGamePixDefaultConfig(config: {
 export async function getCategoriesAndTags() {
   try {
     // 使用缓存层获取分类和标签（并行请求中英文）
-    const { getAllCategoriesForAdmin } = await import('@rungame/database')
-    const { getAllTagsForAdmin } = await import('@rungame/database')
+    const { getAllCategoriesForAdmin } = await import('@/lib/queries/categories')
+    const { getAllTagsForAdmin } = await import('@/lib/queries/tags')
 
     const [categoriesZh, categoriesEn, tagsZh] = await Promise.all([
       getAllCategoriesForAdmin('zh'),

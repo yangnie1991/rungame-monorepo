@@ -3,7 +3,7 @@
  * 使用缓存数据库（Neon）存储对话历史
  */
 
-import { PrismaClient as CachePrismaClient } from "./generated/prisma-cache"
+import { PrismaClient as CachePrismaClient } from "./generated/prisma-client"
 
 // 创建缓存数据库客户端实例
 const globalForCachePrisma = globalThis as unknown as {

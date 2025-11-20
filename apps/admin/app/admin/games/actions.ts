@@ -467,7 +467,7 @@ export async function deleteGame(id: string) {
  */
 export async function getCategories() {
   try {
-    const { getAllCategoriesForAdmin } = await import('@rungame/database')
+    const { getAllCategoriesForAdmin } = await import('@/lib/queries/categories')
     const allCategories = await getAllCategoriesForAdmin('zh')
 
     // 创建一个 Map 用于快速查找父分类
