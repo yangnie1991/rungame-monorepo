@@ -234,20 +234,32 @@ jobs:
           echo "📋 复制 Prisma 引擎文件到 standalone 目录"
           echo "=========================================="
 
-          # 创建目标目录
+          # 创建所有可能的目标目录（根据 Prisma 的搜索路径）
           mkdir -p apps/admin/.next/standalone/packages/database/src/generated/client
           mkdir -p apps/admin/.next/standalone/apps/admin/lib/generated/prisma-client
+          mkdir -p apps/admin/.next/standalone/apps/admin/src/generated/client
+          mkdir -p apps/admin/.next/standalone/apps/admin/.next/server
 
-          # 复制业务数据库 Prisma Client（完整目录，包含所有文件）
+          # 复制业务数据库 Prisma Client 到多个位置
           echo "📦 复制业务数据库 Prisma Client..."
           if [ -d "packages/database/src/generated/client" ]; then
-            # 复制所有文件（包括 .node 引擎文件）
+            # 位置 1: packages/database 路径（monorepo 结构）
             cp -r packages/database/src/generated/client/* apps/admin/.next/standalone/packages/database/src/generated/client/
-            echo "✅ 业务数据库 Prisma Client 已复制"
+
+            # 位置 2: apps/admin/src 路径（Prisma 搜索路径之一）
+            cp -r packages/database/src/generated/client/* apps/admin/.next/standalone/apps/admin/src/generated/client/
+
+            # 位置 3: .next/server 路径（Next.js 编译输出）
+            cp -r packages/database/src/generated/client/*.node apps/admin/.next/standalone/apps/admin/.next/server/ 2>/dev/null || true
+
+            echo "✅ 业务数据库 Prisma Client 已复制到多个位置"
 
             # 验证引擎文件
             echo "🔍 验证业务数据库引擎文件:"
-            find apps/admin/.next/standalone/packages/database/src/generated/client -name "*.node" -o -name "*.so.node" | head -10
+            echo "位置 1 (packages):"
+            ls -lh apps/admin/.next/standalone/packages/database/src/generated/client/*.node 2>/dev/null | head -3 || echo "  未找到"
+            echo "位置 2 (apps/admin/src):"
+            ls -lh apps/admin/.next/standalone/apps/admin/src/generated/client/*.node 2>/dev/null | head -3 || echo "  未找到"
           else
             echo "❌ 错误: packages/database/src/generated/client 不存在"
             exit 1
@@ -255,16 +267,20 @@ jobs:
 
           echo ""
 
-          # 复制管理数据库 Prisma Client（完整目录，包含所有文件）
+          # 复制管理数据库 Prisma Client
           echo "📦 复制管理数据库 Prisma Client..."
           if [ -d "apps/admin/lib/generated/prisma-client" ]; then
-            # 复制所有文件（包括 .node 引擎文件）
+            # 复制完整目录
             cp -r apps/admin/lib/generated/prisma-client/* apps/admin/.next/standalone/apps/admin/lib/generated/prisma-client/
+
+            # 额外复制引擎文件到 .next/server
+            cp -r apps/admin/lib/generated/prisma-client/*.node apps/admin/.next/standalone/apps/admin/.next/server/ 2>/dev/null || true
+
             echo "✅ 管理数据库 Prisma Client 已复制"
 
             # 验证引擎文件
             echo "🔍 验证管理数据库引擎文件:"
-            find apps/admin/.next/standalone/apps/admin/lib/generated/prisma-client -name "*.node" -o -name "*.so.node" | head -10
+            ls -lh apps/admin/.next/standalone/apps/admin/lib/generated/prisma-client/*.node 2>/dev/null | head -3 || echo "  未找到"
           else
             echo "❌ 错误: apps/admin/lib/generated/prisma-client 不存在"
             exit 1
@@ -272,7 +288,7 @@ jobs:
 
           echo ""
           echo "=========================================="
-          echo "✅ 所有 Prisma 引擎文件已复制"
+          echo "✅ 所有 Prisma 引擎文件已复制到多个搜索路径"
           echo "=========================================="
 
           echo "✅ Standalone 目录准备完成:"
