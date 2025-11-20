@@ -10,6 +10,9 @@ const loginSchema = z.object({
 })
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  // 🔐 信任主机（生产环境/反向代理必需）
+  trustHost: true,
+
   // Credentials Provider 不使用 adapter（无状态 JWT）
   session: {
     strategy: "jwt",
