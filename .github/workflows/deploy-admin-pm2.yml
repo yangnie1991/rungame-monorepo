@@ -223,6 +223,28 @@ jobs:
           ls -la apps/admin/.next
           echo "产物大小: $(du -sh apps/admin/.next | cut -f1)"
 
+          # 🔍 诊断：检查 Standalone 目录结构
+          echo ""
+          echo "=========================================="
+          echo "🔍 诊断 - Standalone 目录结构分析"
+          echo "=========================================="
+          echo "📂 Standalone 根目录:"
+          ls -la apps/admin/.next/standalone/
+          echo ""
+          echo "📂 packages 目录（检查 database 是否被打包）:"
+          ls -la apps/admin/.next/standalone/packages/ 2>/dev/null || echo "  ❌ packages 目录不存在"
+          echo ""
+          echo "📂 apps/admin 目录:"
+          ls -la apps/admin/.next/standalone/apps/admin/ 2>/dev/null || echo "  ❌ apps/admin 目录不存在"
+          echo ""
+          echo "🔍 查找 Next.js 自动打包的 Prisma 引擎文件:"
+          find apps/admin/.next/standalone -name "*.node" -o -name "libquery_engine*" 2>/dev/null | head -20 || echo "  未找到任何 .node 文件"
+          echo ""
+          echo "🔍 查找 node_modules 中的 Prisma:"
+          find apps/admin/.next/standalone -path "*/node_modules/.prisma/*" -o -path "*/node_modules/@prisma/*" 2>/dev/null | head -10 || echo "  未找到 Prisma node_modules"
+          echo "=========================================="
+          echo ""
+
           # 复制静态资源到 standalone 目录（Next.js Standalone 模式必需）
           echo "📋 复制静态资源到 standalone 目录..."
           cp -r apps/admin/public apps/admin/.next/standalone/apps/admin/
