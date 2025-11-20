@@ -30,6 +30,7 @@ export interface JinaReaderResult {
  *
  * @param url - 要解析的网页 URL
  * @param truncate - 是否截断内容（默认 true，截断到 5000 字符）
+ * @param skipApiKey - 强制跳过 API Key，使用免费模式（用于回退）
  * @returns 解析结果
  *
  * @example
@@ -40,12 +41,13 @@ export interface JinaReaderResult {
  * const result = await readWebPage('https://example.com/article', false)
  * console.log(result.content) // 完整的 Markdown 内容（不截断）
  */
-export async function readWebPage(url: string, truncate: boolean = true): Promise<JinaReaderResult> {
+export async function readWebPage(url: string, truncate: boolean = true, skipApiKey: boolean = false): Promise<JinaReaderResult> {
   try {
     // 从数据库获取配置
     const dbConfig = await getJinaReaderConfig()
 
-    const apiKey = dbConfig.apiKey
+    // 如果设置了 skipApiKey，强制不使用 API Key（回退模式）
+    const apiKey = skipApiKey ? undefined : dbConfig.apiKey
     const endpoint = dbConfig.endpoint || 'https://r.jina.ai'
     const timeout = dbConfig.timeout || 20
     const options = dbConfig.options || {
@@ -54,7 +56,9 @@ export async function readWebPage(url: string, truncate: boolean = true): Promis
       withLinksSummary: false
     }
 
-    if (apiKey) {
+    if (skipApiKey) {
+      console.log('[Jina Reader] 使用回退模式（免费 API）')
+    } else if (apiKey) {
       console.log('[Jina Reader] 使用数据库配置（带 API Key）')
     } else {
       console.log('[Jina Reader] 使用数据库配置（免费模式）')
@@ -91,12 +95,25 @@ export async function readWebPage(url: string, truncate: boolean = true): Promis
 
       // 401 认证失败
       if (response.status === 401) {
-        throw new Error('Jina API Key 无效或已过期。请检查 JINA_API_KEY 环境变量，或移除该配置使用免费模式')
+        throw new Error('Jina API Key 无效或已过期。请在管理后台（外部 API 配置）更新或移除 API Key 使用免费模式')
       }
 
-      // 429 速率限制
-      if (response.status === 429) {
-        throw new Error('Jina Reader 速率限制。建议添加有效的 JINA_API_KEY 到环境变量')
+      // 402 付费要求 / 配额用完 - 实现回退逻辑
+      if (response.status === 402) {
+        // 如果当前使用的是付费 API 且未在回退模式
+        if (apiKey && !skipApiKey) {
+          console.log('[Jina Reader] 付费 API 返回 402，尝试回退到免费 API')
+
+          // 递归调用自己，但跳过 API Key（回退到免费模式）
+          return await readWebPage(url, truncate, true)
+        }
+
+        // 如果已经是免费模式或回退模式
+        if (skipApiKey) {
+          throw new Error('Jina 免费 API 配额已用完。请稍后重试')
+        } else {
+          throw new Error('Jina 免费模式配额已用完。请在管理后台（外部 API 配置）添加有效的 API Key 或稍后重试')
+        }
       }
 
       // 403 访问被拒绝
@@ -107,6 +124,15 @@ export async function readWebPage(url: string, truncate: boolean = true): Promis
       // 404 页面不存在
       if (response.status === 404) {
         throw new Error('网页不存在或已被删除')
+      }
+
+      // 429 速率限制
+      if (response.status === 429) {
+        if (apiKey) {
+          throw new Error('Jina API 速率限制（已使用 API Key）。请稍后重试或升级账户')
+        } else {
+          throw new Error('Jina 免费模式速率限制。建议在管理后台（外部 API 配置）添加有效的 API Key')
+        }
       }
 
       throw new Error(`HTTP ${response.status}`)
