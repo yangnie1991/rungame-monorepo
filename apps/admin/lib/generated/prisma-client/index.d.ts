@@ -29,6 +29,11 @@ export type ImportPlatform = $Result.DefaultSelection<Prisma.$ImportPlatformPayl
  */
 export type AiConfig = $Result.DefaultSelection<Prisma.$AiConfigPayload>
 /**
+ * Model ExternalApiConfig
+ * 
+ */
+export type ExternalApiConfig = $Result.DefaultSelection<Prisma.$ExternalApiConfigPayload>
+/**
  * Model SearchEngineConfig
  * 
  */
@@ -241,6 +246,16 @@ export class PrismaClient<
     * ```
     */
   get aiConfig(): Prisma.AiConfigDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.externalApiConfig`: Exposes CRUD operations for the **ExternalApiConfig** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more ExternalApiConfigs
+    * const externalApiConfigs = await prisma.externalApiConfig.findMany()
+    * ```
+    */
+  get externalApiConfig(): Prisma.ExternalApiConfigDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.searchEngineConfig`: Exposes CRUD operations for the **SearchEngineConfig** model.
@@ -745,6 +760,7 @@ export namespace Prisma {
     Admin: 'Admin',
     ImportPlatform: 'ImportPlatform',
     AiConfig: 'AiConfig',
+    ExternalApiConfig: 'ExternalApiConfig',
     SearchEngineConfig: 'SearchEngineConfig',
     UrlSubmission: 'UrlSubmission',
     SubmissionBatch: 'SubmissionBatch',
@@ -769,7 +785,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "admin" | "importPlatform" | "aiConfig" | "searchEngineConfig" | "urlSubmission" | "submissionBatch" | "gamePixGameCache" | "syncLog" | "aiChatHistory"
+      modelProps: "admin" | "importPlatform" | "aiConfig" | "externalApiConfig" | "searchEngineConfig" | "urlSubmission" | "submissionBatch" | "gamePixGameCache" | "syncLog" | "aiChatHistory"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -992,6 +1008,80 @@ export namespace Prisma {
           count: {
             args: Prisma.AiConfigCountArgs<ExtArgs>
             result: $Utils.Optional<AiConfigCountAggregateOutputType> | number
+          }
+        }
+      }
+      ExternalApiConfig: {
+        payload: Prisma.$ExternalApiConfigPayload<ExtArgs>
+        fields: Prisma.ExternalApiConfigFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.ExternalApiConfigFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExternalApiConfigPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.ExternalApiConfigFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExternalApiConfigPayload>
+          }
+          findFirst: {
+            args: Prisma.ExternalApiConfigFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExternalApiConfigPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.ExternalApiConfigFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExternalApiConfigPayload>
+          }
+          findMany: {
+            args: Prisma.ExternalApiConfigFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExternalApiConfigPayload>[]
+          }
+          create: {
+            args: Prisma.ExternalApiConfigCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExternalApiConfigPayload>
+          }
+          createMany: {
+            args: Prisma.ExternalApiConfigCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.ExternalApiConfigCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExternalApiConfigPayload>[]
+          }
+          delete: {
+            args: Prisma.ExternalApiConfigDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExternalApiConfigPayload>
+          }
+          update: {
+            args: Prisma.ExternalApiConfigUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExternalApiConfigPayload>
+          }
+          deleteMany: {
+            args: Prisma.ExternalApiConfigDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.ExternalApiConfigUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.ExternalApiConfigUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExternalApiConfigPayload>[]
+          }
+          upsert: {
+            args: Prisma.ExternalApiConfigUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExternalApiConfigPayload>
+          }
+          aggregate: {
+            args: Prisma.ExternalApiConfigAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateExternalApiConfig>
+          }
+          groupBy: {
+            args: Prisma.ExternalApiConfigGroupByArgs<ExtArgs>
+            result: $Utils.Optional<ExternalApiConfigGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.ExternalApiConfigCountArgs<ExtArgs>
+            result: $Utils.Optional<ExternalApiConfigCountAggregateOutputType> | number
           }
         }
       }
@@ -1538,6 +1628,7 @@ export namespace Prisma {
     admin?: AdminOmit
     importPlatform?: ImportPlatformOmit
     aiConfig?: AiConfigOmit
+    externalApiConfig?: ExternalApiConfigOmit
     searchEngineConfig?: SearchEngineConfigOmit
     urlSubmission?: UrlSubmissionOmit
     submissionBatch?: SubmissionBatchOmit
@@ -4853,6 +4944,1178 @@ export namespace Prisma {
      * Omit specific fields from the AiConfig
      */
     omit?: AiConfigOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model ExternalApiConfig
+   */
+
+  export type AggregateExternalApiConfig = {
+    _count: ExternalApiConfigCountAggregateOutputType | null
+    _avg: ExternalApiConfigAvgAggregateOutputType | null
+    _sum: ExternalApiConfigSumAggregateOutputType | null
+    _min: ExternalApiConfigMinAggregateOutputType | null
+    _max: ExternalApiConfigMaxAggregateOutputType | null
+  }
+
+  export type ExternalApiConfigAvgAggregateOutputType = {
+    totalCalls: number | null
+    successCalls: number | null
+    failedCalls: number | null
+  }
+
+  export type ExternalApiConfigSumAggregateOutputType = {
+    totalCalls: number | null
+    successCalls: number | null
+    failedCalls: number | null
+  }
+
+  export type ExternalApiConfigMinAggregateOutputType = {
+    id: string | null
+    name: string | null
+    displayName: string | null
+    description: string | null
+    provider: string | null
+    isEncrypted: boolean | null
+    isEnabled: boolean | null
+    isActive: boolean | null
+    totalCalls: number | null
+    successCalls: number | null
+    failedCalls: number | null
+    lastUsedAt: Date | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type ExternalApiConfigMaxAggregateOutputType = {
+    id: string | null
+    name: string | null
+    displayName: string | null
+    description: string | null
+    provider: string | null
+    isEncrypted: boolean | null
+    isEnabled: boolean | null
+    isActive: boolean | null
+    totalCalls: number | null
+    successCalls: number | null
+    failedCalls: number | null
+    lastUsedAt: Date | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type ExternalApiConfigCountAggregateOutputType = {
+    id: number
+    name: number
+    displayName: number
+    description: number
+    provider: number
+    apiConfig: number
+    isEncrypted: number
+    isEnabled: number
+    isActive: number
+    totalCalls: number
+    successCalls: number
+    failedCalls: number
+    lastUsedAt: number
+    quotaConfig: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type ExternalApiConfigAvgAggregateInputType = {
+    totalCalls?: true
+    successCalls?: true
+    failedCalls?: true
+  }
+
+  export type ExternalApiConfigSumAggregateInputType = {
+    totalCalls?: true
+    successCalls?: true
+    failedCalls?: true
+  }
+
+  export type ExternalApiConfigMinAggregateInputType = {
+    id?: true
+    name?: true
+    displayName?: true
+    description?: true
+    provider?: true
+    isEncrypted?: true
+    isEnabled?: true
+    isActive?: true
+    totalCalls?: true
+    successCalls?: true
+    failedCalls?: true
+    lastUsedAt?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type ExternalApiConfigMaxAggregateInputType = {
+    id?: true
+    name?: true
+    displayName?: true
+    description?: true
+    provider?: true
+    isEncrypted?: true
+    isEnabled?: true
+    isActive?: true
+    totalCalls?: true
+    successCalls?: true
+    failedCalls?: true
+    lastUsedAt?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type ExternalApiConfigCountAggregateInputType = {
+    id?: true
+    name?: true
+    displayName?: true
+    description?: true
+    provider?: true
+    apiConfig?: true
+    isEncrypted?: true
+    isEnabled?: true
+    isActive?: true
+    totalCalls?: true
+    successCalls?: true
+    failedCalls?: true
+    lastUsedAt?: true
+    quotaConfig?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type ExternalApiConfigAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ExternalApiConfig to aggregate.
+     */
+    where?: ExternalApiConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ExternalApiConfigs to fetch.
+     */
+    orderBy?: ExternalApiConfigOrderByWithRelationInput | ExternalApiConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: ExternalApiConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ExternalApiConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ExternalApiConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned ExternalApiConfigs
+    **/
+    _count?: true | ExternalApiConfigCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: ExternalApiConfigAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: ExternalApiConfigSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ExternalApiConfigMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ExternalApiConfigMaxAggregateInputType
+  }
+
+  export type GetExternalApiConfigAggregateType<T extends ExternalApiConfigAggregateArgs> = {
+        [P in keyof T & keyof AggregateExternalApiConfig]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateExternalApiConfig[P]>
+      : GetScalarType<T[P], AggregateExternalApiConfig[P]>
+  }
+
+
+
+
+  export type ExternalApiConfigGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ExternalApiConfigWhereInput
+    orderBy?: ExternalApiConfigOrderByWithAggregationInput | ExternalApiConfigOrderByWithAggregationInput[]
+    by: ExternalApiConfigScalarFieldEnum[] | ExternalApiConfigScalarFieldEnum
+    having?: ExternalApiConfigScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ExternalApiConfigCountAggregateInputType | true
+    _avg?: ExternalApiConfigAvgAggregateInputType
+    _sum?: ExternalApiConfigSumAggregateInputType
+    _min?: ExternalApiConfigMinAggregateInputType
+    _max?: ExternalApiConfigMaxAggregateInputType
+  }
+
+  export type ExternalApiConfigGroupByOutputType = {
+    id: string
+    name: string
+    displayName: string
+    description: string | null
+    provider: string
+    apiConfig: JsonValue
+    isEncrypted: boolean
+    isEnabled: boolean
+    isActive: boolean
+    totalCalls: number
+    successCalls: number
+    failedCalls: number
+    lastUsedAt: Date | null
+    quotaConfig: JsonValue | null
+    createdAt: Date
+    updatedAt: Date
+    _count: ExternalApiConfigCountAggregateOutputType | null
+    _avg: ExternalApiConfigAvgAggregateOutputType | null
+    _sum: ExternalApiConfigSumAggregateOutputType | null
+    _min: ExternalApiConfigMinAggregateOutputType | null
+    _max: ExternalApiConfigMaxAggregateOutputType | null
+  }
+
+  type GetExternalApiConfigGroupByPayload<T extends ExternalApiConfigGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<ExternalApiConfigGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ExternalApiConfigGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ExternalApiConfigGroupByOutputType[P]>
+            : GetScalarType<T[P], ExternalApiConfigGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type ExternalApiConfigSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    name?: boolean
+    displayName?: boolean
+    description?: boolean
+    provider?: boolean
+    apiConfig?: boolean
+    isEncrypted?: boolean
+    isEnabled?: boolean
+    isActive?: boolean
+    totalCalls?: boolean
+    successCalls?: boolean
+    failedCalls?: boolean
+    lastUsedAt?: boolean
+    quotaConfig?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["externalApiConfig"]>
+
+  export type ExternalApiConfigSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    name?: boolean
+    displayName?: boolean
+    description?: boolean
+    provider?: boolean
+    apiConfig?: boolean
+    isEncrypted?: boolean
+    isEnabled?: boolean
+    isActive?: boolean
+    totalCalls?: boolean
+    successCalls?: boolean
+    failedCalls?: boolean
+    lastUsedAt?: boolean
+    quotaConfig?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["externalApiConfig"]>
+
+  export type ExternalApiConfigSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    name?: boolean
+    displayName?: boolean
+    description?: boolean
+    provider?: boolean
+    apiConfig?: boolean
+    isEncrypted?: boolean
+    isEnabled?: boolean
+    isActive?: boolean
+    totalCalls?: boolean
+    successCalls?: boolean
+    failedCalls?: boolean
+    lastUsedAt?: boolean
+    quotaConfig?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["externalApiConfig"]>
+
+  export type ExternalApiConfigSelectScalar = {
+    id?: boolean
+    name?: boolean
+    displayName?: boolean
+    description?: boolean
+    provider?: boolean
+    apiConfig?: boolean
+    isEncrypted?: boolean
+    isEnabled?: boolean
+    isActive?: boolean
+    totalCalls?: boolean
+    successCalls?: boolean
+    failedCalls?: boolean
+    lastUsedAt?: boolean
+    quotaConfig?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type ExternalApiConfigOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "displayName" | "description" | "provider" | "apiConfig" | "isEncrypted" | "isEnabled" | "isActive" | "totalCalls" | "successCalls" | "failedCalls" | "lastUsedAt" | "quotaConfig" | "createdAt" | "updatedAt", ExtArgs["result"]["externalApiConfig"]>
+
+  export type $ExternalApiConfigPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "ExternalApiConfig"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      name: string
+      displayName: string
+      description: string | null
+      provider: string
+      apiConfig: Prisma.JsonValue
+      isEncrypted: boolean
+      isEnabled: boolean
+      isActive: boolean
+      totalCalls: number
+      successCalls: number
+      failedCalls: number
+      lastUsedAt: Date | null
+      quotaConfig: Prisma.JsonValue | null
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["externalApiConfig"]>
+    composites: {}
+  }
+
+  type ExternalApiConfigGetPayload<S extends boolean | null | undefined | ExternalApiConfigDefaultArgs> = $Result.GetResult<Prisma.$ExternalApiConfigPayload, S>
+
+  type ExternalApiConfigCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<ExternalApiConfigFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: ExternalApiConfigCountAggregateInputType | true
+    }
+
+  export interface ExternalApiConfigDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['ExternalApiConfig'], meta: { name: 'ExternalApiConfig' } }
+    /**
+     * Find zero or one ExternalApiConfig that matches the filter.
+     * @param {ExternalApiConfigFindUniqueArgs} args - Arguments to find a ExternalApiConfig
+     * @example
+     * // Get one ExternalApiConfig
+     * const externalApiConfig = await prisma.externalApiConfig.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends ExternalApiConfigFindUniqueArgs>(args: SelectSubset<T, ExternalApiConfigFindUniqueArgs<ExtArgs>>): Prisma__ExternalApiConfigClient<$Result.GetResult<Prisma.$ExternalApiConfigPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one ExternalApiConfig that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {ExternalApiConfigFindUniqueOrThrowArgs} args - Arguments to find a ExternalApiConfig
+     * @example
+     * // Get one ExternalApiConfig
+     * const externalApiConfig = await prisma.externalApiConfig.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends ExternalApiConfigFindUniqueOrThrowArgs>(args: SelectSubset<T, ExternalApiConfigFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ExternalApiConfigClient<$Result.GetResult<Prisma.$ExternalApiConfigPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ExternalApiConfig that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ExternalApiConfigFindFirstArgs} args - Arguments to find a ExternalApiConfig
+     * @example
+     * // Get one ExternalApiConfig
+     * const externalApiConfig = await prisma.externalApiConfig.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends ExternalApiConfigFindFirstArgs>(args?: SelectSubset<T, ExternalApiConfigFindFirstArgs<ExtArgs>>): Prisma__ExternalApiConfigClient<$Result.GetResult<Prisma.$ExternalApiConfigPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ExternalApiConfig that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ExternalApiConfigFindFirstOrThrowArgs} args - Arguments to find a ExternalApiConfig
+     * @example
+     * // Get one ExternalApiConfig
+     * const externalApiConfig = await prisma.externalApiConfig.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends ExternalApiConfigFindFirstOrThrowArgs>(args?: SelectSubset<T, ExternalApiConfigFindFirstOrThrowArgs<ExtArgs>>): Prisma__ExternalApiConfigClient<$Result.GetResult<Prisma.$ExternalApiConfigPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more ExternalApiConfigs that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ExternalApiConfigFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all ExternalApiConfigs
+     * const externalApiConfigs = await prisma.externalApiConfig.findMany()
+     * 
+     * // Get first 10 ExternalApiConfigs
+     * const externalApiConfigs = await prisma.externalApiConfig.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const externalApiConfigWithIdOnly = await prisma.externalApiConfig.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends ExternalApiConfigFindManyArgs>(args?: SelectSubset<T, ExternalApiConfigFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ExternalApiConfigPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a ExternalApiConfig.
+     * @param {ExternalApiConfigCreateArgs} args - Arguments to create a ExternalApiConfig.
+     * @example
+     * // Create one ExternalApiConfig
+     * const ExternalApiConfig = await prisma.externalApiConfig.create({
+     *   data: {
+     *     // ... data to create a ExternalApiConfig
+     *   }
+     * })
+     * 
+     */
+    create<T extends ExternalApiConfigCreateArgs>(args: SelectSubset<T, ExternalApiConfigCreateArgs<ExtArgs>>): Prisma__ExternalApiConfigClient<$Result.GetResult<Prisma.$ExternalApiConfigPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many ExternalApiConfigs.
+     * @param {ExternalApiConfigCreateManyArgs} args - Arguments to create many ExternalApiConfigs.
+     * @example
+     * // Create many ExternalApiConfigs
+     * const externalApiConfig = await prisma.externalApiConfig.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends ExternalApiConfigCreateManyArgs>(args?: SelectSubset<T, ExternalApiConfigCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many ExternalApiConfigs and returns the data saved in the database.
+     * @param {ExternalApiConfigCreateManyAndReturnArgs} args - Arguments to create many ExternalApiConfigs.
+     * @example
+     * // Create many ExternalApiConfigs
+     * const externalApiConfig = await prisma.externalApiConfig.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many ExternalApiConfigs and only return the `id`
+     * const externalApiConfigWithIdOnly = await prisma.externalApiConfig.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends ExternalApiConfigCreateManyAndReturnArgs>(args?: SelectSubset<T, ExternalApiConfigCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ExternalApiConfigPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a ExternalApiConfig.
+     * @param {ExternalApiConfigDeleteArgs} args - Arguments to delete one ExternalApiConfig.
+     * @example
+     * // Delete one ExternalApiConfig
+     * const ExternalApiConfig = await prisma.externalApiConfig.delete({
+     *   where: {
+     *     // ... filter to delete one ExternalApiConfig
+     *   }
+     * })
+     * 
+     */
+    delete<T extends ExternalApiConfigDeleteArgs>(args: SelectSubset<T, ExternalApiConfigDeleteArgs<ExtArgs>>): Prisma__ExternalApiConfigClient<$Result.GetResult<Prisma.$ExternalApiConfigPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one ExternalApiConfig.
+     * @param {ExternalApiConfigUpdateArgs} args - Arguments to update one ExternalApiConfig.
+     * @example
+     * // Update one ExternalApiConfig
+     * const externalApiConfig = await prisma.externalApiConfig.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends ExternalApiConfigUpdateArgs>(args: SelectSubset<T, ExternalApiConfigUpdateArgs<ExtArgs>>): Prisma__ExternalApiConfigClient<$Result.GetResult<Prisma.$ExternalApiConfigPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more ExternalApiConfigs.
+     * @param {ExternalApiConfigDeleteManyArgs} args - Arguments to filter ExternalApiConfigs to delete.
+     * @example
+     * // Delete a few ExternalApiConfigs
+     * const { count } = await prisma.externalApiConfig.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends ExternalApiConfigDeleteManyArgs>(args?: SelectSubset<T, ExternalApiConfigDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ExternalApiConfigs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ExternalApiConfigUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many ExternalApiConfigs
+     * const externalApiConfig = await prisma.externalApiConfig.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends ExternalApiConfigUpdateManyArgs>(args: SelectSubset<T, ExternalApiConfigUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ExternalApiConfigs and returns the data updated in the database.
+     * @param {ExternalApiConfigUpdateManyAndReturnArgs} args - Arguments to update many ExternalApiConfigs.
+     * @example
+     * // Update many ExternalApiConfigs
+     * const externalApiConfig = await prisma.externalApiConfig.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more ExternalApiConfigs and only return the `id`
+     * const externalApiConfigWithIdOnly = await prisma.externalApiConfig.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends ExternalApiConfigUpdateManyAndReturnArgs>(args: SelectSubset<T, ExternalApiConfigUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ExternalApiConfigPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one ExternalApiConfig.
+     * @param {ExternalApiConfigUpsertArgs} args - Arguments to update or create a ExternalApiConfig.
+     * @example
+     * // Update or create a ExternalApiConfig
+     * const externalApiConfig = await prisma.externalApiConfig.upsert({
+     *   create: {
+     *     // ... data to create a ExternalApiConfig
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the ExternalApiConfig we want to update
+     *   }
+     * })
+     */
+    upsert<T extends ExternalApiConfigUpsertArgs>(args: SelectSubset<T, ExternalApiConfigUpsertArgs<ExtArgs>>): Prisma__ExternalApiConfigClient<$Result.GetResult<Prisma.$ExternalApiConfigPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of ExternalApiConfigs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ExternalApiConfigCountArgs} args - Arguments to filter ExternalApiConfigs to count.
+     * @example
+     * // Count the number of ExternalApiConfigs
+     * const count = await prisma.externalApiConfig.count({
+     *   where: {
+     *     // ... the filter for the ExternalApiConfigs we want to count
+     *   }
+     * })
+    **/
+    count<T extends ExternalApiConfigCountArgs>(
+      args?: Subset<T, ExternalApiConfigCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ExternalApiConfigCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a ExternalApiConfig.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ExternalApiConfigAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ExternalApiConfigAggregateArgs>(args: Subset<T, ExternalApiConfigAggregateArgs>): Prisma.PrismaPromise<GetExternalApiConfigAggregateType<T>>
+
+    /**
+     * Group by ExternalApiConfig.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ExternalApiConfigGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ExternalApiConfigGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ExternalApiConfigGroupByArgs['orderBy'] }
+        : { orderBy?: ExternalApiConfigGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ExternalApiConfigGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetExternalApiConfigGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the ExternalApiConfig model
+   */
+  readonly fields: ExternalApiConfigFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for ExternalApiConfig.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__ExternalApiConfigClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the ExternalApiConfig model
+   */
+  interface ExternalApiConfigFieldRefs {
+    readonly id: FieldRef<"ExternalApiConfig", 'String'>
+    readonly name: FieldRef<"ExternalApiConfig", 'String'>
+    readonly displayName: FieldRef<"ExternalApiConfig", 'String'>
+    readonly description: FieldRef<"ExternalApiConfig", 'String'>
+    readonly provider: FieldRef<"ExternalApiConfig", 'String'>
+    readonly apiConfig: FieldRef<"ExternalApiConfig", 'Json'>
+    readonly isEncrypted: FieldRef<"ExternalApiConfig", 'Boolean'>
+    readonly isEnabled: FieldRef<"ExternalApiConfig", 'Boolean'>
+    readonly isActive: FieldRef<"ExternalApiConfig", 'Boolean'>
+    readonly totalCalls: FieldRef<"ExternalApiConfig", 'Int'>
+    readonly successCalls: FieldRef<"ExternalApiConfig", 'Int'>
+    readonly failedCalls: FieldRef<"ExternalApiConfig", 'Int'>
+    readonly lastUsedAt: FieldRef<"ExternalApiConfig", 'DateTime'>
+    readonly quotaConfig: FieldRef<"ExternalApiConfig", 'Json'>
+    readonly createdAt: FieldRef<"ExternalApiConfig", 'DateTime'>
+    readonly updatedAt: FieldRef<"ExternalApiConfig", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * ExternalApiConfig findUnique
+   */
+  export type ExternalApiConfigFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExternalApiConfig
+     */
+    select?: ExternalApiConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExternalApiConfig
+     */
+    omit?: ExternalApiConfigOmit<ExtArgs> | null
+    /**
+     * Filter, which ExternalApiConfig to fetch.
+     */
+    where: ExternalApiConfigWhereUniqueInput
+  }
+
+  /**
+   * ExternalApiConfig findUniqueOrThrow
+   */
+  export type ExternalApiConfigFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExternalApiConfig
+     */
+    select?: ExternalApiConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExternalApiConfig
+     */
+    omit?: ExternalApiConfigOmit<ExtArgs> | null
+    /**
+     * Filter, which ExternalApiConfig to fetch.
+     */
+    where: ExternalApiConfigWhereUniqueInput
+  }
+
+  /**
+   * ExternalApiConfig findFirst
+   */
+  export type ExternalApiConfigFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExternalApiConfig
+     */
+    select?: ExternalApiConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExternalApiConfig
+     */
+    omit?: ExternalApiConfigOmit<ExtArgs> | null
+    /**
+     * Filter, which ExternalApiConfig to fetch.
+     */
+    where?: ExternalApiConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ExternalApiConfigs to fetch.
+     */
+    orderBy?: ExternalApiConfigOrderByWithRelationInput | ExternalApiConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ExternalApiConfigs.
+     */
+    cursor?: ExternalApiConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ExternalApiConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ExternalApiConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ExternalApiConfigs.
+     */
+    distinct?: ExternalApiConfigScalarFieldEnum | ExternalApiConfigScalarFieldEnum[]
+  }
+
+  /**
+   * ExternalApiConfig findFirstOrThrow
+   */
+  export type ExternalApiConfigFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExternalApiConfig
+     */
+    select?: ExternalApiConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExternalApiConfig
+     */
+    omit?: ExternalApiConfigOmit<ExtArgs> | null
+    /**
+     * Filter, which ExternalApiConfig to fetch.
+     */
+    where?: ExternalApiConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ExternalApiConfigs to fetch.
+     */
+    orderBy?: ExternalApiConfigOrderByWithRelationInput | ExternalApiConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ExternalApiConfigs.
+     */
+    cursor?: ExternalApiConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ExternalApiConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ExternalApiConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ExternalApiConfigs.
+     */
+    distinct?: ExternalApiConfigScalarFieldEnum | ExternalApiConfigScalarFieldEnum[]
+  }
+
+  /**
+   * ExternalApiConfig findMany
+   */
+  export type ExternalApiConfigFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExternalApiConfig
+     */
+    select?: ExternalApiConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExternalApiConfig
+     */
+    omit?: ExternalApiConfigOmit<ExtArgs> | null
+    /**
+     * Filter, which ExternalApiConfigs to fetch.
+     */
+    where?: ExternalApiConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ExternalApiConfigs to fetch.
+     */
+    orderBy?: ExternalApiConfigOrderByWithRelationInput | ExternalApiConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing ExternalApiConfigs.
+     */
+    cursor?: ExternalApiConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ExternalApiConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ExternalApiConfigs.
+     */
+    skip?: number
+    distinct?: ExternalApiConfigScalarFieldEnum | ExternalApiConfigScalarFieldEnum[]
+  }
+
+  /**
+   * ExternalApiConfig create
+   */
+  export type ExternalApiConfigCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExternalApiConfig
+     */
+    select?: ExternalApiConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExternalApiConfig
+     */
+    omit?: ExternalApiConfigOmit<ExtArgs> | null
+    /**
+     * The data needed to create a ExternalApiConfig.
+     */
+    data: XOR<ExternalApiConfigCreateInput, ExternalApiConfigUncheckedCreateInput>
+  }
+
+  /**
+   * ExternalApiConfig createMany
+   */
+  export type ExternalApiConfigCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many ExternalApiConfigs.
+     */
+    data: ExternalApiConfigCreateManyInput | ExternalApiConfigCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ExternalApiConfig createManyAndReturn
+   */
+  export type ExternalApiConfigCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExternalApiConfig
+     */
+    select?: ExternalApiConfigSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExternalApiConfig
+     */
+    omit?: ExternalApiConfigOmit<ExtArgs> | null
+    /**
+     * The data used to create many ExternalApiConfigs.
+     */
+    data: ExternalApiConfigCreateManyInput | ExternalApiConfigCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ExternalApiConfig update
+   */
+  export type ExternalApiConfigUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExternalApiConfig
+     */
+    select?: ExternalApiConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExternalApiConfig
+     */
+    omit?: ExternalApiConfigOmit<ExtArgs> | null
+    /**
+     * The data needed to update a ExternalApiConfig.
+     */
+    data: XOR<ExternalApiConfigUpdateInput, ExternalApiConfigUncheckedUpdateInput>
+    /**
+     * Choose, which ExternalApiConfig to update.
+     */
+    where: ExternalApiConfigWhereUniqueInput
+  }
+
+  /**
+   * ExternalApiConfig updateMany
+   */
+  export type ExternalApiConfigUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update ExternalApiConfigs.
+     */
+    data: XOR<ExternalApiConfigUpdateManyMutationInput, ExternalApiConfigUncheckedUpdateManyInput>
+    /**
+     * Filter which ExternalApiConfigs to update
+     */
+    where?: ExternalApiConfigWhereInput
+    /**
+     * Limit how many ExternalApiConfigs to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ExternalApiConfig updateManyAndReturn
+   */
+  export type ExternalApiConfigUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExternalApiConfig
+     */
+    select?: ExternalApiConfigSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExternalApiConfig
+     */
+    omit?: ExternalApiConfigOmit<ExtArgs> | null
+    /**
+     * The data used to update ExternalApiConfigs.
+     */
+    data: XOR<ExternalApiConfigUpdateManyMutationInput, ExternalApiConfigUncheckedUpdateManyInput>
+    /**
+     * Filter which ExternalApiConfigs to update
+     */
+    where?: ExternalApiConfigWhereInput
+    /**
+     * Limit how many ExternalApiConfigs to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ExternalApiConfig upsert
+   */
+  export type ExternalApiConfigUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExternalApiConfig
+     */
+    select?: ExternalApiConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExternalApiConfig
+     */
+    omit?: ExternalApiConfigOmit<ExtArgs> | null
+    /**
+     * The filter to search for the ExternalApiConfig to update in case it exists.
+     */
+    where: ExternalApiConfigWhereUniqueInput
+    /**
+     * In case the ExternalApiConfig found by the `where` argument doesn't exist, create a new ExternalApiConfig with this data.
+     */
+    create: XOR<ExternalApiConfigCreateInput, ExternalApiConfigUncheckedCreateInput>
+    /**
+     * In case the ExternalApiConfig was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<ExternalApiConfigUpdateInput, ExternalApiConfigUncheckedUpdateInput>
+  }
+
+  /**
+   * ExternalApiConfig delete
+   */
+  export type ExternalApiConfigDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExternalApiConfig
+     */
+    select?: ExternalApiConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExternalApiConfig
+     */
+    omit?: ExternalApiConfigOmit<ExtArgs> | null
+    /**
+     * Filter which ExternalApiConfig to delete.
+     */
+    where: ExternalApiConfigWhereUniqueInput
+  }
+
+  /**
+   * ExternalApiConfig deleteMany
+   */
+  export type ExternalApiConfigDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ExternalApiConfigs to delete
+     */
+    where?: ExternalApiConfigWhereInput
+    /**
+     * Limit how many ExternalApiConfigs to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * ExternalApiConfig without action
+   */
+  export type ExternalApiConfigDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExternalApiConfig
+     */
+    select?: ExternalApiConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExternalApiConfig
+     */
+    omit?: ExternalApiConfigOmit<ExtArgs> | null
   }
 
 
@@ -12292,6 +13555,28 @@ export namespace Prisma {
   export type AiConfigScalarFieldEnum = (typeof AiConfigScalarFieldEnum)[keyof typeof AiConfigScalarFieldEnum]
 
 
+  export const ExternalApiConfigScalarFieldEnum: {
+    id: 'id',
+    name: 'name',
+    displayName: 'displayName',
+    description: 'description',
+    provider: 'provider',
+    apiConfig: 'apiConfig',
+    isEncrypted: 'isEncrypted',
+    isEnabled: 'isEnabled',
+    isActive: 'isActive',
+    totalCalls: 'totalCalls',
+    successCalls: 'successCalls',
+    failedCalls: 'failedCalls',
+    lastUsedAt: 'lastUsedAt',
+    quotaConfig: 'quotaConfig',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type ExternalApiConfigScalarFieldEnum = (typeof ExternalApiConfigScalarFieldEnum)[keyof typeof ExternalApiConfigScalarFieldEnum]
+
+
   export const SearchEngineConfigScalarFieldEnum: {
     id: 'id',
     name: 'name',
@@ -12850,6 +14135,115 @@ export namespace Prisma {
     isEnabled?: BoolWithAggregatesFilter<"AiConfig"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"AiConfig"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"AiConfig"> | Date | string
+  }
+
+  export type ExternalApiConfigWhereInput = {
+    AND?: ExternalApiConfigWhereInput | ExternalApiConfigWhereInput[]
+    OR?: ExternalApiConfigWhereInput[]
+    NOT?: ExternalApiConfigWhereInput | ExternalApiConfigWhereInput[]
+    id?: StringFilter<"ExternalApiConfig"> | string
+    name?: StringFilter<"ExternalApiConfig"> | string
+    displayName?: StringFilter<"ExternalApiConfig"> | string
+    description?: StringNullableFilter<"ExternalApiConfig"> | string | null
+    provider?: StringFilter<"ExternalApiConfig"> | string
+    apiConfig?: JsonFilter<"ExternalApiConfig">
+    isEncrypted?: BoolFilter<"ExternalApiConfig"> | boolean
+    isEnabled?: BoolFilter<"ExternalApiConfig"> | boolean
+    isActive?: BoolFilter<"ExternalApiConfig"> | boolean
+    totalCalls?: IntFilter<"ExternalApiConfig"> | number
+    successCalls?: IntFilter<"ExternalApiConfig"> | number
+    failedCalls?: IntFilter<"ExternalApiConfig"> | number
+    lastUsedAt?: DateTimeNullableFilter<"ExternalApiConfig"> | Date | string | null
+    quotaConfig?: JsonNullableFilter<"ExternalApiConfig">
+    createdAt?: DateTimeFilter<"ExternalApiConfig"> | Date | string
+    updatedAt?: DateTimeFilter<"ExternalApiConfig"> | Date | string
+  }
+
+  export type ExternalApiConfigOrderByWithRelationInput = {
+    id?: SortOrder
+    name?: SortOrder
+    displayName?: SortOrder
+    description?: SortOrderInput | SortOrder
+    provider?: SortOrder
+    apiConfig?: SortOrder
+    isEncrypted?: SortOrder
+    isEnabled?: SortOrder
+    isActive?: SortOrder
+    totalCalls?: SortOrder
+    successCalls?: SortOrder
+    failedCalls?: SortOrder
+    lastUsedAt?: SortOrderInput | SortOrder
+    quotaConfig?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type ExternalApiConfigWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    name?: string
+    AND?: ExternalApiConfigWhereInput | ExternalApiConfigWhereInput[]
+    OR?: ExternalApiConfigWhereInput[]
+    NOT?: ExternalApiConfigWhereInput | ExternalApiConfigWhereInput[]
+    displayName?: StringFilter<"ExternalApiConfig"> | string
+    description?: StringNullableFilter<"ExternalApiConfig"> | string | null
+    provider?: StringFilter<"ExternalApiConfig"> | string
+    apiConfig?: JsonFilter<"ExternalApiConfig">
+    isEncrypted?: BoolFilter<"ExternalApiConfig"> | boolean
+    isEnabled?: BoolFilter<"ExternalApiConfig"> | boolean
+    isActive?: BoolFilter<"ExternalApiConfig"> | boolean
+    totalCalls?: IntFilter<"ExternalApiConfig"> | number
+    successCalls?: IntFilter<"ExternalApiConfig"> | number
+    failedCalls?: IntFilter<"ExternalApiConfig"> | number
+    lastUsedAt?: DateTimeNullableFilter<"ExternalApiConfig"> | Date | string | null
+    quotaConfig?: JsonNullableFilter<"ExternalApiConfig">
+    createdAt?: DateTimeFilter<"ExternalApiConfig"> | Date | string
+    updatedAt?: DateTimeFilter<"ExternalApiConfig"> | Date | string
+  }, "id" | "name">
+
+  export type ExternalApiConfigOrderByWithAggregationInput = {
+    id?: SortOrder
+    name?: SortOrder
+    displayName?: SortOrder
+    description?: SortOrderInput | SortOrder
+    provider?: SortOrder
+    apiConfig?: SortOrder
+    isEncrypted?: SortOrder
+    isEnabled?: SortOrder
+    isActive?: SortOrder
+    totalCalls?: SortOrder
+    successCalls?: SortOrder
+    failedCalls?: SortOrder
+    lastUsedAt?: SortOrderInput | SortOrder
+    quotaConfig?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: ExternalApiConfigCountOrderByAggregateInput
+    _avg?: ExternalApiConfigAvgOrderByAggregateInput
+    _max?: ExternalApiConfigMaxOrderByAggregateInput
+    _min?: ExternalApiConfigMinOrderByAggregateInput
+    _sum?: ExternalApiConfigSumOrderByAggregateInput
+  }
+
+  export type ExternalApiConfigScalarWhereWithAggregatesInput = {
+    AND?: ExternalApiConfigScalarWhereWithAggregatesInput | ExternalApiConfigScalarWhereWithAggregatesInput[]
+    OR?: ExternalApiConfigScalarWhereWithAggregatesInput[]
+    NOT?: ExternalApiConfigScalarWhereWithAggregatesInput | ExternalApiConfigScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"ExternalApiConfig"> | string
+    name?: StringWithAggregatesFilter<"ExternalApiConfig"> | string
+    displayName?: StringWithAggregatesFilter<"ExternalApiConfig"> | string
+    description?: StringNullableWithAggregatesFilter<"ExternalApiConfig"> | string | null
+    provider?: StringWithAggregatesFilter<"ExternalApiConfig"> | string
+    apiConfig?: JsonWithAggregatesFilter<"ExternalApiConfig">
+    isEncrypted?: BoolWithAggregatesFilter<"ExternalApiConfig"> | boolean
+    isEnabled?: BoolWithAggregatesFilter<"ExternalApiConfig"> | boolean
+    isActive?: BoolWithAggregatesFilter<"ExternalApiConfig"> | boolean
+    totalCalls?: IntWithAggregatesFilter<"ExternalApiConfig"> | number
+    successCalls?: IntWithAggregatesFilter<"ExternalApiConfig"> | number
+    failedCalls?: IntWithAggregatesFilter<"ExternalApiConfig"> | number
+    lastUsedAt?: DateTimeNullableWithAggregatesFilter<"ExternalApiConfig"> | Date | string | null
+    quotaConfig?: JsonNullableWithAggregatesFilter<"ExternalApiConfig">
+    createdAt?: DateTimeWithAggregatesFilter<"ExternalApiConfig"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"ExternalApiConfig"> | Date | string
   }
 
   export type SearchEngineConfigWhereInput = {
@@ -13910,6 +15304,139 @@ export namespace Prisma {
     modelConfig?: JsonNullValueInput | InputJsonValue
     isActive?: BoolFieldUpdateOperationsInput | boolean
     isEnabled?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ExternalApiConfigCreateInput = {
+    id?: string
+    name: string
+    displayName: string
+    description?: string | null
+    provider: string
+    apiConfig: JsonNullValueInput | InputJsonValue
+    isEncrypted?: boolean
+    isEnabled?: boolean
+    isActive?: boolean
+    totalCalls?: number
+    successCalls?: number
+    failedCalls?: number
+    lastUsedAt?: Date | string | null
+    quotaConfig?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type ExternalApiConfigUncheckedCreateInput = {
+    id?: string
+    name: string
+    displayName: string
+    description?: string | null
+    provider: string
+    apiConfig: JsonNullValueInput | InputJsonValue
+    isEncrypted?: boolean
+    isEnabled?: boolean
+    isActive?: boolean
+    totalCalls?: number
+    successCalls?: number
+    failedCalls?: number
+    lastUsedAt?: Date | string | null
+    quotaConfig?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type ExternalApiConfigUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    displayName?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    provider?: StringFieldUpdateOperationsInput | string
+    apiConfig?: JsonNullValueInput | InputJsonValue
+    isEncrypted?: BoolFieldUpdateOperationsInput | boolean
+    isEnabled?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    totalCalls?: IntFieldUpdateOperationsInput | number
+    successCalls?: IntFieldUpdateOperationsInput | number
+    failedCalls?: IntFieldUpdateOperationsInput | number
+    lastUsedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    quotaConfig?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ExternalApiConfigUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    displayName?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    provider?: StringFieldUpdateOperationsInput | string
+    apiConfig?: JsonNullValueInput | InputJsonValue
+    isEncrypted?: BoolFieldUpdateOperationsInput | boolean
+    isEnabled?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    totalCalls?: IntFieldUpdateOperationsInput | number
+    successCalls?: IntFieldUpdateOperationsInput | number
+    failedCalls?: IntFieldUpdateOperationsInput | number
+    lastUsedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    quotaConfig?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ExternalApiConfigCreateManyInput = {
+    id?: string
+    name: string
+    displayName: string
+    description?: string | null
+    provider: string
+    apiConfig: JsonNullValueInput | InputJsonValue
+    isEncrypted?: boolean
+    isEnabled?: boolean
+    isActive?: boolean
+    totalCalls?: number
+    successCalls?: number
+    failedCalls?: number
+    lastUsedAt?: Date | string | null
+    quotaConfig?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type ExternalApiConfigUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    displayName?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    provider?: StringFieldUpdateOperationsInput | string
+    apiConfig?: JsonNullValueInput | InputJsonValue
+    isEncrypted?: BoolFieldUpdateOperationsInput | boolean
+    isEnabled?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    totalCalls?: IntFieldUpdateOperationsInput | number
+    successCalls?: IntFieldUpdateOperationsInput | number
+    failedCalls?: IntFieldUpdateOperationsInput | number
+    lastUsedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    quotaConfig?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ExternalApiConfigUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    displayName?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    provider?: StringFieldUpdateOperationsInput | string
+    apiConfig?: JsonNullValueInput | InputJsonValue
+    isEncrypted?: BoolFieldUpdateOperationsInput | boolean
+    isEnabled?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    totalCalls?: IntFieldUpdateOperationsInput | number
+    successCalls?: IntFieldUpdateOperationsInput | number
+    failedCalls?: IntFieldUpdateOperationsInput | number
+    lastUsedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    quotaConfig?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -15264,6 +16791,71 @@ export namespace Prisma {
     isEnabled?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+  }
+
+  export type ExternalApiConfigCountOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    displayName?: SortOrder
+    description?: SortOrder
+    provider?: SortOrder
+    apiConfig?: SortOrder
+    isEncrypted?: SortOrder
+    isEnabled?: SortOrder
+    isActive?: SortOrder
+    totalCalls?: SortOrder
+    successCalls?: SortOrder
+    failedCalls?: SortOrder
+    lastUsedAt?: SortOrder
+    quotaConfig?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type ExternalApiConfigAvgOrderByAggregateInput = {
+    totalCalls?: SortOrder
+    successCalls?: SortOrder
+    failedCalls?: SortOrder
+  }
+
+  export type ExternalApiConfigMaxOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    displayName?: SortOrder
+    description?: SortOrder
+    provider?: SortOrder
+    isEncrypted?: SortOrder
+    isEnabled?: SortOrder
+    isActive?: SortOrder
+    totalCalls?: SortOrder
+    successCalls?: SortOrder
+    failedCalls?: SortOrder
+    lastUsedAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type ExternalApiConfigMinOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    displayName?: SortOrder
+    description?: SortOrder
+    provider?: SortOrder
+    isEncrypted?: SortOrder
+    isEnabled?: SortOrder
+    isActive?: SortOrder
+    totalCalls?: SortOrder
+    successCalls?: SortOrder
+    failedCalls?: SortOrder
+    lastUsedAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type ExternalApiConfigSumOrderByAggregateInput = {
+    totalCalls?: SortOrder
+    successCalls?: SortOrder
+    failedCalls?: SortOrder
   }
 
   export type SearchEngineConfigCountOrderByAggregateInput = {

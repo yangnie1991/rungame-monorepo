@@ -162,6 +162,25 @@ exports.Prisma.AiConfigScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.ExternalApiConfigScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  displayName: 'displayName',
+  description: 'description',
+  provider: 'provider',
+  apiConfig: 'apiConfig',
+  isEncrypted: 'isEncrypted',
+  isEnabled: 'isEnabled',
+  isActive: 'isActive',
+  totalCalls: 'totalCalls',
+  successCalls: 'successCalls',
+  failedCalls: 'failedCalls',
+  lastUsedAt: 'lastUsedAt',
+  quotaConfig: 'quotaConfig',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SearchEngineConfigScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -349,6 +368,7 @@ exports.Prisma.ModelName = {
   Admin: 'Admin',
   ImportPlatform: 'ImportPlatform',
   AiConfig: 'AiConfig',
+  ExternalApiConfig: 'ExternalApiConfig',
   SearchEngineConfig: 'SearchEngineConfig',
   UrlSubmission: 'UrlSubmission',
   SubmissionBatch: 'SubmissionBatch',

@@ -132,6 +132,74 @@ model AiConfig {
   @@map("ai_configs")
 }
 
+// 外部 API 配置表（Jina, Google Search 等）
+model ExternalApiConfig {
+  id String @id @default(cuid())
+
+  // 基本信息
+  name        String  @unique // 配置名称：google_search, jina_reader, custom_api_name
+  displayName String  @map("display_name") // 显示名称：Google Search API, Jina Reader API
+  description String? @db.Text // 描述信息
+  provider    String // 提供商：google, jina, custom
+
+  // API 配置（JSON 格式存储所有配置项）
+  // 使用 JSON 格式以支持不同 API 的不同配置需求
+  apiConfig Json @map("api_config")
+  // 结构示例（Google Search）:
+  // {
+  //   "apiKey": "[加密的 API Key]",
+  //   "engineId": "xxx",
+  //   "endpoint": "https://www.googleapis.com/customsearch/v1",
+  //   "quota": {
+  //     "daily": 100,
+  //     "current": 23
+  //   }
+  // }
+  //
+  // 结构示例（Jina Reader）:
+  // {
+  //   "apiKey": "[加密的 API Key]",  // 可选
+  //   "endpoint": "https://r.jina.ai",
+  //   "timeout": 20,
+  //   "options": {
+  //     "withGeneratedAlt": true,
+  //     "withImagesSummary": true
+  //   }
+  // }
+
+  // 安全性
+  isEncrypted Boolean @default(true) @map("is_encrypted") // API Key 是否已加密
+
+  // 状态
+  isEnabled Boolean @default(true) @map("is_enabled") // 是否启用
+  isActive  Boolean @default(false) @map("is_active") // 是否为当前激活配置（某些 API 可能有多个配置）
+
+  // 使用统计
+  totalCalls   Int       @default(0) @map("total_calls") // 总调用次数
+  successCalls Int       @default(0) @map("success_calls") // 成功次数
+  failedCalls  Int       @default(0) @map("failed_calls") // 失败次数
+  lastUsedAt   DateTime? @map("last_used_at") // 最后使用时间
+
+  // 配额管理（可选）
+  quotaConfig Json? @map("quota_config")
+  // 结构示例：
+  // {
+  //   "daily": 100,
+  //   "monthly": 3000,
+  //   "resetDate": "2025-01-01T00:00:00Z"
+  // }
+
+  // 时间戳
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([name])
+  @@index([provider])
+  @@index([isEnabled])
+  @@index([isActive])
+  @@map("external_api_configs")
+}
+
 // 搜索引擎配置表
 model SearchEngineConfig {
   id String @id @default(cuid())
