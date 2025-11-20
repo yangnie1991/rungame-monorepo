@@ -117,6 +117,9 @@ export async function readWebPage(url: string, truncate: boolean = true, skipApi
     // 如果有 API Key，添加认证（可选，提高速率限制）
     if (apiKey) {
       headers['Authorization'] = `Bearer ${apiKey}`
+      console.log('[Jina Reader] 请求包含 Authorization 头')
+    } else {
+      console.log('[Jina Reader] 请求不包含 Authorization 头（免费模式）')
     }
 
     // 调用 Jina Reader API
@@ -147,9 +150,13 @@ export async function readWebPage(url: string, truncate: boolean = true, skipApi
           console.log('[Jina Reader] 付费 API 配额用完，自动切换到免费模式')
 
           // 永久切换到 free 模式（后续请求直接使用免费 API）
-          await updateJinaUseMode('free')
+          const updateSuccess = await updateJinaUseMode('free')
 
-          // 本次请求立即重试免费 API
+          if (!updateSuccess) {
+            console.error('[Jina Reader] 切换模式失败，但仍尝试使用免费 API')
+          }
+
+          // 本次请求立即重试免费 API（skipApiKey=true 强制不使用 API Key）
           return await readWebPage(url, truncate, true)
         }
 
