@@ -291,6 +291,86 @@ jobs:
           echo "✅ 所有 Prisma 引擎文件已复制到多个搜索路径"
           echo "=========================================="
 
+          # 🔍 最终验证：检查所有 Prisma 搜索路径中的引擎文件
+          echo ""
+          echo "=========================================="
+          echo "🔍 最终验证 - 检查 Prisma 引擎文件完整性"
+          echo "=========================================="
+
+          VALIDATION_FAILED=false
+
+          # 验证业务数据库引擎文件（3 个位置）
+          echo "📦 业务数据库引擎文件:"
+
+          echo "  位置 1: packages/database/src/generated/client/"
+          ENGINE_PATH_1="apps/admin/.next/standalone/packages/database/src/generated/client"
+          if ls "$ENGINE_PATH_1"/*.node >/dev/null 2>&1; then
+            ENGINE_COUNT_1=$(ls "$ENGINE_PATH_1"/*.node | wc -l)
+            ENGINE_SIZE_1=$(du -sh "$ENGINE_PATH_1"/*.node | head -1 | cut -f1)
+            echo "    ✅ 找到 $ENGINE_COUNT_1 个引擎文件 (大小: $ENGINE_SIZE_1)"
+            ls -lh "$ENGINE_PATH_1"/*.node | head -3
+          else
+            echo "    ❌ 未找到引擎文件"
+            VALIDATION_FAILED=true
+          fi
+
+          echo ""
+          echo "  位置 2: apps/admin/src/generated/client/"
+          ENGINE_PATH_2="apps/admin/.next/standalone/apps/admin/src/generated/client"
+          if ls "$ENGINE_PATH_2"/*.node >/dev/null 2>&1; then
+            ENGINE_COUNT_2=$(ls "$ENGINE_PATH_2"/*.node | wc -l)
+            ENGINE_SIZE_2=$(du -sh "$ENGINE_PATH_2"/*.node | head -1 | cut -f1)
+            echo "    ✅ 找到 $ENGINE_COUNT_2 个引擎文件 (大小: $ENGINE_SIZE_2)"
+            ls -lh "$ENGINE_PATH_2"/*.node | head -3
+          else
+            echo "    ❌ 未找到引擎文件"
+            VALIDATION_FAILED=true
+          fi
+
+          echo ""
+          echo "  位置 3: apps/admin/.next/server/"
+          ENGINE_PATH_3="apps/admin/.next/standalone/apps/admin/.next/server"
+          if ls "$ENGINE_PATH_3"/*.node >/dev/null 2>&1; then
+            ENGINE_COUNT_3=$(ls "$ENGINE_PATH_3"/*.node | wc -l)
+            ENGINE_SIZE_3=$(du -sh "$ENGINE_PATH_3"/*.node | head -1 | cut -f1)
+            echo "    ✅ 找到 $ENGINE_COUNT_3 个引擎文件 (大小: $ENGINE_SIZE_3)"
+            ls -lh "$ENGINE_PATH_3"/*.node | head -3
+          else
+            echo "    ⚠️  未找到引擎文件（此位置为备用，非必需）"
+          fi
+
+          echo ""
+          echo "📦 管理数据库引擎文件:"
+          echo "  位置: apps/admin/lib/generated/prisma-client/"
+          ENGINE_PATH_4="apps/admin/.next/standalone/apps/admin/lib/generated/prisma-client"
+          if ls "$ENGINE_PATH_4"/*.node >/dev/null 2>&1; then
+            ENGINE_COUNT_4=$(ls "$ENGINE_PATH_4"/*.node | wc -l)
+            ENGINE_SIZE_4=$(du -sh "$ENGINE_PATH_4"/*.node | head -1 | cut -f1)
+            echo "    ✅ 找到 $ENGINE_COUNT_4 个引擎文件 (大小: $ENGINE_SIZE_4)"
+            ls -lh "$ENGINE_PATH_4"/*.node | head -3
+          else
+            echo "    ❌ 未找到引擎文件"
+            VALIDATION_FAILED=true
+          fi
+
+          echo ""
+          echo "=========================================="
+
+          if [ "$VALIDATION_FAILED" = true ]; then
+            echo "❌ 引擎文件验证失败！某些必需的引擎文件未找到"
+            echo ""
+            echo "📋 调试信息 - 检查源文件:"
+            echo "业务数据库源文件:"
+            ls -lh packages/database/src/generated/client/*.node 2>/dev/null | head -3 || echo "  源文件不存在"
+            echo "管理数据库源文件:"
+            ls -lh apps/admin/lib/generated/prisma-client/*.node 2>/dev/null | head -3 || echo "  源文件不存在"
+            exit 1
+          else
+            echo "✅ 所有引擎文件验证通过"
+          fi
+
+          echo "=========================================="
+
           echo "✅ Standalone 目录准备完成:"
           ls -la apps/admin/.next/standalone/apps/admin/
           echo "Standalone 大小: $(du -sh apps/admin/.next/standalone | cut -f1)"
@@ -719,6 +799,70 @@ jobs:
             else
               echo "⚠️  警告: 静态资源可能缺失"
             fi
+
+            # 🔍 验证 Prisma 引擎文件（VPS 端）
+            echo ""
+            echo "=========================================="
+            echo "🔍 VPS 端验证 - Prisma 引擎文件"
+            echo "=========================================="
+
+            VPS_VALIDATION_FAILED=false
+
+            # 验证业务数据库引擎文件
+            echo "📦 业务数据库引擎文件:"
+
+            echo "  位置 1: packages/database/src/generated/client/"
+            if ls apps/admin/.next/standalone/packages/database/src/generated/client/*.node >/dev/null 2>&1; then
+              ENGINE_COUNT=$(ls apps/admin/.next/standalone/packages/database/src/generated/client/*.node | wc -l)
+              echo "    ✅ 找到 $ENGINE_COUNT 个引擎文件"
+              ls -lh apps/admin/.next/standalone/packages/database/src/generated/client/*.node | head -2
+            else
+              echo "    ❌ 未找到引擎文件"
+              VPS_VALIDATION_FAILED=true
+            fi
+
+            echo ""
+            echo "  位置 2: apps/admin/src/generated/client/"
+            if ls apps/admin/.next/standalone/apps/admin/src/generated/client/*.node >/dev/null 2>&1; then
+              ENGINE_COUNT=$(ls apps/admin/.next/standalone/apps/admin/src/generated/client/*.node | wc -l)
+              echo "    ✅ 找到 $ENGINE_COUNT 个引擎文件"
+              ls -lh apps/admin/.next/standalone/apps/admin/src/generated/client/*.node | head -2
+            else
+              echo "    ❌ 未找到引擎文件"
+              VPS_VALIDATION_FAILED=true
+            fi
+
+            echo ""
+            echo "📦 管理数据库引擎文件:"
+            echo "  位置: apps/admin/lib/generated/prisma-client/"
+            if ls apps/admin/.next/standalone/apps/admin/lib/generated/prisma-client/*.node >/dev/null 2>&1; then
+              ENGINE_COUNT=$(ls apps/admin/.next/standalone/apps/admin/lib/generated/prisma-client/*.node | wc -l)
+              echo "    ✅ 找到 $ENGINE_COUNT 个引擎文件"
+              ls -lh apps/admin/.next/standalone/apps/admin/lib/generated/prisma-client/*.node | head -2
+            else
+              echo "    ❌ 未找到引擎文件"
+              VPS_VALIDATION_FAILED=true
+            fi
+
+            echo ""
+            echo "=========================================="
+
+            if [ "$VPS_VALIDATION_FAILED" = true ]; then
+              echo "❌ VPS 端引擎文件验证失败！"
+              echo "某些 Prisma 引擎文件未成功传输到 VPS"
+              echo ""
+              echo "📋 目录结构检查:"
+              echo "Standalone 目录:"
+              ls -la apps/admin/.next/standalone/apps/admin/ 2>/dev/null || echo "  目录不存在"
+              echo ""
+              echo "请检查构建和打包步骤是否正常执行"
+              exit 1
+            else
+              echo "✅ VPS 端所有 Prisma 引擎文件验证通过"
+            fi
+
+            echo "=========================================="
+            echo ""
 
             # 配置环境变量
             echo "⚙️  配置环境变量..."
