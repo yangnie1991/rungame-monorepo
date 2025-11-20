@@ -208,6 +208,13 @@ jobs:
       # 6. 构建应用
       # ==========================================
       - name: 🔨 Build applications
+        env:
+          # 构建时需要的环境变量（用于 Next.js 预渲染）
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CACHE_DATABASE_URL: ${{ secrets.CACHE_DATABASE_URL }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
         run: |
           echo "开始构建 Admin 应用..."
           pnpm build:admin

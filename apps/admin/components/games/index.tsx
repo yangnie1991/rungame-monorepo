@@ -3,7 +3,7 @@ export { GameForm, GameBasicInfo, GameTranslationContent, GameMediaSection } fro
 
 // 导出其他游戏相关组件
 export { DeleteGameButton } from './DeleteGameButton'
-export { ToggleGameStatus } from './ToggleGameStatus'
+export { ToggleGamePublishStatus, ToggleGameFeaturedStatus } from './ToggleGameStatus'
 
 // 导出 AI 生成相关组件
 export { BatchGenerateDialog } from './BatchGenerateDialog'
