@@ -7,10 +7,15 @@
  * 文档: https://jina.ai/reader
  * 免费使用，可选 API Key 提高速率限制
  *
+ * 配置方式：
+ * 在管理后台配置（/admin/external-apis）
+ *
  * 本地开发代理设置:
  * - 使用 TUN 模式（推荐）或系统代理
  * - 详见: PROXY-QUICKSTART.md
  */
+
+import { getJinaReaderConfig, recordApiCall } from '@/lib/external-api-config'
 
 export interface JinaReaderResult {
   url: string           // 原始 URL
@@ -37,23 +42,40 @@ export interface JinaReaderResult {
  */
 export async function readWebPage(url: string, truncate: boolean = true): Promise<JinaReaderResult> {
   try {
+    // 从数据库获取配置
+    const dbConfig = await getJinaReaderConfig()
+
+    const apiKey = dbConfig.apiKey
+    const endpoint = dbConfig.endpoint || 'https://r.jina.ai'
+    const timeout = dbConfig.timeout || 20
+    const options = dbConfig.options || {
+      withGeneratedAlt: true,
+      withImagesSummary: true,
+      withLinksSummary: false
+    }
+
+    if (apiKey) {
+      console.log('[Jina Reader] 使用数据库配置（带 API Key）')
+    } else {
+      console.log('[Jina Reader] 使用数据库配置（免费模式）')
+    }
+
     // 构建 Jina Reader URL
-    // 只需在 URL 前加上 r.jina.ai/ 即可
-    const jinaUrl = `https://r.jina.ai/${url}`
+    const jinaUrl = `${endpoint}/${url}`
 
     // 构建请求头
     const headers: Record<string, string> = {
       'Accept': 'text/markdown',
       'X-Return-Format': 'markdown',
-      'X-Timeout': '20',  // 20秒超时
-      'X-With-Generated-Alt': 'true',  // 为图片生成 alt 文本
-      'X-With-Images-Summary': 'true',  // 将图片移到文档最后的 "Images:" 部分
-      'X-With-Links-Summary': 'false'  // 不需要链接摘要
+      'X-Timeout': String(timeout),
+      'X-With-Generated-Alt': String(options.withGeneratedAlt),
+      'X-With-Images-Summary': String(options.withImagesSummary),
+      'X-With-Links-Summary': String(options.withLinksSummary)
     }
 
     // 如果有 API Key，添加认证（可选，提高速率限制）
-    if (process.env.JINA_API_KEY) {
-      headers['Authorization'] = `Bearer ${process.env.JINA_API_KEY}`
+    if (apiKey) {
+      headers['Authorization'] = `Bearer ${apiKey}`
     }
 
     // 调用 Jina Reader API
@@ -64,6 +86,9 @@ export async function readWebPage(url: string, truncate: boolean = true): Promis
 
     // 处理错误响应
     if (!response.ok) {
+      // 记录失败
+      await recordApiCall('jina_reader', false).catch(() => {})
+
       // 401 认证失败
       if (response.status === 401) {
         throw new Error('Jina API Key 无效或已过期。请检查 JINA_API_KEY 环境变量，或移除该配置使用免费模式')
@@ -139,6 +164,9 @@ export async function readWebPage(url: string, truncate: boolean = true): Promis
 
     console.log(`[Jina Reader] ✓ ${url} - ${wordCount} 词`)
 
+    // 记录成功
+    await recordApiCall('jina_reader', true).catch(() => {})
+
     return {
       url,
       title,
@@ -148,6 +176,9 @@ export async function readWebPage(url: string, truncate: boolean = true): Promis
 
   } catch (error: any) {
     console.error(`[Jina Reader] ✗ ${url}:`, error.message)
+
+    // 记录失败（如果错误不是在 recordApiCall 之后发生的）
+    await recordApiCall('jina_reader', false).catch(() => {})
 
     // 返回失败结果（不抛出错误，允许部分失败）
     return {

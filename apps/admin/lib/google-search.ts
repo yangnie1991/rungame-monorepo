@@ -5,10 +5,15 @@
  *
  * 文档: https://developers.google.com/custom-search/v1/introduction
  *
+ * 配置方式：
+ * 在管理后台配置（/admin/external-apis）
+ *
  * 本地开发代理设置:
  * - 使用 TUN 模式（推荐）或系统代理
  * - 详见: PROXY-QUICKSTART.md
  */
+
+import { getGoogleSearchConfig, recordApiCall } from '@/lib/external-api-config'
 
 export interface GoogleSearchResult {
   rank: number       // 排名（1-N）
@@ -34,19 +39,23 @@ export async function searchGoogleTopPages(
   topN: number = 5,
   locale: string = 'en'
 ): Promise<GoogleSearchResult[]> {
-  // 验证环境变量
-  const apiKey = process.env.GOOGLE_SEARCH_API_KEY
-  const engineId = process.env.GOOGLE_SEARCH_ENGINE_ID
+  // 从数据库获取配置
+  const dbConfig = await getGoogleSearchConfig()
 
-  if (!apiKey || !engineId) {
+  if (!dbConfig) {
     console.warn(
       '[Google Search] API 未配置，跳过搜索功能\n' +
-      '提示：配置 Google Search API 可以提升 GamePix 导入内容质量\n' +
-      '参考文档: docs/GOOGLE-SEARCH-API-SETUP.md'
+      '提示：在管理后台配置 Google Search API 可以提升 GamePix 导入内容质量\n' +
+      '配置路径: /admin/external-apis'
     )
-    // 返回空数组而不是抛出错误，允许优雅降级
     return []
   }
+
+  const apiKey = dbConfig.apiKey
+  const engineId = dbConfig.engineId
+  const endpoint = dbConfig.endpoint || 'https://www.googleapis.com/customsearch/v1'
+
+  console.log('[Google Search] 使用数据库配置')
 
   // 语言映射
   const langMap: Record<string, string> = {
@@ -66,7 +75,7 @@ export async function searchGoogleTopPages(
   try {
     // 调用 Google Custom Search API
     const response = await fetch(
-      `https://www.googleapis.com/customsearch/v1?${params}`,
+      `${endpoint}?${params}`,
       {
         signal: AbortSignal.timeout(10000)  // 10秒超时
       }
@@ -75,6 +84,9 @@ export async function searchGoogleTopPages(
     // 处理 API 错误
     if (!response.ok) {
       const error = await response.text()
+
+      // 记录失败
+      await recordApiCall('google_search', false).catch(() => {})
 
       // 特殊处理配额错误
       if (response.status === 429 || error.includes('quota')) {
@@ -93,6 +105,8 @@ export async function searchGoogleTopPages(
     // 检查是否有结果
     if (!data.items || data.items.length === 0) {
       console.warn(`[Google Search] 关键词 "${keyword}" 未找到结果`)
+      // 记录成功（虽然没结果，但API调用成功）
+      await recordApiCall('google_search', true).catch(() => {})
       return []
     }
 
@@ -107,6 +121,9 @@ export async function searchGoogleTopPages(
       }))
 
     console.log(`[Google Search] ✓ 找到 ${results.length} 个结果`)
+
+    // 记录成功
+    await recordApiCall('google_search', true).catch(() => {})
 
     return results
 

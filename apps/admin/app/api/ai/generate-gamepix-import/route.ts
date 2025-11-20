@@ -12,10 +12,6 @@ class SSEEncoder {
   encode(data: any): Uint8Array {
     return this.encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
   }
-
-  encodeEvent(event: string, data: any): Uint8Array {
-    return this.encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
-  }
 }
 
 /**
@@ -170,7 +166,8 @@ export async function POST(request: NextRequest) {
       async start(controller) {
         try {
           // 发送开始事件
-          controller.enqueue(encoder.encodeEvent('start', {
+          controller.enqueue(encoder.encode({
+            event: 'start',
             totalSteps,
             mode,
             gameTitle
@@ -183,7 +180,7 @@ export async function POST(request: NextRequest) {
             console.log(`[GamePix Import] ${message}`)
 
             // 推送进度更新
-            controller.enqueue(encoder.encodeEvent('progress', {
+            controller.enqueue(encoder.encode({
               step,
               total,
               message,
@@ -191,8 +188,59 @@ export async function POST(request: NextRequest) {
             }))
           }
 
+          // 警告回调 - 发送警告事件并等待用户确认
+          const onWarning = async (
+            type: 'google_search' | 'jina_reader' | 'no_data',
+            message: string
+          ): Promise<boolean> => {
+            console.log(`[GamePix Import] ⚠️  警告: ${type} - ${message}`)
+
+            // 发送警告事件到前端
+            controller.enqueue(encoder.encode({
+              type,
+              message,
+              timestamp: new Date().toISOString()
+            }))
+
+            // 创建一个 Promise，用于等待用户确认
+            return new Promise<boolean>((resolve) => {
+              // 设置一个检查间隔，检测连接是否被关闭
+              let checkCount = 0
+              const maxChecks = 600 // 最多等待 60 秒（100ms * 600）
+
+              const checkInterval = setInterval(() => {
+                checkCount++
+
+                // 如果连接已关闭（用户取消）
+                if (controller.desiredSize === null || checkCount >= maxChecks) {
+                  clearInterval(checkInterval)
+                  resolve(false) // 返回 false 表示取消
+                  return
+                }
+
+                // 超过 60 秒，自动继续
+                if (checkCount >= maxChecks) {
+                  clearInterval(checkInterval)
+                  console.log('[GamePix Import] 等待超时，自动继续')
+                  resolve(true)
+                }
+              }, 100)
+
+              // 如果用户选择继续（不关闭连接），5秒后自动继续
+              // 这里我们假设用户在前端点击"继续"后不会关闭连接
+              // 前端需要在点击"继续"后发送一个信号
+              // 但由于 SSE 是单向的，我们改为：
+              // - 用户点击"取消" -> 关闭连接
+              // - 用户点击"继续" -> 不关闭连接，等待几秒后自动继续
+              setTimeout(() => {
+                clearInterval(checkInterval)
+                resolve(true) // 默认 5 秒后继续
+              }, 5000)
+            })
+          }
+
           // 调用生成函数
-          const result = await generateGamePixImportContent(input, onProgress)
+          const result = await generateGamePixImportContent(input, onProgress, onWarning)
 
           console.log('[GamePix Import] ✅ 生成完成')
           console.log(`  - 生成字段: 9 个`)
@@ -200,7 +248,7 @@ export async function POST(request: NextRequest) {
           console.log(`  - keywords: ${result.keywords}`)
 
           // 发送完成事件，包含完整数据
-          controller.enqueue(encoder.encodeEvent('complete', {
+          controller.enqueue(encoder.encode({
             success: true,
             data: result,
             stepsCompleted: currentStep,
@@ -213,7 +261,7 @@ export async function POST(request: NextRequest) {
           console.error('[GamePix Import] 生成失败:', error)
 
           // 发送错误事件
-          controller.enqueue(encoder.encodeEvent('error', {
+          controller.enqueue(encoder.encode({
             success: false,
             error: error.message || '生成失败'
           }))

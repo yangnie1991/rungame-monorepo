@@ -432,6 +432,155 @@ cat /etc/logrotate.d/nginx
 
 ---
 
+## 🔑 外部 API 配置管理
+
+### 概述
+
+从 v1.1 版本开始，**Google Search API** 和 **Jina Reader API** 的密钥已从环境变量迁移到数据库存储，提供以下优势：
+
+- ✅ **集中管理**：通过管理后台 Web 界面配置，无需修改环境变量
+- ✅ **加密存储**：API Key 使用 AES-256-GCM 加密存储在数据库中
+- ✅ **使用统计**：自动记录 API 调用次数和成功率
+- ✅ **向后兼容**：仍支持从环境变量读取（回退机制）
+- ✅ **热更新**：配置修改后立即生效，无需重启应用
+
+### 配置方式
+
+#### 方式一：通过管理后台配置（推荐）
+
+1. **登录管理后台**：`https://admin.rungame.online/login`
+
+2. **进入外部 API 配置页面**：导航到 `/admin/external-apis`
+
+3. **添加 Google Search API 配置**：
+
+   点击"添加配置"按钮，填写以下信息：
+
+   ```json
+   {
+     "配置名称": "google_search",
+     "显示名称": "Google Search API",
+     "提供商": "google",
+     "描述": "用于 GamePix 游戏导入时的 SEO 关键词搜索",
+     "API 配置": {
+       "apiKey": "your-google-api-key",
+       "engineId": "your-search-engine-id",
+       "endpoint": "https://www.googleapis.com/customsearch/v1"
+     }
+   }
+   ```
+
+4. **添加 Jina Reader API 配置**：
+
+   ```json
+   {
+     "配置名称": "jina_reader",
+     "显示名称": "Jina Reader API",
+     "提供商": "jina",
+     "描述": "用于将网页转换为 LLM 友好的 Markdown 格式",
+     "API 配置": {
+       "apiKey": "your-jina-api-key",
+       "endpoint": "https://r.jina.ai",
+       "timeout": 20,
+       "options": {
+         "withGeneratedAlt": true,
+         "withImagesSummary": true,
+         "withLinksSummary": false
+       }
+     }
+   }
+   ```
+
+   **注意**：Jina Reader API Key 是可选的，不配置则使用免费模式。
+
+5. **启用并激活配置**：
+   - 勾选"启用配置"开关
+   - 勾选"激活配置"开关（系统只会使用激活的配置）
+
+#### 方式二：通过环境变量配置（向后兼容）
+
+如果管理后台未配置，系统会自动回退到环境变量：
+
+**在 `.env.local` 或 Docker 环境变量中添加**：
+
+```bash
+# Google Search API（可选，用于 GamePix 导入优化）
+GOOGLE_SEARCH_API_KEY="your-google-api-key"
+GOOGLE_SEARCH_ENGINE_ID="your-search-engine-id"
+
+# Jina Reader API（可选，用于网页内容提取）
+JINA_API_KEY="your-jina-api-key"
+```
+
+**Docker Compose 配置示例**：
+
+```yaml
+services:
+  admin:
+    environment:
+      - GOOGLE_SEARCH_API_KEY=your-google-api-key
+      - GOOGLE_SEARCH_ENGINE_ID=your-search-engine-id
+      - JINA_API_KEY=your-jina-api-key
+```
+
+### 优先级说明
+
+系统按以下顺序读取配置：
+
+1. **数据库配置**（优先）- 从 `ExternalApiConfig` 表读取
+2. **环境变量配置**（回退）- 从 `process.env` 读取
+3. **默认配置/跳过**（最后）- 使用默认值或跳过该功能
+
+### 查看使用统计
+
+在管理后台 `/admin/external-apis` 页面，可以查看每个 API 的：
+
+- 总调用次数
+- 成功调用次数
+- 失败调用次数
+- 成功率百分比
+- 最后使用时间
+
+点击"统计"按钮可查看详细信息，点击"重置统计"可清零计数。
+
+### 安全注意事项
+
+1. **加密密钥**：确保 `ENCRYPTION_KEY` 环境变量已设置且足够复杂
+
+   ```bash
+   # 生成强加密密钥（32字节随机字符串）
+   openssl rand -base64 32
+   ```
+
+2. **数据库访问**：`ExternalApiConfig` 表仅管理员可访问
+
+3. **API Key 显示**：管理后台列表页显示掩码版本（`AIza****C5Y`），编辑页显示完整密钥
+
+4. **缓存机制**：配置缓存 5 分钟，修改后自动失效
+
+### 常见问题
+
+**Q: 修改配置后需要重启应用吗？**
+A: 不需要。配置使用 Next.js 缓存机制，修改后最多 5 分钟生效，或立即清除缓存。
+
+**Q: 可以同时使用数据库和环境变量配置吗？**
+A: 可以。数据库配置优先，如果数据库中没有或读取失败，会自动回退到环境变量。
+
+**Q: Jina Reader 不配置 API Key 能用吗？**
+A: 可以。Jina Reader 提供免费模式，不配置 API Key 时使用免费速率限制。
+
+**Q: Google Search API 配额用完了怎么办？**
+A: 免费版每天 100 次，付费版 $5/1000 次。可以在 [Google Cloud Console](https://console.cloud.google.com/apis/api/customsearch.googleapis.com/quotas) 查看配额。
+
+**Q: 如何从环境变量迁移到数据库配置？**
+A:
+1. 登录管理后台，进入 `/admin/external-apis`
+2. 添加新配置，填写环境变量中的 API Key
+3. 启用并激活配置
+4. 验证功能正常后，可以移除环境变量中的配置
+
+---
+
 ## ✅ 部署检查清单
 
 - [ ] 1Panel 面板正常运行

@@ -1127,7 +1127,31 @@ export function GameImportConfirmDialog({
             const data = JSON.parse(jsonStr)
 
             // 处理不同类型的事件
-            if (data.step && data.message) {
+            if (data.type && data.message && (data.type === 'google_search' || data.type === 'jina_reader' || data.type === 'no_data')) {
+              // 警告事件 - 弹框让用户选择
+              const errorMessages: Record<string, string> = {
+                google_search: 'Google Search API 调用失败',
+                jina_reader: 'Jina Reader API 调用失败',
+                no_data: '未能获取竞品数据'
+              }
+
+              const shouldContinue = window.confirm(
+                `⚠️ ${errorMessages[data.type]}\n\n` +
+                `${data.message}\n\n` +
+                `是否继续使用基础模式生成内容？\n\n` +
+                `- 点击"确定"继续生成（不使用竞品数据）\n` +
+                `- 点击"取消"停止导入`
+              )
+
+              if (!shouldContinue) {
+                // 用户选择取消，关闭连接
+                reader.cancel()
+                throw new Error('用户取消操作')
+              }
+
+              // 用户选择继续，更新进度提示
+              setGenerationProgress('继续使用基础模式生成...')
+            } else if (data.step && data.message) {
               // 进度更新
               setGenerationStep(data.step)
               setGenerationTotal(data.total)

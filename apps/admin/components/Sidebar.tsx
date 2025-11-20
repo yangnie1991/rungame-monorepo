@@ -17,6 +17,7 @@ import {
   Bot,
   Settings,
   Share2,
+  Sparkles,
 } from "lucide-react"
 
 interface SubMenuItem {
@@ -55,7 +56,15 @@ const navigation: NavigationItem[] = [
       { name: "Bing (IndexNow)", href: "/admin/seo-submissions/bing" },
     ]
   },
-  { name: "AI 配置", href: "/admin/ai-config", icon: Bot },
+  {
+    name: "AI 配置",
+    href: "/admin/ai-config",
+    icon: Bot,
+    children: [
+      { name: "模型配置", href: "/admin/ai-config" },
+      { name: "外部 API", href: "/admin/external-apis" },
+    ]
+  },
   { name: "网站配置", href: "/admin/site-config", icon: Settings },
 ]
 

@@ -592,11 +592,13 @@ export interface GamePixImportOutput {
  *
  * @param input - 导入输入数据
  * @param onProgress - 进度回调 (step, total, message)
+ * @param onWarning - 警告回调 (type, message) => Promise<boolean> 返回 true 继续，false 取消
  * @returns 生成的9个字段内容
  */
 export async function generateGamePixImportContent(
   input: GamePixImportInput,
-  onProgress?: (step: number, total: number, message: string) => void
+  onProgress?: (step: number, total, message: string) => void,
+  onWarning?: (type: 'google_search' | 'jina_reader' | 'no_data', message: string) => Promise<boolean>
 ): Promise<GamePixImportOutput> {
   const { gameTitle, mainKeyword, subKeywords, originalDescription, markdownContent, locale, mode, aiConfigId, modelId } = input
 
@@ -615,6 +617,9 @@ export async function generateGamePixImportContent(
   onProgress?.(0, totalSteps, '正在搜索竞品网站...')
 
   let filteredWebsites: Array<{ title: string; url: string; content: string; confidence: number; reasoning: string }> = []
+  let hasApiError = false
+  let apiErrorType: 'google_search' | 'jina_reader' | 'no_data' = 'no_data'
+  let apiErrorMessage = ''
 
   try {
     // 导入 Google Search 和 Jina Reader
@@ -625,10 +630,23 @@ export async function generateGamePixImportContent(
     const searchResults = await searchGoogleTopPages(mainKeyword, 5, locale)
     console.log(`[generateGamePixImportContent] 搜索到 ${searchResults.length} 个结果`)
 
-    if (searchResults.length > 0) {
+    if (searchResults.length === 0) {
+      // Google Search 没有返回结果
+      hasApiError = true
+      apiErrorType = 'google_search'
+      apiErrorMessage = 'Google Search API 未返回任何结果。可能原因：API Key 未配置、配额已用完或搜索无结果。'
+    } else {
       // 读取页面内容
       const urls = searchResults.map(r => r.url)
       const readResults = await readMultiplePages(urls)
+
+      // 检查 Jina Reader 是否成功
+      const successfulReads = readResults.filter(r => r.content && r.content.length > 0)
+      if (successfulReads.length === 0) {
+        hasApiError = true
+        apiErrorType = 'jina_reader'
+        apiErrorMessage = 'Jina Reader API 未能读取任何网页内容。可能原因：API 限流、网页无法访问或内容解析失败。'
+      }
 
       const webContents = searchResults.map((r, i) => ({
         title: r.title,
@@ -637,12 +655,46 @@ export async function generateGamePixImportContent(
       }))
 
       // 使用 AI 过滤游戏网站
-      onProgress?.(0, totalSteps, '正在过滤游戏网站...')
-      filteredWebsites = await filterGameWebsites(webContents, gameTitle, locale)
-      console.log(`[generateGamePixImportContent] 过滤后剩余 ${filteredWebsites.length} 个游戏网站`)
+      if (!hasApiError) {
+        onProgress?.(0, totalSteps, '正在过滤游戏网站...')
+        filteredWebsites = await filterGameWebsites(webContents, gameTitle, locale)
+        console.log(`[generateGamePixImportContent] 过滤后剩余 ${filteredWebsites.length} 个游戏网站`)
+
+        if (filteredWebsites.length === 0) {
+          hasApiError = true
+          apiErrorType = 'no_data'
+          apiErrorMessage = '未能找到相关的游戏网站内容。'
+        }
+      }
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('[generateGamePixImportContent] 获取竞品数据失败:', error)
+    hasApiError = true
+
+    // 判断错误类型
+    if (error.message?.includes('Google Search') || error.message?.includes('API Key')) {
+      apiErrorType = 'google_search'
+      apiErrorMessage = `Google Search API 调用失败：${error.message}`
+    } else if (error.message?.includes('Jina') || error.message?.includes('读取')) {
+      apiErrorType = 'jina_reader'
+      apiErrorMessage = `Jina Reader API 调用失败：${error.message}`
+    } else {
+      apiErrorType = 'no_data'
+      apiErrorMessage = `获取竞品数据失败：${error.message}`
+    }
+  }
+
+  // 如果有 API 错误且提供了警告回调，询问用户是否继续
+  if (hasApiError && onWarning) {
+    console.log(`[generateGamePixImportContent] 检测到 API 错误，询问用户是否继续...`)
+    const shouldContinue = await onWarning(apiErrorType, apiErrorMessage)
+
+    if (!shouldContinue) {
+      throw new Error('用户取消操作')
+    }
+
+    console.log('[generateGamePixImportContent] 用户选择继续，使用基础模式生成...')
+  } else if (hasApiError) {
     console.log('[generateGamePixImportContent] 继续使用基础模式生成...')
   }
 

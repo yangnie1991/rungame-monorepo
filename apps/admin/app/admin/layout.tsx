@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { AdminSidebar } from "@/components/Sidebar"
 import { AdminHeader } from "@/components/Header"
+import { Toaster } from "@/components/ui/toaster"
 
 // 强制动态渲染，避免在构建时执行数据库查询
 export const dynamic = 'force-dynamic'
@@ -28,6 +29,7 @@ export default async function AdminLayout({
           </div>
         </main>
       </div>
+      <Toaster />
     </div>
   )
 }
