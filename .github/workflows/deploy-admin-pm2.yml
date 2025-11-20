@@ -136,25 +136,25 @@ jobs:
           echo "目标平台: $BINARY_TARGET"
           echo ""
 
-          # 备份原始 schema 文件
+          # 备份原始 schema 文件（业务数据库 + 管理数据库）
           cp packages/database/prisma/schema.prisma packages/database/prisma/schema.prisma.backup
-          cp packages/database/prisma/schema-admin.prisma packages/database/prisma/schema-admin.prisma.backup
+          cp apps/admin/prisma/schema.prisma apps/admin/prisma/schema.prisma.backup
 
           # 🔥 关键：删除旧的生成文件（防止缓存干扰）
           echo "🗑️  删除旧的 Prisma Client 生成文件..."
           rm -rf packages/database/src/generated/client
-          rm -rf packages/database/src/generated/prisma-admin
+          rm -rf apps/admin/lib/generated/prisma-client
           echo "✅ 旧文件已删除"
           echo ""
 
           # 动态修改 binaryTargets（只生成 VPS 目标平台，不生成 native）
-          echo "📝 修改 schema.prisma 的 binaryTargets..."
+          echo "📝 修改业务数据库 schema.prisma 的 binaryTargets..."
           sed -i "s/binaryTargets = \[.*\]/binaryTargets = [\"$BINARY_TARGET\"]/" \
             packages/database/prisma/schema.prisma
 
-          echo "📝 修改 schema-admin.prisma 的 binaryTargets..."
+          echo "📝 修改管理数据库 schema.prisma 的 binaryTargets..."
           sed -i "s/binaryTargets = \[.*\]/binaryTargets = [\"$BINARY_TARGET\"]/" \
-            packages/database/prisma/schema-admin.prisma
+            apps/admin/prisma/schema.prisma
 
           # 显示修改后的配置
           echo ""
@@ -172,22 +172,22 @@ jobs:
           echo "✅ 生成完成，检查二进制文件:"
           echo "=========================================="
 
-          CLIENT_DIR="packages/database/src/generated/client"
-          ADMIN_DIR="packages/database/src/generated/prisma-admin"
+          BUSINESS_CLIENT_DIR="packages/database/src/generated/client"
+          ADMIN_CLIENT_DIR="apps/admin/lib/generated/prisma-client"
 
-          if [ -d "$CLIENT_DIR" ]; then
-            echo "📦 Client 目录:"
-            ls -lh $CLIENT_DIR | grep -E "\.(so|node)" || echo "⚠️  未找到二进制文件"
-            BINARY_SIZE=$(du -sh $CLIENT_DIR | cut -f1)
-            echo "总大小: $BINARY_SIZE"
+          if [ -d "$BUSINESS_CLIENT_DIR" ]; then
+            echo "📦 业务数据库 Client 目录:"
+            ls -lh $BUSINESS_CLIENT_DIR | grep -E "\.(so|node)" || echo "⚠️  未找到二进制文件"
+            BUSINESS_SIZE=$(du -sh $BUSINESS_CLIENT_DIR | cut -f1)
+            echo "总大小: $BUSINESS_SIZE"
           fi
 
           echo ""
 
-          if [ -d "$ADMIN_DIR" ]; then
-            echo "📦 Admin 目录:"
-            ls -lh $ADMIN_DIR | grep -E "\.(so|node)" || echo "⚠️  未找到二进制文件"
-            ADMIN_SIZE=$(du -sh $ADMIN_DIR | cut -f1)
+          if [ -d "$ADMIN_CLIENT_DIR" ]; then
+            echo "📦 管理数据库 Client 目录:"
+            ls -lh $ADMIN_CLIENT_DIR | grep -E "\.(so|node)" || echo "⚠️  未找到二进制文件"
+            ADMIN_SIZE=$(du -sh $ADMIN_CLIENT_DIR | cut -f1)
             echo "总大小: $ADMIN_SIZE"
           fi
 
@@ -219,30 +219,31 @@ jobs:
           echo "📋 复制 Prisma 引擎文件到 standalone 目录"
           echo "=========================================="
 
-          # 创建目标目录
-          mkdir -p apps/admin/.next/standalone/apps/admin/src/generated/client
-          mkdir -p apps/admin/.next/standalone/apps/admin/src/generated/prisma-admin
+          # 创建目标目录（业务数据库 + 管理数据库）
+          mkdir -p apps/admin/.next/standalone/packages/database/src/generated/client
+          mkdir -p apps/admin/.next/standalone/apps/admin/lib/generated/prisma-client
 
-          # 复制 client 目录（用于业务数据库）
-          echo "📦 复制 client 目录..."
+          # 复制业务数据库 Prisma Client
+          echo "📦 复制业务数据库 Prisma Client..."
           if [ -d "packages/database/src/generated/client" ]; then
-            cp -r packages/database/src/generated/client/* apps/admin/.next/standalone/apps/admin/src/generated/client/
-            echo "✅ Client 已复制"
-            ls -lh apps/admin/.next/standalone/apps/admin/src/generated/client/*.node 2>/dev/null || echo "⚠️  未找到 client .node 文件"
+            cp -r packages/database/src/generated/client/* apps/admin/.next/standalone/packages/database/src/generated/client/
+            echo "✅ 业务数据库 Prisma Client 已复制"
+            ls -lh apps/admin/.next/standalone/packages/database/src/generated/client/*.node 2>/dev/null || echo "⚠️  未找到 .node 文件"
           else
             echo "❌ 错误: packages/database/src/generated/client 不存在"
             exit 1
           fi
 
-          # 复制 prisma-admin 目录（用于管理数据库）
           echo ""
-          echo "📦 复制 prisma-admin 目录..."
-          if [ -d "packages/database/src/generated/prisma-admin" ]; then
-            cp -r packages/database/src/generated/prisma-admin/* apps/admin/.next/standalone/apps/admin/src/generated/prisma-admin/
-            echo "✅ Prisma-admin 已复制"
-            ls -lh apps/admin/.next/standalone/apps/admin/src/generated/prisma-admin/*.node 2>/dev/null || echo "⚠️  未找到 prisma-admin .node 文件"
+
+          # 复制管理数据库 Prisma Client
+          echo "📦 复制管理数据库 Prisma Client..."
+          if [ -d "apps/admin/lib/generated/prisma-client" ]; then
+            cp -r apps/admin/lib/generated/prisma-client/* apps/admin/.next/standalone/apps/admin/lib/generated/prisma-client/
+            echo "✅ 管理数据库 Prisma Client 已复制"
+            ls -lh apps/admin/.next/standalone/apps/admin/lib/generated/prisma-client/*.node 2>/dev/null || echo "⚠️  未找到 .node 文件"
           else
-            echo "❌ 错误: packages/database/src/generated/prisma-admin 不存在"
+            echo "❌ 错误: apps/admin/lib/generated/prisma-client 不存在"
             exit 1
           fi
 
@@ -879,18 +880,20 @@ jobs:
           echo "🔄 恢复原始 Schema 文件"
           echo "=========================================="
 
+          # 恢复业务数据库 schema
           if [ -f packages/database/prisma/schema.prisma.backup ]; then
             mv packages/database/prisma/schema.prisma.backup packages/database/prisma/schema.prisma
-            echo "✅ 已恢复 schema.prisma"
+            echo "✅ 已恢复业务数据库 schema.prisma"
           else
-            echo "ℹ️  未找到 schema.prisma 备份文件（可能未执行优化步骤）"
+            echo "ℹ️  未找到业务数据库 schema.prisma 备份文件（可能未执行优化步骤）"
           fi
 
-          if [ -f packages/database/prisma/schema-admin.prisma.backup ]; then
-            mv packages/database/prisma/schema-admin.prisma.backup packages/database/prisma/schema-admin.prisma
-            echo "✅ 已恢复 schema-admin.prisma"
+          # 恢复管理数据库 schema
+          if [ -f apps/admin/prisma/schema.prisma.backup ]; then
+            mv apps/admin/prisma/schema.prisma.backup apps/admin/prisma/schema.prisma
+            echo "✅ 已恢复管理数据库 schema.prisma"
           else
-            echo "ℹ️  未找到 schema-admin.prisma 备份文件（可能未执行优化步骤）"
+            echo "ℹ️  未找到管理数据库 schema.prisma 备份文件（可能未执行优化步骤）"
           fi
 
           echo "=========================================="
