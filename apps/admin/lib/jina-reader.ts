@@ -132,7 +132,12 @@ export async function readWebPage(url: string, truncate: boolean = true, skipApi
 
       // 401 认证失败
       if (response.status === 401) {
-        throw new Error('Jina API Key 无效或已过期。请在管理后台（外部 API 配置）更新或移除 API Key 使用免费模式')
+        if (apiKey) {
+          throw new Error('Jina API Key 无效或已过期。请在管理后台（外部 API 配置）更新或移除 API Key 使用免费模式')
+        } else {
+          // 免费模式下的 401 可能是速率限制或其他原因
+          throw new Error('Jina 免费 API 访问被拒绝。可能是速率限制，请稍后重试')
+        }
       }
 
       // 402 付费要求 / 配额用完 - 智能回退逻辑
