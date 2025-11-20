@@ -159,12 +159,20 @@ jobs:
           # 显示修改后的配置
           echo ""
           echo "📋 修改后的 binaryTargets 配置:"
+          echo "业务数据库 schema:"
           grep -A 5 "generator client" packages/database/prisma/schema.prisma
           echo ""
+          echo "管理数据库 schema:"
+          grep -A 5 "generator client" apps/admin/prisma/schema.prisma
+          echo ""
 
-          # 生成 Prisma Client
-          echo "⏳ 生成 Prisma Client..."
+          # 生成 Prisma Client（业务数据库 + 管理数据库）
+          echo "⏳ 生成业务数据库 Prisma Client..."
           pnpm db:generate
+
+          echo ""
+          echo "⏳ 生成管理数据库 Prisma Client..."
+          pnpm --filter @rungame/admin db:generate
 
           # 验证生成的二进制文件
           echo ""
