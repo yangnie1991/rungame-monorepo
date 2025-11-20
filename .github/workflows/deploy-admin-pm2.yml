@@ -234,16 +234,20 @@ jobs:
           echo "📋 复制 Prisma 引擎文件到 standalone 目录"
           echo "=========================================="
 
-          # 创建目标目录（业务数据库 + 管理数据库）
+          # 创建目标目录
           mkdir -p apps/admin/.next/standalone/packages/database/src/generated/client
           mkdir -p apps/admin/.next/standalone/apps/admin/lib/generated/prisma-client
 
-          # 复制业务数据库 Prisma Client
+          # 复制业务数据库 Prisma Client（完整目录，包含所有文件）
           echo "📦 复制业务数据库 Prisma Client..."
           if [ -d "packages/database/src/generated/client" ]; then
+            # 复制所有文件（包括 .node 引擎文件）
             cp -r packages/database/src/generated/client/* apps/admin/.next/standalone/packages/database/src/generated/client/
             echo "✅ 业务数据库 Prisma Client 已复制"
-            ls -lh apps/admin/.next/standalone/packages/database/src/generated/client/*.node 2>/dev/null || echo "⚠️  未找到 .node 文件"
+
+            # 验证引擎文件
+            echo "🔍 验证业务数据库引擎文件:"
+            find apps/admin/.next/standalone/packages/database/src/generated/client -name "*.node" -o -name "*.so.node" | head -10
           else
             echo "❌ 错误: packages/database/src/generated/client 不存在"
             exit 1
@@ -251,12 +255,16 @@ jobs:
 
           echo ""
 
-          # 复制管理数据库 Prisma Client
+          # 复制管理数据库 Prisma Client（完整目录，包含所有文件）
           echo "📦 复制管理数据库 Prisma Client..."
           if [ -d "apps/admin/lib/generated/prisma-client" ]; then
+            # 复制所有文件（包括 .node 引擎文件）
             cp -r apps/admin/lib/generated/prisma-client/* apps/admin/.next/standalone/apps/admin/lib/generated/prisma-client/
             echo "✅ 管理数据库 Prisma Client 已复制"
-            ls -lh apps/admin/.next/standalone/apps/admin/lib/generated/prisma-client/*.node 2>/dev/null || echo "⚠️  未找到 .node 文件"
+
+            # 验证引擎文件
+            echo "🔍 验证管理数据库引擎文件:"
+            find apps/admin/.next/standalone/apps/admin/lib/generated/prisma-client -name "*.node" -o -name "*.so.node" | head -10
           else
             echo "❌ 错误: apps/admin/lib/generated/prisma-client 不存在"
             exit 1
