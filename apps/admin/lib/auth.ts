@@ -18,6 +18,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     strategy: "jwt",
     maxAge: 7 * 24 * 60 * 60, // 7 天
   },
+
+  // Cookie 配置（支持 HTTP 访问）
+  useSecureCookies: process.env.NODE_ENV === 'production'
+    ? process.env.NEXTAUTH_URL?.startsWith('https://') ?? false
+    : false,
+
   pages: {
     signIn: "/login",
     error: "/login",
