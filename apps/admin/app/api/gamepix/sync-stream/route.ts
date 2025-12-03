@@ -64,7 +64,17 @@ export async function GET(req: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       const send = (data: any, event?: string) => {
-        controller.enqueue(encoder.encode(createSSEMessage(data, event)))
+        // 检查 controller 是否已关闭（用户取消时会关闭）
+        if (controller.desiredSize === null) {
+          return false // 已关闭，停止发送
+        }
+        try {
+          controller.enqueue(encoder.encode(createSSEMessage(data, event)))
+          return true
+        } catch (error) {
+          // 连接已关闭，忽略错误
+          return false
+        }
       }
 
       const syncStartTime = Date.now()
@@ -77,14 +87,17 @@ export async function GET(req: NextRequest) {
 
       try {
         // 步骤 1: 获取第一页数据以获取总页数
-        send({
+        if (!send({
           currentPage: 0,
           totalPages: maxPages,
           processedGames: accumulatedSynced,
           newGames: accumulatedNew,
           updatedGames: accumulatedUpdated,
           currentStep: '正在获取 API 信息...',
-        })
+        })) {
+          console.log('[SSE 同步] 客户端已断开连接')
+          return
+        }
 
         const firstPageFeed = await fetchGamePixFeed(siteId, {
           format: 'json',
@@ -114,7 +127,7 @@ export async function GET(req: NextRequest) {
         // 步骤 2: 分批同步（从 startPage 开始，最多同步 maxPages 页）
         const endPage = Math.min(startPage + maxPages - 1, actualTotalPages)
 
-        send({
+        if (!send({
           currentPage: 0,
           totalPages: maxPages,
           processedGames: accumulatedSynced,
@@ -122,11 +135,14 @@ export async function GET(req: NextRequest) {
           updatedGames: accumulatedUpdated,
           currentStep: `准备同步 ${startPage}-${endPage} 页（共 ${actualTotalPages} 页）...`,
           estimatedTotal,
-        })
+        })) {
+          console.log('[SSE 同步] 客户端已断开连接')
+          return
+        }
 
         // 逐页同步
         for (let page = startPage; page <= endPage; page++) {
-          send({
+          if (!send({
             currentPage: page - startPage + 1,
             totalPages: maxPages,
             processedGames: accumulatedSynced + batchSynced,
@@ -134,7 +150,10 @@ export async function GET(req: NextRequest) {
             updatedGames: accumulatedUpdated + batchUpdated,
             currentStep: `正在获取第 ${page}/${actualTotalPages} 页数据...`,
             estimatedTotal,
-          })
+          })) {
+            console.log('[SSE 同步] 客户端已断开连接，停止同步')
+            return
+          }
 
           // 获取当前页数据
           const feed = await fetchGamePixFeed(siteId, {
@@ -151,7 +170,7 @@ export async function GET(req: NextRequest) {
             break
           }
 
-          send({
+          if (!send({
             currentPage: page - startPage + 1,
             totalPages: maxPages,
             processedGames: accumulatedSynced + batchSynced,
@@ -159,7 +178,10 @@ export async function GET(req: NextRequest) {
             updatedGames: accumulatedUpdated + batchUpdated,
             currentStep: `第 ${page} 页: 正在保存 ${games.length} 个游戏...`,
             estimatedTotal,
-          })
+          })) {
+            console.log('[SSE 同步] 客户端已断开连接，停止同步')
+            return
+          }
 
           // 批量插入（跳过重复）
           const createResult = await prismaCache.gamePixGameCache.createMany({
@@ -240,7 +262,7 @@ export async function GET(req: NextRequest) {
 
           batchSynced += games.length
 
-          send({
+          if (!send({
             currentPage: page - startPage + 1,
             totalPages: maxPages,
             processedGames: accumulatedSynced + batchSynced,
@@ -248,7 +270,10 @@ export async function GET(req: NextRequest) {
             updatedGames: accumulatedUpdated + batchUpdated,
             currentStep: `第 ${page} 页完成 (${games.length} 个游戏)`,
             estimatedTotal,
-          })
+          })) {
+            console.log('[SSE 同步] 客户端已断开连接，停止同步')
+            return
+          }
 
           // 如果这一页的游戏数少于 96，说明到达最后一页
           if (games.length < 96) {
@@ -301,22 +326,41 @@ export async function GET(req: NextRequest) {
         console.log(`[SSE 同步] 完成: 批次=${startPage}-${endPage}, 总页数=${actualTotalPages}, hasMorePages=${hasMorePages}`)
         controller.close()
       } catch (error: any) {
+        // 检查是否是因为客户端断开连接导致的错误
+        if (error.code === 'ERR_INVALID_STATE' || error.message?.includes('Controller is already closed')) {
+          console.log('[SSE 同步] 客户端已断开连接（用户取消）')
+          return
+        }
+
         console.error('[SSE 同步] 错误:', error)
 
         // 记录失败日志
-        await prismaCache.syncLog.create({
-          data: {
-            totalGames: 0,
-            newGames: 0,
-            updatedGames: 0,
-            status: 'failed',
-            errorMessage: error.message || '未知错误',
-            apiParams: { siteId, mode, orderBy, startPage, maxPages, perPage: 96 },
-          },
-        })
+        try {
+          await prismaCache.syncLog.create({
+            data: {
+              totalGames: 0,
+              newGames: 0,
+              updatedGames: 0,
+              status: 'failed',
+              errorMessage: error.message || '未知错误',
+              apiParams: { siteId, mode, orderBy, startPage, maxPages, perPage: 96 },
+            },
+          })
+        } catch (logError) {
+          console.error('[SSE 同步] 记录日志失败:', logError)
+        }
 
+        // 尝试发送错误消息（如果连接还在）
         send({ type: 'error', error: error.message || '同步失败' })
-        controller.close()
+
+        // 尝试关闭 controller（如果还没关闭）
+        try {
+          if (controller.desiredSize !== null) {
+            controller.close()
+          }
+        } catch (closeError) {
+          // 忽略关闭错误
+        }
       }
     },
   })
