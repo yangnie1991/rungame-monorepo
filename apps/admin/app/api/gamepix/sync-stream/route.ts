@@ -50,6 +50,11 @@ export async function GET(req: NextRequest) {
   const accumulatedNew = parseInt(searchParams.get('accumulatedNew') || '0', 10)
   const accumulatedUpdated = parseInt(searchParams.get('accumulatedUpdated') || '0', 10)
 
+  // 全局同步开始时间（第一批传入，后续批次复用）
+  const globalSyncStartTime = searchParams.get('globalSyncStartTime')
+    ? parseInt(searchParams.get('globalSyncStartTime')!, 10)
+    : null
+
   if (!siteId) {
     return new Response(
       createSSEMessage({ type: 'error', error: '缺少 siteId 参数' }),
@@ -78,6 +83,9 @@ export async function GET(req: NextRequest) {
       }
 
       const syncStartTime = Date.now()
+      // 使用全局同步开始时间（如果是第一批则使用当前时间，否则使用传入的时间）
+      const effectiveGlobalSyncStartTime = globalSyncStartTime || syncStartTime
+
       // 当前批次的计数（不包含累计值）
       let batchSynced = 0
       let batchNew = 0
@@ -310,15 +318,16 @@ export async function GET(req: NextRequest) {
           }
 
           try {
-            // 将 lastSyncAt 早于本次同步开始时间的游戏标记为已下架
+            // 将 lastSyncAt 早于全局同步开始时间的游戏标记为已下架
+            // 使用 effectiveGlobalSyncStartTime 而不是当前批次的 syncStartTime
             const result = await prismaCache.$executeRaw`
               UPDATE "gamepix_games_cache"
               SET "isHidden" = true, "updatedAt" = NOW()
-              WHERE "lastSyncAt" < ${new Date(syncStartTime)}
+              WHERE "lastSyncAt" < ${new Date(effectiveGlobalSyncStartTime)}
                 AND "isHidden" = false
             `
             hiddenGames = Number(result)
-            console.log(`[SSE 同步] 标注 ${hiddenGames} 个下架游戏`)
+            console.log(`[SSE 同步] 标注 ${hiddenGames} 个下架游戏 (基准时间: ${new Date(effectiveGlobalSyncStartTime).toISOString()})`)
           } catch (error: any) {
             console.error('[SSE 同步] 标注下架游戏失败:', error)
           }
@@ -353,6 +362,8 @@ export async function GET(req: NextRequest) {
             accumulatedSynced: totalAccumulatedSynced,
             accumulatedNew: totalAccumulatedNew,
             accumulatedUpdated: totalAccumulatedUpdated,
+            // 传递全局同步开始时间给前端，用于下一批
+            globalSyncStartTime: effectiveGlobalSyncStartTime,
           },
         })
 

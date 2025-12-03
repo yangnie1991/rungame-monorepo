@@ -132,7 +132,11 @@ export function SyncProgressDialog({
   }, [status, startTime])
 
   // 🎯 执行单批同步
-  const executeBatch = async (startPage: number, accumulated = { synced: 0, new: 0, updated: 0 }) => {
+  const executeBatch = async (
+    startPage: number,
+    accumulated = { synced: 0, new: 0, updated: 0 },
+    globalSyncStartTime?: number
+  ) => {
     const maxPages = 5 // 每批同步 5 页
 
     try {
@@ -148,6 +152,11 @@ export function SyncProgressDialog({
       url.searchParams.set('accumulatedSynced', accumulated.synced.toString())
       url.searchParams.set('accumulatedNew', accumulated.new.toString())
       url.searchParams.set('accumulatedUpdated', accumulated.updated.toString())
+
+      // 传递全局同步开始时间（用于下架检测）
+      if (globalSyncStartTime) {
+        url.searchParams.set('globalSyncStartTime', globalSyncStartTime.toString())
+      }
 
       const eventSource = new EventSource(url.toString())
       eventSourceRef.current = eventSource
@@ -174,6 +183,7 @@ export function SyncProgressDialog({
               accumulatedSynced,
               accumulatedNew,
               accumulatedUpdated,
+              globalSyncStartTime: returnedGlobalSyncStartTime,
             } = data.data
 
             // 使用后端返回的累计值（而不是前端累加）
@@ -201,13 +211,17 @@ export function SyncProgressDialog({
 
             // 🎯 检查是否还有更多页需要同步
             if (hasMorePages && nextStartPage && autoContinue) {
-              // 自动开始下一批，传递累计值
+              // 自动开始下一批，传递累计值和全局同步开始时间
               console.log(`[分批同步] 开始下一批: 第 ${nextStartPage} 页，累计: ${finalAccumulatedSynced} 个`)
-              setTimeout(() => executeBatch(nextStartPage, {
-                synced: finalAccumulatedSynced,
-                new: finalAccumulatedNew,
-                updated: finalAccumulatedUpdated,
-              }), 1000) // 延迟 1 秒，避免请求过快
+              setTimeout(() => executeBatch(
+                nextStartPage,
+                {
+                  synced: finalAccumulatedSynced,
+                  new: finalAccumulatedNew,
+                  updated: finalAccumulatedUpdated,
+                },
+                returnedGlobalSyncStartTime // 传递全局同步开始时间
+              ), 1000) // 延迟 1 秒，避免请求过快
             } else {
               // 全部完成
               setStatus('success')
