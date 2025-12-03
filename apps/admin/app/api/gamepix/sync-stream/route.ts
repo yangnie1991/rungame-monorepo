@@ -208,6 +208,7 @@ export async function GET(req: NextRequest) {
               orientation: game.orientation,
               date_published: new Date(game.date_published),
               date_modified: new Date(game.date_modified),
+              isHidden: false, // 新游戏默认为正常状态（非下架）
             })),
             skipDuplicates: true,
           })
@@ -254,6 +255,7 @@ export async function GET(req: NextRequest) {
                 "orientation" = v.orientation,
                 "date_published" = v.date_published::timestamp,
                 "date_modified" = v.date_modified::timestamp,
+                "isHidden" = false,
                 "lastSyncAt" = NOW()
               FROM (
                 VALUES ${values}
@@ -320,11 +322,11 @@ export async function GET(req: NextRequest) {
           try {
             // 将 lastSyncAt 早于全局同步开始时间的游戏标记为已下架
             // 使用 effectiveGlobalSyncStartTime 而不是当前批次的 syncStartTime
+            // 不需要 AND "isHidden" = false 条件，因为所有同步的游戏都已重置为 false
             const result = await prismaCache.$executeRaw`
               UPDATE "gamepix_games_cache"
               SET "isHidden" = true, "updatedAt" = NOW()
               WHERE "lastSyncAt" < ${new Date(effectiveGlobalSyncStartTime)}
-                AND "isHidden" = false
             `
             hiddenGames = Number(result)
             console.log(`[SSE 同步] 标注 ${hiddenGames} 个下架游戏 (基准时间: ${new Date(effectiveGlobalSyncStartTime).toISOString()})`)
