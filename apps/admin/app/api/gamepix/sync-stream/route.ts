@@ -45,6 +45,11 @@ export async function GET(req: NextRequest) {
   const startPage = parseInt(searchParams.get('startPage') || '1', 10)
   const maxPages = parseInt(searchParams.get('maxPages') || '5', 10)
 
+  // 累计值参数（用于跨批次累计统计）
+  const accumulatedSynced = parseInt(searchParams.get('accumulatedSynced') || '0', 10)
+  const accumulatedNew = parseInt(searchParams.get('accumulatedNew') || '0', 10)
+  const accumulatedUpdated = parseInt(searchParams.get('accumulatedUpdated') || '0', 10)
+
   if (!siteId) {
     return new Response(
       createSSEMessage({ type: 'error', error: '缺少 siteId 参数' }),
@@ -63,9 +68,10 @@ export async function GET(req: NextRequest) {
       }
 
       const syncStartTime = Date.now()
-      let totalSynced = 0
-      let newGames = 0
-      let updatedGames = 0
+      // 当前批次的计数（不包含累计值）
+      let batchSynced = 0
+      let batchNew = 0
+      let batchUpdated = 0
       let estimatedTotal = 0
       let actualTotalPages = 0
 
@@ -74,9 +80,9 @@ export async function GET(req: NextRequest) {
         send({
           currentPage: 0,
           totalPages: maxPages,
-          processedGames: 0,
-          newGames: 0,
-          updatedGames: 0,
+          processedGames: accumulatedSynced,
+          newGames: accumulatedNew,
+          updatedGames: accumulatedUpdated,
           currentStep: '正在获取 API 信息...',
         })
 
@@ -111,9 +117,9 @@ export async function GET(req: NextRequest) {
         send({
           currentPage: 0,
           totalPages: maxPages,
-          processedGames: 0,
-          newGames: 0,
-          updatedGames: 0,
+          processedGames: accumulatedSynced,
+          newGames: accumulatedNew,
+          updatedGames: accumulatedUpdated,
           currentStep: `准备同步 ${startPage}-${endPage} 页（共 ${actualTotalPages} 页）...`,
           estimatedTotal,
         })
@@ -123,9 +129,9 @@ export async function GET(req: NextRequest) {
           send({
             currentPage: page - startPage + 1,
             totalPages: maxPages,
-            processedGames: totalSynced,
-            newGames,
-            updatedGames,
+            processedGames: accumulatedSynced + batchSynced,
+            newGames: accumulatedNew + batchNew,
+            updatedGames: accumulatedUpdated + batchUpdated,
             currentStep: `正在获取第 ${page}/${actualTotalPages} 页数据...`,
             estimatedTotal,
           })
@@ -148,9 +154,9 @@ export async function GET(req: NextRequest) {
           send({
             currentPage: page - startPage + 1,
             totalPages: maxPages,
-            processedGames: totalSynced,
-            newGames,
-            updatedGames,
+            processedGames: accumulatedSynced + batchSynced,
+            newGames: accumulatedNew + batchNew,
+            updatedGames: accumulatedUpdated + batchUpdated,
             currentStep: `第 ${page} 页: 正在保存 ${games.length} 个游戏...`,
             estimatedTotal,
           })
@@ -177,7 +183,7 @@ export async function GET(req: NextRequest) {
           })
 
           const createdCount = createResult.count
-          newGames += createdCount
+          batchNew += createdCount
 
           // 批量更新已存在的游戏
           const existingCount = games.length - createdCount
@@ -229,17 +235,17 @@ export async function GET(req: NextRequest) {
               WHERE g.id = v.id
             `)
 
-            updatedGames += existingCount
+            batchUpdated += existingCount
           }
 
-          totalSynced += games.length
+          batchSynced += games.length
 
           send({
             currentPage: page - startPage + 1,
             totalPages: maxPages,
-            processedGames: totalSynced,
-            newGames,
-            updatedGames,
+            processedGames: accumulatedSynced + batchSynced,
+            newGames: accumulatedNew + batchNew,
+            updatedGames: accumulatedUpdated + batchUpdated,
             currentStep: `第 ${page} 页完成 (${games.length} 个游戏)`,
             estimatedTotal,
           })
@@ -253,12 +259,12 @@ export async function GET(req: NextRequest) {
 
         const syncDuration = Date.now() - syncStartTime
 
-        // 记录同步日志
+        // 记录同步日志（只记录当前批次）
         await prismaCache.syncLog.create({
           data: {
-            totalGames: totalSynced,
-            newGames,
-            updatedGames,
+            totalGames: batchSynced,
+            newGames: batchNew,
+            updatedGames: batchUpdated,
             status: 'success',
             syncDuration,
             apiParams: { siteId, mode, orderBy, startPage, maxPages, perPage: 96 },
@@ -269,17 +275,26 @@ export async function GET(req: NextRequest) {
         const nextStartPage = endPage + 1
         const hasMorePages = endPage < actualTotalPages
 
+        // 计算总累计值（包含当前批次）
+        const totalAccumulatedSynced = accumulatedSynced + batchSynced
+        const totalAccumulatedNew = accumulatedNew + batchNew
+        const totalAccumulatedUpdated = accumulatedUpdated + batchUpdated
+
         // 发送完成事件
         send({
           type: 'complete',
           data: {
-            totalSynced,
-            newGames,
-            updatedGames,
+            totalSynced: batchSynced, // 当前批次的数量
+            newGames: batchNew,
+            updatedGames: batchUpdated,
             syncDuration,
             nextStartPage,
             hasMorePages,
             actualTotalPages,
+            // 添加总累计值
+            accumulatedSynced: totalAccumulatedSynced,
+            accumulatedNew: totalAccumulatedNew,
+            accumulatedUpdated: totalAccumulatedUpdated,
           },
         })
 

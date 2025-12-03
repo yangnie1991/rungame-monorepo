@@ -131,7 +131,7 @@ export function SyncProgressDialog({
   }, [status, startTime])
 
   // 🎯 执行单批同步
-  const executeBatch = async (startPage: number) => {
+  const executeBatch = async (startPage: number, accumulated = { synced: 0, new: 0, updated: 0 }) => {
     const maxPages = 5 // 每批同步 5 页
 
     try {
@@ -142,6 +142,11 @@ export function SyncProgressDialog({
       url.searchParams.set('orderBy', config.orderBy || 'quality')
       url.searchParams.set('startPage', startPage.toString())
       url.searchParams.set('maxPages', maxPages.toString())
+
+      // 传递累计值参数
+      url.searchParams.set('accumulatedSynced', accumulated.synced.toString())
+      url.searchParams.set('accumulatedNew', accumulated.new.toString())
+      url.searchParams.set('accumulatedUpdated', accumulated.updated.toString())
 
       const eventSource = new EventSource(url.toString())
       eventSourceRef.current = eventSource
@@ -164,30 +169,42 @@ export function SyncProgressDialog({
               nextStartPage,
               hasMorePages,
               actualTotalPages,
+              accumulatedSynced,
+              accumulatedNew,
+              accumulatedUpdated,
             } = data.data
+
+            // 使用后端返回的累计值（而不是前端累加）
+            const finalAccumulatedSynced = accumulatedSynced || 0
+            const finalAccumulatedNew = accumulatedNew || 0
+            const finalAccumulatedUpdated = accumulatedUpdated || 0
 
             // 更新累计统计
             setBatchInfo(prev => ({
               ...prev,
-              accumulatedSynced: prev.accumulatedSynced + totalSynced,
-              accumulatedNew: prev.accumulatedNew + newGames,
-              accumulatedUpdated: prev.accumulatedUpdated + updatedGames,
+              accumulatedSynced: finalAccumulatedSynced,
+              accumulatedNew: finalAccumulatedNew,
+              accumulatedUpdated: finalAccumulatedUpdated,
               totalPagesInApi: actualTotalPages || prev.totalPagesInApi,
               currentBatch: prev.currentBatch + 1,
             }))
 
-            setResult(prev => ({
-              totalSynced: (prev.totalSynced || 0) + totalSynced,
-              newGames: (prev.newGames || 0) + newGames,
-              updatedGames: (prev.updatedGames || 0) + updatedGames,
-              syncDuration: (prev.syncDuration || 0) + syncDuration,
-            }))
+            setResult({
+              totalSynced: finalAccumulatedSynced,
+              newGames: finalAccumulatedNew,
+              updatedGames: finalAccumulatedUpdated,
+              syncDuration: (result.syncDuration || 0) + syncDuration,
+            })
 
             // 🎯 检查是否还有更多页需要同步
             if (hasMorePages && nextStartPage && autoContinue) {
-              // 自动开始下一批
-              console.log(`[分批同步] 开始下一批: 第 ${nextStartPage} 页`)
-              setTimeout(() => executeBatch(nextStartPage), 1000) // 延迟 1 秒，避免请求过快
+              // 自动开始下一批，传递累计值
+              console.log(`[分批同步] 开始下一批: 第 ${nextStartPage} 页，累计: ${finalAccumulatedSynced} 个`)
+              setTimeout(() => executeBatch(nextStartPage, {
+                synced: finalAccumulatedSynced,
+                new: finalAccumulatedNew,
+                updated: finalAccumulatedUpdated,
+              }), 1000) // 延迟 1 秒，避免请求过快
             } else {
               // 全部完成
               setStatus('success')
@@ -201,7 +218,7 @@ export function SyncProgressDialog({
             eventSource.close()
             eventSourceRef.current = null
           } else {
-            // 进度更新
+            // 进度更新（后端返回的已经是累计值）
             const progressUpdate = data as SyncProgressUpdate
 
             setCurrentStep(progressUpdate.currentStep)
