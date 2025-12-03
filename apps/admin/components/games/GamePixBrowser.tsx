@@ -82,6 +82,7 @@ export function GamePixBrowser({
   const [searchQuery, setSearchQuery] = useState('')
   const [minQuality, setMinQuality] = useState(0)
   const [importStatusFilter, setImportStatusFilter] = useState<'all' | 'imported' | 'not_imported'>('all')
+  const [hiddenStatusFilter, setHiddenStatusFilter] = useState<'active' | 'hidden' | 'all'>('active') // 下架状态筛选
 
   // 分页
   const [currentPage, setCurrentPage] = useState(1)
@@ -219,6 +220,7 @@ export function GamePixBrowser({
         minQuality,
         search: searchQuery || undefined,
         isImported: importStatusFilter === 'all' ? undefined : importStatusFilter === 'imported',
+        isHidden: hiddenStatusFilter === 'all' ? undefined : hiddenStatusFilter === 'hidden',
         page,
         perPage: parseInt(perPage),
         orderBy: orderBy === 'published' ? 'published' : 'quality',
@@ -483,94 +485,118 @@ export function GamePixBrowser({
 
             {/* 筛选选项 */}
             {siteId && (
-              <div className="flex items-center gap-4">
-                {/* 搜索框 */}
-                <div className="flex items-center gap-2 flex-1">
+              <div className="space-y-3">
+                {/* 第一行：搜索框 */}
+                <div className="flex items-center gap-2">
                   <Search className="h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="搜索游戏标题..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="max-w-xs"
+                    className="flex-1"
                   />
                 </div>
 
-                {/* 质量筛选 */}
-                <div className="flex items-center gap-2">
-                  <Label className="text-sm text-muted-foreground whitespace-nowrap">质量:</Label>
-                  <Select value={minQuality.toString()} onValueChange={(v) => setMinQuality(parseFloat(v))}>
-                    <SelectTrigger className="w-[120px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0">全部</SelectItem>
-                      <SelectItem value="0.7">≥ 7分</SelectItem>
-                      <SelectItem value="0.8">≥ 8分</SelectItem>
-                      <SelectItem value="0.9">≥ 9分</SelectItem>
-                    </SelectContent>
-                  </Select>
+                {/* 第二行：筛选条件 */}
+                <div className="flex items-center gap-4 flex-wrap">
+                  {/* 质量筛选 */}
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm text-muted-foreground whitespace-nowrap">质量:</Label>
+                    <Select value={minQuality.toString()} onValueChange={(v) => setMinQuality(parseFloat(v))}>
+                      <SelectTrigger className="w-[120px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">全部</SelectItem>
+                        <SelectItem value="0.7">≥ 7分</SelectItem>
+                        <SelectItem value="0.8">≥ 8分</SelectItem>
+                        <SelectItem value="0.9">≥ 9分</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* 导入状态筛选 */}
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm text-muted-foreground whitespace-nowrap">导入:</Label>
+                    <Select value={importStatusFilter} onValueChange={(v) => setImportStatusFilter(v as any)}>
+                      <SelectTrigger className="w-[120px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">全部</SelectItem>
+                        <SelectItem value="imported">已导入</SelectItem>
+                        <SelectItem value="not_imported">未导入</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* 下架状态筛选 */}
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm text-muted-foreground whitespace-nowrap">上架:</Label>
+                    <Select value={hiddenStatusFilter} onValueChange={(v) => setHiddenStatusFilter(v as any)}>
+                      <SelectTrigger className="w-[120px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">在售中</SelectItem>
+                        <SelectItem value="hidden">已下架</SelectItem>
+                        <SelectItem value="all">全部</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* 排序 */}
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm text-muted-foreground whitespace-nowrap">排序:</Label>
+                    <Select value={orderBy} onValueChange={(v) => setOrderBy(v as 'quality' | 'published')}>
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="quality">按质量</SelectItem>
+                        <SelectItem value="published">按发布日期</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* 每页数量 */}
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm text-muted-foreground whitespace-nowrap">数量:</Label>
+                    <Select value={perPage} onValueChange={(v) => setPerPage(v as '12' | '24' | '48' | '96')}>
+                      <SelectTrigger className="w-[100px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="12">12</SelectItem>
+                        <SelectItem value="24">24</SelectItem>
+                        <SelectItem value="48">48</SelectItem>
+                        <SelectItem value="96">96</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
-                {/* 导入状态筛选 */}
-                <div className="flex items-center gap-2">
-                  <Label className="text-sm text-muted-foreground whitespace-nowrap">状态:</Label>
-                  <Select value={importStatusFilter} onValueChange={(v) => setImportStatusFilter(v as any)}>
-                    <SelectTrigger className="w-[120px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">全部</SelectItem>
-                      <SelectItem value="imported">已导入</SelectItem>
-                      <SelectItem value="not_imported">未导入</SelectItem>
-                    </SelectContent>
-                  </Select>
+                {/* 第三行：查询按钮（右对齐） */}
+                <div className="flex justify-end">
+                  <Button
+                    onClick={() => handleFetchGames(1)}
+                    disabled={isLoading}
+                    variant="default"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        加载中
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        查询
+                      </>
+                    )}
+                  </Button>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <Label className="text-sm text-muted-foreground whitespace-nowrap">排序:</Label>
-                  <Select value={orderBy} onValueChange={(v) => setOrderBy(v as 'quality' | 'published')}>
-                    <SelectTrigger className="w-[140px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="quality">按质量</SelectItem>
-                      <SelectItem value="published">按发布日期</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Label className="text-sm text-muted-foreground whitespace-nowrap">数量:</Label>
-                  <Select value={perPage} onValueChange={(v) => setPerPage(v as '12' | '24' | '48' | '96')}>
-                    <SelectTrigger className="w-[100px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="12">12</SelectItem>
-                      <SelectItem value="24">24</SelectItem>
-                      <SelectItem value="48">48</SelectItem>
-                      <SelectItem value="96">96</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button
-                  onClick={() => handleFetchGames(1)}
-                  disabled={isLoading}
-                  className="ml-auto"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      加载中
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                      查询
-                    </>
-                  )}
-                </Button>
               </div>
             )}
           </div>
@@ -673,11 +699,14 @@ export function GamePixBrowser({
                   </div>
 
                   {/* 状态 */}
-                  <div className="flex items-center justify-center">
+                  <div className="flex items-center justify-center gap-1 flex-wrap">
                     {game.isImported ? (
                       <Badge variant="secondary" className="text-xs">已导入</Badge>
                     ) : (
                       <Badge variant="outline" className="text-xs">未导入</Badge>
+                    )}
+                    {game.isHidden && (
+                      <Badge variant="destructive" className="text-xs">已下架</Badge>
                     )}
                   </div>
 

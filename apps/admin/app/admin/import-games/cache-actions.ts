@@ -15,6 +15,7 @@ export interface CacheFilters {
   minQuality?: number
   search?: string
   isImported?: boolean
+  isHidden?: boolean // 是否只显示已下架的游戏
   page?: number
   perPage?: number
   orderBy?: 'quality' | 'published' | 'priority'
@@ -30,6 +31,7 @@ export async function getGamePixGamesFromCache(filters: CacheFilters = {}) {
       minQuality = 0,
       search,
       isImported,
+      isHidden,
       page = 1,
       perPage = 48,
       orderBy = 'quality',
@@ -47,7 +49,7 @@ export async function getGamePixGamesFromCache(filters: CacheFilters = {}) {
         ],
       }),
       ...(isImported !== undefined && { isImported }),
-      isHidden: false, // 不显示隐藏的游戏
+      ...(isHidden !== undefined && { isHidden }),
     }
 
     // 排序规则

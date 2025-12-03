@@ -284,18 +284,6 @@ export async function GET(req: NextRequest) {
 
         const syncDuration = Date.now() - syncStartTime
 
-        // 记录同步日志（只记录当前批次）
-        await prismaCache.syncLog.create({
-          data: {
-            totalGames: batchSynced,
-            newGames: batchNew,
-            updatedGames: batchUpdated,
-            status: 'success',
-            syncDuration,
-            apiParams: { siteId, mode, orderBy, startPage, maxPages, perPage: 96 },
-          },
-        })
-
         // 计算下一批的起始页
         const nextStartPage = endPage + 1
         const hasMorePages = endPage < actualTotalPages
@@ -305,6 +293,50 @@ export async function GET(req: NextRequest) {
         const totalAccumulatedNew = accumulatedNew + batchNew
         const totalAccumulatedUpdated = accumulatedUpdated + batchUpdated
 
+        // 🎯 全量同步完成后，自动标注下架游戏
+        let hiddenGames = 0
+        if (mode === 'full' && !hasMorePages) {
+          if (!send({
+            currentPage: maxPages,
+            totalPages: maxPages,
+            processedGames: totalAccumulatedSynced,
+            newGames: totalAccumulatedNew,
+            updatedGames: totalAccumulatedUpdated,
+            currentStep: '正在检测下架游戏...',
+            estimatedTotal,
+          })) {
+            console.log('[SSE 同步] 客户端已断开连接')
+            return
+          }
+
+          try {
+            // 将 lastSyncAt 早于本次同步开始时间的游戏标记为已下架
+            const result = await prismaCache.$executeRaw`
+              UPDATE "gamepix_games_cache"
+              SET "isHidden" = true, "updatedAt" = NOW()
+              WHERE "lastSyncAt" < ${new Date(syncStartTime)}
+                AND "isHidden" = false
+            `
+            hiddenGames = Number(result)
+            console.log(`[SSE 同步] 标注 ${hiddenGames} 个下架游戏`)
+          } catch (error: any) {
+            console.error('[SSE 同步] 标注下架游戏失败:', error)
+          }
+        }
+
+        // 记录同步日志（只记录当前批次）
+        await prismaCache.syncLog.create({
+          data: {
+            totalGames: batchSynced,
+            newGames: batchNew,
+            updatedGames: batchUpdated,
+            deletedGames: hiddenGames, // 记录隐藏的游戏数
+            status: 'success',
+            syncDuration,
+            apiParams: { siteId, mode, orderBy, startPage, maxPages, perPage: 96 },
+          },
+        })
+
         // 发送完成事件
         send({
           type: 'complete',
@@ -312,6 +344,7 @@ export async function GET(req: NextRequest) {
             totalSynced: batchSynced, // 当前批次的数量
             newGames: batchNew,
             updatedGames: batchUpdated,
+            hiddenGames, // 添加隐藏游戏数
             syncDuration,
             nextStartPage,
             hasMorePages,

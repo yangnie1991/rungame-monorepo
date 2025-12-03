@@ -60,6 +60,7 @@ export function SyncProgressDialog({
     totalSynced?: number
     newGames?: number
     updatedGames?: number
+    hiddenGames?: number
     syncDuration?: number
     error?: string
   }>({})
@@ -165,6 +166,7 @@ export function SyncProgressDialog({
               totalSynced,
               newGames,
               updatedGames,
+              hiddenGames,
               syncDuration,
               nextStartPage,
               hasMorePages,
@@ -193,6 +195,7 @@ export function SyncProgressDialog({
               totalSynced: finalAccumulatedSynced,
               newGames: finalAccumulatedNew,
               updatedGames: finalAccumulatedUpdated,
+              hiddenGames: hiddenGames || 0,
               syncDuration: (result.syncDuration || 0) + syncDuration,
             })
 
@@ -422,7 +425,7 @@ export function SyncProgressDialog({
               )}
 
               {/* 实时统计 */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className={`grid gap-4 ${result.hiddenGames && result.hiddenGames > 0 ? 'grid-cols-4' : 'grid-cols-3'}`}>
                 <div className="text-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950">
                   <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                     {result.totalSynced || 0}
@@ -441,6 +444,14 @@ export function SyncProgressDialog({
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">更新</div>
                 </div>
+                {result.hiddenGames && result.hiddenGames > 0 && (
+                  <div className="text-center p-3 rounded-lg bg-gray-50 dark:bg-gray-950">
+                    <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">
+                      {result.hiddenGames}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">已下架</div>
+                  </div>
+                )}
               </div>
 
               {/* 耗时 */}
@@ -456,7 +467,8 @@ export function SyncProgressDialog({
                   <CheckCircle2 className="h-4 w-4 text-green-600" />
                   <AlertDescription className="text-green-800 dark:text-green-200">
                     同步成功! 共处理 {result.totalSynced} 个游戏，
-                    新增 {result.newGames} 个，更新 {result.updatedGames} 个。
+                    新增 {result.newGames} 个，更新 {result.updatedGames} 个
+                    {result.hiddenGames && result.hiddenGames > 0 && `，标注 ${result.hiddenGames} 个已下架`}。
                     {result.syncDuration && ` 耗时 ${formatTime(result.syncDuration)}`}
                   </AlertDescription>
                 </Alert>
