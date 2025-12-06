@@ -955,8 +955,8 @@ jobs:
             MISSING_IN_FILE=()
             for var_name in "${REQUIRED_VARS[@]}"; do
               if grep -q "^${var_name}=" "$ENV_FILE"; then
-                # 获取变量值（去除引号和前后空格）
-                var_value=$(grep "^${var_name}=" "$ENV_FILE" | cut -d'=' -f2- | tr -d '"' | xargs)
+                # 获取变量值（去除引号和前后空格，使用 sed 避免 xargs 特殊字符问题）
+                var_value=$(grep "^${var_name}=" "$ENV_FILE" | cut -d'=' -f2- | tr -d '"' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 
                 if [ -z "$var_value" ]; then
                   echo "❌ $var_name: 在 .env 中为空"
