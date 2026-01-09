@@ -1,11 +1,10 @@
 import type { NextConfig } from "next"
 import path from "path"
 
-const isDocker = process.env.DOCKER_BUILD === 'true'
-
 const nextConfig: NextConfig = {
-  output: isDocker ? 'standalone' : undefined,
-  outputFileTracingRoot: isDocker ? path.join(__dirname, '../../') : undefined,
+  // 移除 standalone 输出，使用标准 Docker 部署
+  // output: 'standalone',
+
   // 设置 Turbopack 根目录为 Monorepo 根目录
   turbopack: {
     root: path.resolve(__dirname, '../../'),
