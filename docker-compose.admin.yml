@@ -3,17 +3,17 @@
 services:
   admin:
     container_name: rungame-admin
-    # 如果已构建镜像，可以直接使用 image: rungame-admin
-    # 这里默认支持从源码构建
-    build:
-      context: .
-      dockerfile: Dockerfile.admin
-      args:
-        NODE_ENV: production
-        DATABASE_URL: ${DATABASE_URL}
-        NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
-        NEXTAUTH_URL: ${NEXTAUTH_URL}
-        ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+    # 使用本地构建并传输过来的镜像
+    image: rungame-admin:latest
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile.admin
+    #   args:
+    #     NODE_ENV: production
+    #     DATABASE_URL: ${DATABASE_URL}
+    #     NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+    #     NEXTAUTH_URL: ${NEXTAUTH_URL}
+    #     ENCRYPTION_KEY: ${ENCRYPTION_KEY}
     restart: always
     ports:
       - "4000:4000"
