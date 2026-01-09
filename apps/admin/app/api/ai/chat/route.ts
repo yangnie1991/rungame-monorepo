@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   try {
     // 验证身份（仅管理员可用）
     const session = await auth()
-    if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN')) {
+    if (!session || ((session.user as any)?.role !== 'ADMIN' && (session.user as any)?.role !== 'SUPER_ADMIN')) {
       return new Response(JSON.stringify({ error: '未授权访问' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },

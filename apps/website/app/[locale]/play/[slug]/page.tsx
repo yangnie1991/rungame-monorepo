@@ -127,7 +127,7 @@ export default async function GamePage({ params }: GamePageProps) {
 
   // 获取用户的投票状态
   const userVoteResult = await getUserVote(game.id)
-  const initialUserVote = userVoteResult.success ? userVoteResult.vote : null
+  const initialUserVote = userVoteResult.success ? (userVoteResult.vote as "like" | "dislike" | null) : null
 
   // 准备推荐引擎需要的当前游戏数据（传递给异步组件）
   const currentGameData = {
@@ -139,7 +139,7 @@ export default async function GamePage({ params }: GamePageProps) {
     viewCount: game.viewCount,
     rating: game.rating,
     ratingCount: game.ratingCount,
-    qualityScore: game.qualityScore,
+    qualityScore: game.qualityScore ?? 0,
     releaseDate: game.releaseDate,
     createdAt: game.createdAt,
   }

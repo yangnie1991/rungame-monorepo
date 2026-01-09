@@ -29,7 +29,7 @@ export function parseAIJsonResponse(content: string, errorContext?: string): any
     const codeBlockPattern = /^```(?:json)?\s*\n?([\s\S]*?)\n?```$/
     const match = cleaned.match(codeBlockPattern)
 
-    if (match) {
+    if (match && match[1]) {
       cleaned = match[1].trim()
     }
 

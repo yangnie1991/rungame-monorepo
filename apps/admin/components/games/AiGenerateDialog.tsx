@@ -199,18 +199,19 @@ export function AiGenerateDialog({
       setAvailableConfigs(configs)
 
       // 自动选中激活的配置
-      const activeConfig = configs.find(c => c.isActive)
-      const selectedConfig = activeConfig || configs[0]
+      const activeConfig = configs.find((c: any) => c.isActive)
+      const selectedConfig = activeConfig || (configs.length > 0 ? configs[0] : null)
+      if (selectedConfig) {
+        setSelectedConfigId(selectedConfig.id)
+        setAvailableModels(selectedConfig.models)
 
-      setSelectedConfigId(selectedConfig.id)
-      setAvailableModels(selectedConfig.models)
-
-      // 设置默认选中的模型
-      const defaultModel = selectedConfig.models.find((m: any) => m.isDefault)
-      if (defaultModel) {
-        setSelectedModelId(defaultModel.id)
-      } else if (selectedConfig.models.length > 0) {
-        setSelectedModelId(selectedConfig.models[0].id)
+        // 设置默认选中的模型
+        const defaultModel = selectedConfig.models.find((m: any) => m.isDefault)
+        if (defaultModel) {
+          setSelectedModelId(defaultModel.id)
+        } else if (selectedConfig.models.length > 0 && selectedConfig.models[0]) {
+          setSelectedModelId(selectedConfig.models[0].id)
+        }
       }
     } catch (err: any) {
       console.error('加载 AI 配置失败:', err)
@@ -533,22 +534,20 @@ export function AiGenerateDialog({
                     <button
                       type="button"
                       onClick={() => setSeoMode('fast')}
-                      className={`px-3 py-2 rounded-md text-sm transition-all ${
-                        seoMode === 'fast'
-                          ? 'bg-purple-600 text-white shadow-sm'
-                          : 'bg-white border border-gray-200 text-gray-700 hover:border-purple-300'
-                      }`}
+                      className={`px-3 py-2 rounded-md text-sm transition-all ${seoMode === 'fast'
+                        ? 'bg-purple-600 text-white shadow-sm'
+                        : 'bg-white border border-gray-200 text-gray-700 hover:border-purple-300'
+                        }`}
                     >
                       快速模式 (~15s)
                     </button>
                     <button
                       type="button"
                       onClick={() => setSeoMode('quality')}
-                      className={`px-3 py-2 rounded-md text-sm transition-all ${
-                        seoMode === 'quality'
-                          ? 'bg-purple-600 text-white shadow-sm'
-                          : 'bg-white border border-gray-200 text-gray-700 hover:border-purple-300'
-                      }`}
+                      className={`px-3 py-2 rounded-md text-sm transition-all ${seoMode === 'quality'
+                        ? 'bg-purple-600 text-white shadow-sm'
+                        : 'bg-white border border-gray-200 text-gray-700 hover:border-purple-300'
+                        }`}
                     >
                       质量模式 (~30s)
                     </button>
@@ -616,21 +615,18 @@ export function AiGenerateDialog({
                     <div className="mt-6 space-y-3 text-left">
                       {/* 阶段指示器 */}
                       <div className="flex items-center justify-center gap-4">
-                        <div className={`flex items-center gap-2 ${
-                          generationProgress.phase === 'searching' ? 'text-blue-600' : 'text-gray-400'
-                        }`}>
+                        <div className={`flex items-center gap-2 ${generationProgress.phase === 'searching' ? 'text-blue-600' : 'text-gray-400'
+                          }`}>
                           <Search className="w-4 h-4" />
                           <span className="text-xs font-medium">搜索竞品</span>
                         </div>
-                        <div className={`flex items-center gap-2 ${
-                          generationProgress.phase === 'parsing' ? 'text-orange-600' : 'text-gray-400'
-                        }`}>
+                        <div className={`flex items-center gap-2 ${generationProgress.phase === 'parsing' ? 'text-orange-600' : 'text-gray-400'
+                          }`}>
                           <FileText className="w-4 h-4" />
                           <span className="text-xs font-medium">解析网页</span>
                         </div>
-                        <div className={`flex items-center gap-2 ${
-                          generationProgress.phase === 'generating' ? 'text-purple-600' : 'text-gray-400'
-                        }`}>
+                        <div className={`flex items-center gap-2 ${generationProgress.phase === 'generating' ? 'text-purple-600' : 'text-gray-400'
+                          }`}>
                           <Sparkles className="w-4 h-4" />
                           <span className="text-xs font-medium">生成内容</span>
                         </div>
@@ -639,11 +635,10 @@ export function AiGenerateDialog({
                       {/* 进度条 */}
                       <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                         <div
-                          className={`h-full rounded-full transition-all duration-300 ${
-                            generationProgress.phase === 'searching' ? 'bg-blue-600' :
+                          className={`h-full rounded-full transition-all duration-300 ${generationProgress.phase === 'searching' ? 'bg-blue-600' :
                             generationProgress.phase === 'parsing' ? 'bg-orange-600' :
-                            'bg-purple-600'
-                          }`}
+                              'bg-purple-600'
+                            }`}
                           style={{ width: `${generationProgress.progress}%` }}
                         />
                       </div>

@@ -153,12 +153,12 @@ export async function getCategoriesAndTags() {
   try {
     // 使用缓存层获取分类和标签（并行请求中英文）
     const { getAllCategoriesForAdmin } = await import('@/lib/queries/categories')
-    const { getAllTagsForAdmin } = await import('@/lib/queries/tags')
+    const { getAllTagsForMatching } = await import('@/lib/queries/tags')
 
-    const [categoriesZh, categoriesEn, tagsZh] = await Promise.all([
+    const [categoriesZh, categoriesEn, tags] = await Promise.all([
       getAllCategoriesForAdmin('zh'),
       getAllCategoriesForAdmin('en'),
-      getAllTagsForAdmin('zh'),
+      getAllTagsForMatching(), // ✅ 返回英文主表数据，用于匹配 GamePix 的英文标签
     ])
 
     // 创建分类映射表（用于快速查找父分类）
@@ -194,11 +194,11 @@ export async function getCategoriesAndTags() {
       }
     })
 
-    // 过滤启用的标签并转换格式
-    const tags = tagsZh.filter(tag => tag.isEnabled)
+    // 转换标签格式（已经是英文主表数据，无需翻译和过滤）
     const tagOptions = tags.map((tag) => ({
       id: tag.id,
-      name: tag.name, // getAllTags 已经返回了翻译后的 name
+      name: tag.name, // 英文主表 name，用于匹配 GamePix 的英文标签
+      slug: tag.slug,
     }))
 
     return {

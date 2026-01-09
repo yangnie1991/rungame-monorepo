@@ -418,7 +418,7 @@ export async function filterGameWebsites(
   locale: string,
   aiConfigId?: string,
   modelId?: string
-): Promise<Array<{ title: string; url: string; content: string; confidence: number; reasoning: string }>> {
+): Promise<Array<{ title: string; url: string; content: string; confidence: number; relevanceScore: number; reasoning: string }>> {
   if (searchResults.length === 0) {
     return []
   }
@@ -429,7 +429,7 @@ export async function filterGameWebsites(
   console.log(`[filterGameWebsites] 开始过滤 ${searchResults.length} 个搜索结果...`)
 
   // 系统提示词
-  const systemPrompt = `你是一个游戏网站内容分析专家。你的任务是判断提供的网页内容是否是游戏相关网站。
+  const systemPrompt = `你是一个游戏网站内容分析专家。你的任务是判断提供的网页内容是否是游戏相关网站，并且评估内容与目标游戏的相关性。
 
 **游戏网站的特征：**
 ✅ 提供游戏下载、在线游戏、游戏试玩
@@ -448,12 +448,24 @@ export async function filterGameWebsites(
 ❌ 不相关的网站（如新闻、购物、生活服务等）
 
 **评分标准：**
-- confidence: 0-100 的整数
-  - 90-100: 明确的游戏网站（游戏平台、游戏媒体、开发者官网）
-  - 70-89: 很可能是游戏网站（包含大量游戏内容）
-  - 50-69: 可能是游戏网站（部分游戏内容）
-  - 30-49: 不太可能是游戏网站（游戏内容很少）
-  - 0-29: 明确不是游戏网站
+你需要对每个网页进行**两个维度**的评分：
+
+1. **confidence (网站类型置信度)**: 0-100 的整数
+   - 90-100: 明确的游戏网站（游戏平台、游戏媒体、开发者官网）
+   - 70-89: 很可能是游戏网站（包含大量游戏内容）
+   - 50-69: 可能是游戏网站（部分游戏内容）
+   - 30-49: 不太可能是游戏网站（游戏内容很少）
+   - 0-29: 明确不是游戏网站
+
+2. **relevanceScore (内容相关性评分)**: 0-100 的整数
+   - **关键判断：页面内容是否与目标游戏直接相关**
+   - 90-100: 专门介绍该游戏的页面（游戏详情页、评测、攻略）
+   - 70-89: 主要讨论该游戏（如游戏列表中包含该游戏且有详细介绍）
+   - 50-69: 提到该游戏但不是主要内容（如游戏推荐列表、相关游戏）
+   - 30-49: 轻微提及该游戏（如标签、分类）
+   - 0-29: 完全不相关或未提及该游戏
+
+**重要：即使是游戏网站，如果内容与目标游戏无关，relevanceScore 也应该很低！**
 
 你需要返回 JSON 数组格式：
 [
@@ -461,12 +473,15 @@ export async function filterGameWebsites(
     "url": "网站URL",
     "isGameWebsite": true/false,
     "confidence": 0-100,
-    "reasoning": "判断理由（简短说明）"
+    "relevanceScore": 0-100,
+    "reasoning": "判断理由（说明网站类型和内容相关性）"
   }
 ]`
 
   // 构建用户消息 - 包含所有搜索结果（不截断内容）
-  let userMessage = `游戏名称: ${gameTitle}\n语言: ${locale}\n\n请分析以下 ${searchResults.length} 个搜索结果，判断它们是否是游戏相关网站：\n\n`
+  let userMessage = `目标游戏: "${gameTitle}"\n语言: ${locale}\n\n请分析以下 ${searchResults.length} 个搜索结果：
+1. 判断是否是游戏相关网站 (confidence)
+2. **重点判断内容是否与游戏 "${gameTitle}" 直接相关 (relevanceScore)**\n\n`
 
   searchResults.forEach((result, index) => {
     userMessage += `--- 网站 ${index + 1} ---\n`
@@ -475,7 +490,11 @@ export async function filterGameWebsites(
     userMessage += `内容:\n${result.content}\n\n` // 完整内容，不截断
   })
 
-  userMessage += `\n请以 JSON 数组格式返回所有 ${searchResults.length} 个网站的分析结果。`
+  userMessage += `\n请以 JSON 数组格式返回所有 ${searchResults.length} 个网站的分析结果。
+重要提醒：
+- confidence 评估网站类型（是否是游戏网站）
+- relevanceScore 评估内容是否与 "${gameTitle}" 这个游戏相关
+- 即使是优质游戏网站，如果内容与 "${gameTitle}" 无关，relevanceScore 也应该很低`
 
   try {
     // 构建请求头
@@ -510,7 +529,13 @@ export async function filterGameWebsites(
     const content = data.choices[0]?.message?.content || '[]'
 
     // 解析 JSON 结果
-    let analysisResults: Array<{ url: string; isGameWebsite: boolean; confidence: number; reasoning: string }>
+    let analysisResults: Array<{
+      url: string;
+      isGameWebsite: boolean;
+      confidence: number;
+      relevanceScore: number;
+      reasoning: string
+    }>
     const parsed = safeParseJSON(content, { results: [] })
     // 处理可能是对象包裹数组的情况
     analysisResults = Array.isArray(parsed) ? parsed : (parsed.results || parsed.websites || [])
@@ -531,14 +556,22 @@ export async function filterGameWebsites(
           url: result.url,
           content: result.content, // 保持完整内容
           confidence: analysis.confidence || 0,
+          relevanceScore: analysis.relevanceScore || 0,
           reasoning: analysis.reasoning || '无分析理由'
         }
       })
-      .filter((r): r is NonNullable<typeof r> => r !== null && r.confidence >= 60) // 只保留置信度 >= 60 的网站
+      .filter((r): r is NonNullable<typeof r> => {
+        // 筛选条件：
+        // 1. 必须是游戏网站 (confidence >= 60)
+        // 2. 内容必须与游戏相关 (relevanceScore >= 50)
+        return r !== null && r.confidence >= 60 && r.relevanceScore >= 50
+      })
 
-    console.log(`[filterGameWebsites] ✓ 过滤完成: ${filtered.length}/${searchResults.length} 个游戏网站`)
+    console.log(`[filterGameWebsites] ✓ 过滤完成: ${filtered.length}/${searchResults.length} 个相关游戏网站`)
     filtered.forEach(r => {
-      console.log(`  - ${r.title} (置信度: ${r.confidence}%) - ${r.reasoning}`)
+      console.log(`  - ${r.title}`)
+      console.log(`    网站置信度: ${r.confidence}%, 内容相关性: ${r.relevanceScore}%`)
+      console.log(`    理由: ${r.reasoning}`)
     })
 
     return filtered
@@ -550,6 +583,7 @@ export async function filterGameWebsites(
     return searchResults.map(r => ({
       ...r,
       confidence: 50, // 默认置信度
+      relevanceScore: 50, // 默认相关性
       reasoning: '过滤失败，默认保留'
     }))
   }
@@ -597,7 +631,7 @@ export interface GamePixImportOutput {
  */
 export async function generateGamePixImportContent(
   input: GamePixImportInput,
-  onProgress?: (step: number, total, message: string) => void,
+  onProgress?: (step: number, total: number, message: string) => void,
   onWarning?: (type: 'google_search' | 'jina_reader' | 'no_data', message: string) => Promise<boolean>
 ): Promise<GamePixImportOutput> {
   const { gameTitle, mainKeyword, subKeywords, originalDescription, markdownContent, locale, mode, aiConfigId, modelId } = input
@@ -616,7 +650,7 @@ export async function generateGamePixImportContent(
   const totalSteps = mode === 'fast' ? 2 : 5
   onProgress?.(0, totalSteps, '正在搜索竞品网站...')
 
-  let filteredWebsites: Array<{ title: string; url: string; content: string; confidence: number; reasoning: string }> = []
+  let filteredWebsites: Array<{ title: string; url: string; content: string; confidence: number; relevanceScore: number; reasoning: string }> = []
   let hasApiError = false
   let apiErrorType: 'google_search' | 'jina_reader' | 'no_data' = 'no_data'
   let apiErrorMessage = ''
@@ -626,8 +660,8 @@ export async function generateGamePixImportContent(
     const { searchGoogleTopPages } = await import('./google-search')
     const { readMultiplePages } = await import('./jina-reader')
 
-    // 搜索 Top 5 页面
-    const searchResults = await searchGoogleTopPages(mainKeyword, 5, locale)
+    // 搜索 Top 10 页面
+    const searchResults = await searchGoogleTopPages(mainKeyword, 10, locale)
     console.log(`[generateGamePixImportContent] 搜索到 ${searchResults.length} 个结果`)
 
     if (searchResults.length === 0) {
@@ -711,7 +745,7 @@ export async function generateGamePixImportContent(
  */
 async function generateFastModeForGamePix(
   input: GamePixImportInput,
-  filteredWebsites: Array<{ title: string; url: string; content: string; confidence: number; reasoning: string }>,
+  filteredWebsites: Array<{ title: string; url: string; content: string; confidence: number; relevanceScore: number; reasoning: string }>,
   config: AiModelConfig,
   onProgress?: (step: number, total: number, message: string) => void
 ): Promise<GamePixImportOutput> {
@@ -787,10 +821,11 @@ Return JSON format:
 **Markdown Content (Complete):**
 ${markdownContent}
 
-${filteredWebsites.length > 0 ? `**Competitor Game Website Content (Filtered, Complete):**
+${filteredWebsites.length > 0 ? `**Competitor Game Website Content (Filtered by AI, Complete):**
 ${filteredWebsites.map((w, i) => `
---- Website ${i + 1}: ${w.title} (Confidence: ${w.confidence}%) ---
+--- Website ${i + 1}: ${w.title} ---
 URL: ${w.url}
+Quality Score: ${w.confidence}% (game website), ${w.relevanceScore}% (content relevance)
 Reasoning: ${w.reasoning}
 Content:
 ${w.content}
@@ -943,7 +978,7 @@ Please generate all 9 fields with complete, detailed content in ${languageName}.
  */
 async function generateQualityModeForGamePix(
   input: GamePixImportInput,
-  filteredWebsites: Array<{ title: string; url: string; content: string; confidence: number; reasoning: string }>,
+  filteredWebsites: Array<{ title: string; url: string; content: string; confidence: number; relevanceScore: number; reasoning: string }>,
   config: AiModelConfig,
   onProgress?: (step: number, total: number, message: string) => void
 ): Promise<GamePixImportOutput> {
@@ -977,10 +1012,11 @@ async function generateQualityModeForGamePix(
 **Markdown Content:**
 ${markdownContent}
 
-${filteredWebsites.length > 0 ? `**Competitor Game Websites (${filteredWebsites.length} total):**
+${filteredWebsites.length > 0 ? `**Competitor Game Websites (${filteredWebsites.length} total, filtered by AI):**
 ${filteredWebsites.map((w, i) => `
-${i + 1}. ${w.title} (Confidence: ${w.confidence}%)
+${i + 1}. ${w.title}
 URL: ${w.url}
+Quality: ${w.confidence}% (game website), ${w.relevanceScore}% (content relevance)
 Content: ${w.content}
 `).join('\n')}` : ''}
 

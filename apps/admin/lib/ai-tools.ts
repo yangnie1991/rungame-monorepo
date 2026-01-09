@@ -121,16 +121,16 @@ export async function executeTool(
 ): Promise<any> {
   switch (name) {
     case 'search_similar_games':
-      return await searchSimilarGames(args)
+      return await searchSimilarGames(args as any)
 
     case 'get_category_stats':
-      return await getCategoryStats(args)
+      return await getCategoryStats(args as any)
 
     case 'get_popular_tags':
-      return await getPopularTags(args)
+      return await getPopularTags(args as any)
 
     case 'analyze_game_keywords':
-      return await analyzeGameKeywords(args)
+      return await analyzeGameKeywords(args as any)
 
     default:
       throw new Error(`Unknown tool: ${name}`)
@@ -162,10 +162,18 @@ async function searchSimilarGames(args: {
     }
 
     // 查询游戏
+    // 查询游戏
     const games = await prisma.game.findMany({
       where: {
-        categoryId: categoryRecord.id,
-        isPublished: true,
+        gameCategories: {
+          some: {
+            OR: [
+              { categoryId: categoryRecord.id },
+              { mainCategoryId: categoryRecord.id }
+            ]
+          }
+        },
+        status: 'PUBLISHED',
         ...(tags.length > 0 && {
           tags: {
             some: {
@@ -211,23 +219,6 @@ async function getCategoryStats(args: {
     const category = await prisma.category.findUnique({
       where: { id: categoryId },
       include: {
-        games: {
-          where: { isPublished: true },
-          select: {
-            playCount: true,
-            tags: {
-              include: {
-                tag: {
-                  include: {
-                    translations: {
-                      where: { locale: 'en' }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
         translations: {
           where: { locale: 'en' }
         }
@@ -238,14 +229,43 @@ async function getCategoryStats(args: {
       return { error: `分类 ID "${categoryId}" 未找到` }
     }
 
+    // 单独查询游戏，解决关系嵌套过深或类型不匹配问题
+    const games = await prisma.game.findMany({
+      where: {
+        gameCategories: {
+          some: {
+            OR: [
+              { categoryId },
+              { mainCategoryId: categoryId }
+            ]
+          }
+        },
+        status: 'PUBLISHED'
+      },
+      select: {
+        playCount: true,
+        tags: {
+          include: {
+            tag: {
+              include: {
+                translations: {
+                  where: { locale: 'en' }
+                }
+              }
+            }
+          }
+        }
+      }
+    })
+
     // 统计
-    const totalGames = category.games.length
-    const totalPlays = category.games.reduce((sum, g) => sum + g.playCount, 0)
+    const totalGames = games.length
+    const totalPlays = games.reduce((sum, g) => sum + g.playCount, 0)
     const avgPlays = totalGames > 0 ? Math.round(totalPlays / totalGames) : 0
 
     // 热门标签
     const tagCounts = new Map<string, number>()
-    category.games.forEach(game => {
+    games.forEach(game => {
       game.tags.forEach(({ tag }) => {
         const tagName = tag.translations[0]?.name || tag.slug
         tagCounts.set(tagName, (tagCounts.get(tagName) || 0) + 1)
@@ -283,10 +303,14 @@ async function getPopularTags(args: {
         games: {
           some: {
             game: {
-              isPublished: true,
+              status: 'PUBLISHED',
               ...(category && {
-                category: {
-                  slug: category
+                gameCategories: {
+                  some: {
+                    category: {
+                      slug: category
+                    }
+                  }
                 }
               })
             }

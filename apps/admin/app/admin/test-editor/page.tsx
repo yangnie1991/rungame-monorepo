@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { CharacterCount } from '@tiptap/extensions'
+import CharacterCount from '@tiptap/extension-character-count'
 
 export default function TestEditorPage() {
   const [content, setContent] = useState('<p>测试内容 Hello World</p>')

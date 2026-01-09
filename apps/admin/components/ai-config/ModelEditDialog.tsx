@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2, TestTube, CheckCircle2, XCircle } from "lucide-react"
 import { updateAiConfig, testAiModel } from "@/app/admin/ai-config/actions"
-import type { AiConfig, AiModel, AiProviderTemplate } from "@/types/ai-config"
+import type { AiConfig, AiModel, AiModelConfig, AiProviderTemplate } from "@/types/ai-config"
 
 interface ModelEditDialogProps {
   open: boolean
@@ -73,7 +73,7 @@ export function ModelEditDialog({
         id: "",
         name: "",
         description: "",
-        isDefault: config?.modelConfig?.models?.length === 0, // 第一个模型默认为默认模型
+        isDefault: (config?.modelConfig as unknown as AiModelConfig)?.models?.length === 0, // 第一个模型默认为默认模型
         isEnabled: true,
         parameters: {
           temperature: 0.7,
@@ -102,8 +102,8 @@ export function ModelEditDialog({
       if (
         formData.id !== originalData.id ||
         formData.name !== originalData.name ||
-        formData.parameters.temperature !== originalData.parameters.temperature ||
-        formData.parameters.max_tokens !== originalData.parameters.max_tokens
+        formData.parameters?.temperature !== originalData.parameters?.temperature ||
+        formData.parameters?.max_tokens !== originalData.parameters?.max_tokens
       ) {
         setTestResult(null) // 清除测试结果，要求重新测试
       }
@@ -170,9 +170,9 @@ export function ModelEditDialog({
     }
 
     setLoading(true)
-
     try {
-      let updatedModels = [...config.modelConfig.models]
+      const currentModelConfig = config.modelConfig as unknown as AiModelConfig
+      let updatedModels = [...currentModelConfig.models]
 
       if (mode === "add") {
         // 添加新模型
@@ -234,11 +234,10 @@ export function ModelEditDialog({
           {/* 测试结果 */}
           {testResult && (
             <div
-              className={`p-3 border rounded text-sm flex items-start gap-2 ${
-                testResult.success
-                  ? "bg-green-50 border-green-200 text-green-800"
-                  : "bg-red-50 border-red-200 text-red-800"
-              }`}
+              className={`p-3 border rounded text-sm flex items-start gap-2 ${testResult.success
+                ? "bg-green-50 border-green-200 text-green-800"
+                : "bg-red-50 border-red-200 text-red-800"
+                }`}
             >
               {testResult.success ? (
                 <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5" />
@@ -326,12 +325,12 @@ export function ModelEditDialog({
                   step="0.1"
                   min="0"
                   max="2"
-                  value={formData.parameters.temperature}
+                  value={formData.parameters?.temperature}
                   onChange={e =>
                     setFormData({
                       ...formData,
                       parameters: {
-                        ...formData.parameters,
+                        ...(formData.parameters || {}),
                         temperature: parseFloat(e.target.value),
                       },
                     })
@@ -344,12 +343,12 @@ export function ModelEditDialog({
                 <Input
                   type="number"
                   min="1"
-                  value={formData.parameters.max_tokens}
+                  value={formData.parameters?.max_tokens}
                   onChange={e =>
                     setFormData({
                       ...formData,
                       parameters: {
-                        ...formData.parameters,
+                        ...(formData.parameters || {}),
                         max_tokens: parseInt(e.target.value),
                       },
                     })
@@ -363,12 +362,12 @@ export function ModelEditDialog({
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
-                      checked={formData.parameters.stream}
+                      checked={formData.parameters?.stream}
                       onChange={e =>
                         setFormData({
                           ...formData,
                           parameters: {
-                            ...formData.parameters,
+                            ...(formData.parameters || {}),
                             stream: e.target.checked,
                           },
                         })

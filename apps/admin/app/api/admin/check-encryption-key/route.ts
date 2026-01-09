@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   try {
     // 验证管理员身份
     const session = await auth()
-    if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN')) {
+    if (!session || ((session.user as any)?.role !== 'ADMIN' && (session.user as any)?.role !== 'SUPER_ADMIN')) {
       return NextResponse.json({ error: '未授权' }, { status: 401 })
     }
 

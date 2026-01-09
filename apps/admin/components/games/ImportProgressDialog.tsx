@@ -38,7 +38,8 @@ interface ImportProgressDialogProps {
   steps: ImportStep[]
   currentStepIndex: number
   overallProgress: number
-  onRetry?: () => void
+  onRetryStep?: (stepIndex: number) => void // 重试指定的步骤
+  onExecuteStep?: (stepIndex: number) => void // 执行指定的步骤(跳过之前的步骤)
   onCancel?: () => void
   allowClose?: boolean
 }
@@ -59,14 +60,18 @@ export function ImportProgressDialog({
   steps,
   currentStepIndex,
   overallProgress,
-  onRetry,
+  onRetryStep,
+  onExecuteStep,
   onCancel,
   allowClose = false,
 }: ImportProgressDialogProps) {
-  const [isRetrying, setIsRetrying] = useState(false)
+  const [executingStepIndex, setExecutingStepIndex] = useState<number | null>(null)
 
   // 是否有步骤失败
   const hasError = steps.some(step => step.status === 'error')
+
+  // 获取失败的步骤索引
+  const failedStepIndex = steps.findIndex(step => step.status === 'error')
 
   // 是否正在运行
   const isRunning = steps.some(step => step.status === 'running')
@@ -104,14 +109,25 @@ export function ImportProgressDialog({
     }
   }
 
-  // 处理重试
-  const handleRetry = async () => {
-    if (!onRetry) return
-    setIsRetrying(true)
+  // 处理重试步骤
+  const handleRetryStep = async (stepIndex: number) => {
+    if (!onRetryStep) return
+    setExecutingStepIndex(stepIndex)
     try {
-      await onRetry()
+      await onRetryStep(stepIndex)
     } finally {
-      setIsRetrying(false)
+      setExecutingStepIndex(null)
+    }
+  }
+
+  // 处理执行步骤
+  const handleExecuteStep = async (stepIndex: number) => {
+    if (!onExecuteStep) return
+    setExecutingStepIndex(stepIndex)
+    try {
+      await onExecuteStep(stepIndex)
+    } finally {
+      setExecutingStepIndex(null)
     }
   }
 
@@ -229,6 +245,52 @@ export function ImportProgressDialog({
                       {step.error}
                     </div>
                   )}
+
+                  {/* 操作按钮 */}
+                  <div className="mt-2 flex gap-2">
+                    {/* 失败步骤: 显示重试按钮 */}
+                    {step.status === 'error' && onRetryStep && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleRetryStep(index)}
+                        disabled={executingStepIndex !== null}
+                      >
+                        {executingStepIndex === index ? (
+                          <>
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                            重试中...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="mr-1 h-3 w-3" />
+                            重试此步骤
+                          </>
+                        )}
+                      </Button>
+                    )}
+
+                    {/* 待执行步骤(在失败步骤之后): 显示执行按钮 */}
+                    {step.status === 'pending' && failedStepIndex !== -1 && index > failedStepIndex && onExecuteStep && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleExecuteStep(index)}
+                        disabled={executingStepIndex !== null}
+                      >
+                        {executingStepIndex === index ? (
+                          <>
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                            执行中...
+                          </>
+                        ) : (
+                          <>
+                            执行此步骤
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -236,25 +298,6 @@ export function ImportProgressDialog({
 
           {/* 底部操作按钮 */}
           <div className="flex items-center justify-end gap-2 pt-2 border-t">
-            {hasError && onRetry && (
-              <Button
-                onClick={handleRetry}
-                disabled={isRetrying}
-                variant="default"
-              >
-                {isRetrying ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    重试中...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    重新执行
-                  </>
-                )}
-              </Button>
-            )}
 
             {isRunning && onCancel && (
               <Button onClick={onCancel} variant="outline">

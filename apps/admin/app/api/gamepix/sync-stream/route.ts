@@ -30,7 +30,7 @@ function createSSEMessage(data: any, event?: string): string {
 export async function GET(req: NextRequest) {
   // 验证身份
   const session = await auth()
-  if (!session || !['ADMIN', 'SUPER_ADMIN'].includes(session.user.role)) {
+  if (!session || !['ADMIN', 'SUPER_ADMIN'].includes((session.user as any)?.role)) {
     return new Response(
       createSSEMessage({ type: 'error', error: '无权限' }),
       { status: 403, headers: { 'Content-Type': 'text/event-stream' } }

@@ -39,6 +39,8 @@ COPY . .
 # 构建参数
 ARG DATABASE_URL
 ARG NODE_ENV=production
+# 设置 Docker 构建标志
+ENV DOCKER_BUILD=true
 
 # 设置环境变量
 ENV DATABASE_URL=${DATABASE_URL}

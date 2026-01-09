@@ -207,7 +207,7 @@ export function transformGamePixGameToDbFormat(game: GamePixGameItem, categoryId
     // 分类
     categoryId,
     // 默认启用和发布
-    isPublished: true,
+    status: 'PUBLISHED',
     isFeatured: game.quality_score > 0.7, // 高质量游戏标记为精选
     // 播放次数默认为0,后续可以更新
     playCount: 0,

@@ -1,11 +1,12 @@
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+// 以前使用 Google Fonts，现在由于网络环境限制暂时移除
+// import { Inter } from "next/font/google"
 import "./admin.css"
 import { Toaster } from "@/components/ui/sonner"
 // 导入环境变量验证（只在应用运行时执行，不在构建时执行）
 import "@/lib/env-init"
 
-const inter = Inter({ subsets: ["latin"] })
+// const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "管理后台 - RunGame.Online",
@@ -25,7 +26,7 @@ export default function AdminRootLayout({
 }) {
   return (
     <html lang="zh" suppressHydrationWarning className="light">
-      <body className={`${inter.className} antialiased`} style={{ colorScheme: 'light' }}>
+      <body className="antialiased" style={{ colorScheme: 'light' }}>
         {children}
         <Toaster />
       </body>

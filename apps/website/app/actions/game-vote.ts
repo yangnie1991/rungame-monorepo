@@ -18,7 +18,7 @@ async function getUserIp(): Promise<string> {
 
   if (cfConnectingIp) return cfConnectingIp
   if (realIp) return realIp
-  if (forwardedFor) return forwardedFor.split(",")[0].trim()
+  if (forwardedFor) return (forwardedFor.split(",")[0] || "").trim()
 
   return "unknown"
 }
@@ -65,7 +65,7 @@ export async function voteGame(gameId: string, isLike: boolean) {
         updatedGame = game
 
         // 清除游戏详情缓存
-        revalidateTag(CACHE_TAGS.GAMES)
+        // revalidateTag(CACHE_TAGS.GAMES)
 
         return {
           success: true,
@@ -93,7 +93,7 @@ export async function voteGame(gameId: string, isLike: boolean) {
         updatedGame = game
 
         // 清除游戏详情缓存
-        revalidateTag(CACHE_TAGS.GAMES)
+        // revalidateTag(CACHE_TAGS.GAMES)
 
         return {
           success: true,
@@ -124,7 +124,7 @@ export async function voteGame(gameId: string, isLike: boolean) {
       updatedGame = game
 
       // 清除游戏详情缓存
-      revalidateTag(CACHE_TAGS.GAMES)
+      // revalidateTag(CACHE_TAGS.GAMES)
 
       return {
         success: true,

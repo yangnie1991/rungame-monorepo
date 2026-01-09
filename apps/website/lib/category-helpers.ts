@@ -4,7 +4,7 @@
  */
 
 import { prisma } from "@rungame/database"
-import { Category } from '@prisma/client'
+import type { Category } from '@prisma/client'
 
 /**
  * 获取分类及其所有子分类的ID列表
@@ -83,18 +83,18 @@ export async function getGameMainCategory(gameId: string): Promise<Category | nu
   const game = await prisma.game.findUnique({
     where: { id: gameId },
     include: {
-      category: {
+      gameCategories: {
+        where: { isPrimary: true },
         include: {
-          parent: true
+          mainCategory: true
         }
       }
     }
   })
 
-  if (!game) return null
+  if (!game || !game.gameCategories[0]) return null
 
-  // 如果游戏分类有父分类，返回父分类；否则返回当前分类（说明已经是主分类）
-  return game.category.parent || game.category
+  return game.gameCategories[0].mainCategory
 }
 
 /**
@@ -106,18 +106,22 @@ export async function getGameSubCategory(gameId: string): Promise<Category | nul
   const game = await prisma.game.findUnique({
     where: { id: gameId },
     include: {
-      category: {
+      gameCategories: {
+        where: { isPrimary: true },
         include: {
-          parent: true
+          category: {
+            include: { parent: true }
+          }
         }
       }
     }
   })
 
-  if (!game) return null
+  if (!game || !game.gameCategories[0]) return null
 
-  // 如果有父分类，说明当前分类是子分类
-  return game.category.parentId ? game.category : null
+  const primaryCat = game.gameCategories[0].category
+  // 如果当前分类有父分类，说明它是子分类
+  return primaryCat.parentId ? primaryCat : null
 }
 
 /**
@@ -142,13 +146,13 @@ export async function getMainCategories(locale: string) {
             where: { locale }
           },
           _count: {
-            select: { games: true }
+            select: { gameSubCategories: true }
           }
         },
         orderBy: { sortOrder: 'asc' }
       },
       _count: {
-        select: { games: true }
+        select: { gameMainCategories: true }
       }
     },
     orderBy: { sortOrder: 'asc' }
@@ -160,12 +164,12 @@ export async function getMainCategories(locale: string) {
     name: cat.translations[0]?.name || cat.name,
     description: cat.translations[0]?.description || cat.description,
     icon: cat.icon,
-    gameCount: cat._count.games,
+    gameCount: cat._count.gameMainCategories,
     subCategories: cat.subCategories.map(sub => ({
       id: sub.id,
       slug: sub.slug,
       name: sub.translations[0]?.name || sub.name,
-      gameCount: sub._count.games
+      gameCount: sub._count.gameSubCategories
     }))
   }))
 }
@@ -216,7 +220,11 @@ export async function getMainCategoriesGameCount(): Promise<Record<string, numbe
 
     const count = await prisma.game.count({
       where: {
-        categoryId: { in: allCategoryIds },
+        gameCategories: {
+          some: {
+            categoryId: { in: allCategoryIds }
+          }
+        },
         status: 'PUBLISHED'
       }
     })

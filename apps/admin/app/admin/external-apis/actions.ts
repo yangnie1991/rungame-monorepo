@@ -153,7 +153,7 @@ export async function updateGoogleSearchConfig(data: GoogleSearchConfigData) {
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
+        error: error.issues.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
       }
     }
     console.error('[External API] 更新 Google Search 配置失败:', error.message)
@@ -203,7 +203,7 @@ export async function updateJinaReaderConfig(data: JinaReaderConfigData) {
           apiConfig: {
             apiKey: encryptedApiKey,
             endpoint: 'https://r.jina.ai',
-            timeout: 20,
+            timeout: 60,
             options: {
               withGeneratedAlt: true,
               withImagesSummary: true,
@@ -215,7 +215,7 @@ export async function updateJinaReaderConfig(data: JinaReaderConfigData) {
           apiConfig: {
             apiKey: encryptedApiKey,
             endpoint: 'https://r.jina.ai',
-            timeout: 20,
+            timeout: 60,
             options: {
               withGeneratedAlt: true,
               withImagesSummary: true,
@@ -234,7 +234,7 @@ export async function updateJinaReaderConfig(data: JinaReaderConfigData) {
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
+        error: error.issues.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
       }
     }
     console.error('[External API] 更新 Jina Reader 配置失败:', error.message)
@@ -322,7 +322,7 @@ async function ensureDefaultConfigs() {
           apiConfig: {
             apiKey: '',
             endpoint: 'https://r.jina.ai',
-            timeout: 20,
+            timeout: 60,
             useMode: 'auto',  // 默认使用 auto 模式
             options: {
               withGeneratedAlt: true,

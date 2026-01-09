@@ -2,32 +2,67 @@
  * Cloudflare R2 文件上传工具
  *
  * 使用 AWS S3 SDK 连接 R2 (R2 兼容 S3 API)
+ * 配置从数据库读取 (ExternalApiConfig 表)
  */
 
 import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3"
+import { getR2Config, recordApiCall, type R2Config } from './external-api-config'
 
-// R2 配置验证
-const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID
-const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID
-const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY
-const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME
-const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL
+/**
+ * R2 客户端缓存（避免每次都创建新实例）
+ */
+let cachedR2Client: S3Client | null = null
+let cachedConfig: R2Config | null = null
 
-if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY || !R2_BUCKET_NAME) {
-  console.warn('⚠️ R2 环境变量未配置,文件上传功能将不可用')
-}
+/**
+ * 获取 R2 客户端实例
+ * 从数据库读取配置，自动创建和缓存客户端
+ *
+ * @returns R2 客户端实例，如果配置不存在则返回 null
+ */
+async function getR2Client(): Promise<{ client: S3Client; config: R2Config } | null> {
+  try {
+    // 获取配置
+    const config = await getR2Config()
 
-// 创建 R2 客户端 (使用 S3 兼容 API)
-const r2Client = R2_ACCOUNT_ID && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY
-  ? new S3Client({
+    if (!config) {
+      console.warn('[R2] R2 配置未找到，请在管理后台配置')
+      return null
+    }
+
+    // 如果配置未变化，直接返回缓存的客户端
+    if (
+      cachedR2Client &&
+      cachedConfig &&
+      cachedConfig.accountId === config.accountId &&
+      cachedConfig.accessKeyId === config.accessKeyId &&
+      cachedConfig.bucketName === config.bucketName
+    ) {
+      return { client: cachedR2Client, config: cachedConfig }
+    }
+
+    // 创建新的 R2 客户端
+    const client = new S3Client({
       region: "auto",
-      endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      endpoint: config.endpoint || `https://${config.accountId}.r2.cloudflarestorage.com`,
       credentials: {
-        accessKeyId: R2_ACCESS_KEY_ID,
-        secretAccessKey: R2_SECRET_ACCESS_KEY,
+        accessKeyId: config.accessKeyId,
+        secretAccessKey: config.secretAccessKey,
       },
     })
-  : null
+
+    // 缓存客户端和配置
+    cachedR2Client = client
+    cachedConfig = config
+
+    console.log('[R2] R2 客户端已初始化')
+    return { client, config }
+
+  } catch (error: any) {
+    console.error('[R2] 获取 R2 客户端失败:', error.message)
+    return null
+  }
+}
 
 /**
  * 上传配置选项
@@ -105,16 +140,19 @@ export interface UploadResult {
  * ```
  */
 export async function uploadToR2(options: UploadOptions): Promise<UploadResult> {
-  if (!r2Client || !R2_BUCKET_NAME) {
-    throw new Error('R2 未配置,请检查环境变量')
+  const r2ClientData = await getR2Client()
+
+  if (!r2ClientData) {
+    throw new Error('R2 未配置,请在管理后台配置 Cloudflare R2')
   }
 
+  const { client, config } = r2ClientData
   const { key, body, contentType, cacheControl = "public, max-age=31536000, immutable", metadata } = options
 
   try {
     // 上传文件
     const command = new PutObjectCommand({
-      Bucket: R2_BUCKET_NAME,
+      Bucket: config.bucketName,
       Key: key,
       Body: body,
       ContentType: contentType,
@@ -122,12 +160,15 @@ export async function uploadToR2(options: UploadOptions): Promise<UploadResult> 
       Metadata: metadata,
     })
 
-    await r2Client.send(command)
+    await client.send(command)
+
+    // 记录 API 调用成功
+    await recordApiCall('cloudflare_r2', true)
 
     // 构造公共 URL
-    const publicUrl = R2_PUBLIC_URL
-      ? `https://${R2_PUBLIC_URL}/${key}`
-      : `https://pub-${R2_ACCOUNT_ID}.r2.dev/${key}` // 回退到 r2.dev 域名
+    const publicUrl = config.publicUrl
+      ? `https://${config.publicUrl}/${key}`
+      : `https://pub-${config.accountId}.r2.dev/${key}` // 回退到 r2.dev 域名
 
     return {
       key,
@@ -136,7 +177,10 @@ export async function uploadToR2(options: UploadOptions): Promise<UploadResult> 
       contentType,
     }
   } catch (error) {
-    console.error('R2 上传失败:', error)
+    // 记录 API 调用失败
+    await recordApiCall('cloudflare_r2', false)
+
+    console.error('[R2] 上传失败:', error)
     throw new Error(`文件上传失败: ${error instanceof Error ? error.message : '未知错误'}`)
   }
 }
@@ -151,19 +195,30 @@ export async function uploadToR2(options: UploadOptions): Promise<UploadResult> 
  * ```
  */
 export async function deleteFromR2(key: string): Promise<void> {
-  if (!r2Client || !R2_BUCKET_NAME) {
-    throw new Error('R2 未配置,请检查环境变量')
+  const r2ClientData = await getR2Client()
+
+  if (!r2ClientData) {
+    throw new Error('R2 未配置,请在管理后台配置 Cloudflare R2')
   }
+
+  const { client, config } = r2ClientData
 
   try {
     const command = new DeleteObjectCommand({
-      Bucket: R2_BUCKET_NAME,
+      Bucket: config.bucketName,
       Key: key,
     })
 
-    await r2Client.send(command)
+    await client.send(command)
+
+    // 记录 API 调用成功
+    await recordApiCall('cloudflare_r2', true)
+
   } catch (error) {
-    console.error('R2 删除失败:', error)
+    // 记录 API 调用失败
+    await recordApiCall('cloudflare_r2', false)
+
+    console.error('[R2] 删除失败:', error)
     throw new Error(`文件删除失败: ${error instanceof Error ? error.message : '未知错误'}`)
   }
 }
@@ -175,19 +230,30 @@ export async function deleteFromR2(key: string): Promise<void> {
  * @returns 是否存在
  */
 export async function fileExistsInR2(key: string): Promise<boolean> {
-  if (!r2Client || !R2_BUCKET_NAME) {
+  const r2ClientData = await getR2Client()
+
+  if (!r2ClientData) {
     return false
   }
 
+  const { client, config } = r2ClientData
+
   try {
     const command = new HeadObjectCommand({
-      Bucket: R2_BUCKET_NAME,
+      Bucket: config.bucketName,
       Key: key,
     })
 
-    await r2Client.send(command)
+    await client.send(command)
+
+    // 记录 API 调用成功
+    await recordApiCall('cloudflare_r2', true)
+
     return true
   } catch {
+    // 记录 API 调用失败（可选，因为文件不存在是正常情况）
+    // await recordApiCall('cloudflare_r2', false)
+
     return false
   }
 }

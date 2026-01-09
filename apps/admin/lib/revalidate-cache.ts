@@ -69,7 +69,7 @@ export async function revalidatePageTypes(locale?: string) {
  */
 export async function revalidateGames() {
   revalidateTag(CACHE_TAGS.GAMES, "max")
-  revalidateTag(CACHE_TAGS.FEATURED_GAMES, "max")
+  // revalidateTag(CACHE_TAGS.FEATURED_GAMES, "max")
 
   // 重新验证首页和游戏相关页面
   revalidatePath("/[locale]", "page")

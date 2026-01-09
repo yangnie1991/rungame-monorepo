@@ -176,7 +176,7 @@ export async function updateGoogleConfig(data: GoogleConfigData): Promise<Update
 
     // 处理 zod 验证错误
     if (error instanceof z.ZodError) {
-      const errorMessages = error.errors.map(e => e.message).join('; ')
+      const errorMessages = error.issues.map(e => e.message).join('; ')
       return {
         success: false,
         message: `数据验证失败: ${errorMessages}`,
@@ -249,7 +249,7 @@ export async function updateBingConfig(data: BingConfigData): Promise<UpdateConf
 
     // 处理 zod 验证错误
     if (error instanceof z.ZodError) {
-      const errorMessages = error.errors.map(e => e.message).join('; ')
+      const errorMessages = error.issues.map(e => e.message).join('; ')
       return {
         success: false,
         message: `数据验证失败: ${errorMessages}`,
@@ -296,7 +296,7 @@ export async function testGoogleApi(data: {
 
     // 处理 zod 验证错误
     if (error instanceof z.ZodError) {
-      const errorMessages = error.errors.map(e => e.message).join('; ')
+      const errorMessages = error.issues.map(e => e.message).join('; ')
       return {
         success: false,
         message: `数据验证失败: ${errorMessages}`,
@@ -343,7 +343,7 @@ export async function testBingApi(data: {
 
     // 处理 zod 验证错误
     if (error instanceof z.ZodError) {
-      const errorMessages = error.errors.map(e => e.message).join('; ')
+      const errorMessages = error.issues.map(e => e.message).join('; ')
       return {
         success: false,
         message: `数据验证失败: ${errorMessages}`,

@@ -184,8 +184,8 @@ async function decryptApiKey(encryptedKey: string): Promise<string> {
 
   try {
     const parts = encryptedKey.split(':')
-    const iv = Buffer.from(parts[0], 'hex')
-    const encrypted = Buffer.from(parts[1], 'hex')
+    const iv = Buffer.from(parts[0] || '', 'hex')
+    const encrypted = Buffer.from(parts[1] || '', 'hex')
     const key = crypto.createHash('sha256').update(encryptionKey).digest()
     const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv)
     let decrypted = decipher.update(encrypted)

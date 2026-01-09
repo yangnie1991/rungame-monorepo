@@ -248,7 +248,7 @@ export function getRecommendedGameIds(
     // Fisher-Yates 洗牌算法
     for (let i = topN.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1))
-      ;[topN[i], topN[j]] = [topN[j], topN[i]]
+        ;[topN[i], topN[j]] = [topN[j]!, topN[i]!]
     }
 
     return topN.slice(0, limit).map(r => r.gameId)

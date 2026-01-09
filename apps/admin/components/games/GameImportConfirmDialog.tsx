@@ -232,7 +232,7 @@ interface GameImportConfirmDialogProps {
     parentName: string
     parentNameEn: string
   }>
-  tags: Array<{ id: string; name: string }>
+  tags: Array<{ id: string; name: string; slug: string }> // ✅ 英文主表数据，用于匹配 GamePix 标签
   onConfirm: (gameId: string, data: ImportFormData) => Promise<void>
   onLoadCategories?: () => Promise<boolean>  // 加载分类的回调函数
   isImporting?: boolean
@@ -282,6 +282,14 @@ export function GameImportConfirmDialog({
   const [configError, setConfigError] = useState<string | null>(null)
   const [showAiConfigDialog, setShowAiConfigDialog] = useState(false)
 
+  // AI 生成进度状态
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [generationProgress, setGenerationProgress] = useState('')
+  const [generationPercentage, setGenerationPercentage] = useState(0)
+  const [generationStep, setGenerationStep] = useState(0)
+  const [generationTotal, setGenerationTotal] = useState(0)
+  const [aiConfigMode, setAiConfigMode] = useState<'fast' | 'quality'>('fast')
+
   // AI 生成配置
   const [aiConfig, setAiConfig] = useState({
     mainKeyword: '',
@@ -292,7 +300,7 @@ export function GameImportConfirmDialog({
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   const form = useForm<ImportFormData>({
-    resolver: zodResolver(importFormSchema),
+    resolver: zodResolver(importFormSchema) as any,
     defaultValues: {
       slug: '',
       thumbnail: '',
@@ -371,6 +379,8 @@ export function GameImportConfirmDialog({
   }
 
   // 🎯 统一的标签分类函数（所有数据源都使用此函数）
+  // ✅ 标签分类：匹配 GamePix 的英文标签
+  // tags 现在是英文主表数据（getAllTagsForMatching），可以直接匹配
   const classifyTags = useCallback((tagNames: string[], source: string = 'unknown'): {
     existingIds: string[]
     newNames: string[]
@@ -378,14 +388,14 @@ export function GameImportConfirmDialog({
     const existingIds: string[] = []
     const newNames: string[] = []
 
-    console.log(`🔄 [标签分类-${source}] 开始分类 ${tagNames.length} 个标签`)
+    console.log(`🔄 [标签分类-${source}] 开始分类 ${tagNames.length} 个英文标签`)
     console.log(`🔄 [标签分类-${source}] 可用标签列表: ${tags.length} 个`)
 
     tagNames.forEach(tagName => {
       const normalizedName = tagName.trim()
       if (!normalizedName) return // 跳过空标签
 
-      // 尝试在已有标签中匹配（忽略大小写）
+      // 尝试在已有标签中匹配（忽略大小写，匹配英文 name）
       const matchedTag = tags.find(dbTag =>
         dbTag.name.toLowerCase() === normalizedName.toLowerCase()
       )
@@ -431,6 +441,10 @@ export function GameImportConfirmDialog({
         setIsFullscreen(false)
         setIsGenerating(false)
         setGenerationProgress('')
+        setGenerationPercentage(0)
+        setGenerationStep(0)
+        setGenerationTotal(0)
+        setAiConfigMode('fast')
 
         // 重置表单
         form.reset()
@@ -467,15 +481,17 @@ export function GameImportConfirmDialog({
       const activeConfig = configs.find(c => c.isActive)
       const selectedConfig = activeConfig || configs[0]
 
-      setSelectedAiConfigId(selectedConfig.id)
-      setAvailableModels(selectedConfig.models)
+      if (selectedConfig) {
+        setSelectedAiConfigId(selectedConfig.id)
+        setAvailableModels(selectedConfig.models)
 
-      // 设置默认选中的模型
-      const defaultModel = selectedConfig.models.find((m: any) => m.isDefault)
-      if (defaultModel) {
-        setSelectedModelId(defaultModel.id)
-      } else if (selectedConfig.models.length > 0) {
-        setSelectedModelId(selectedConfig.models[0].id)
+        // 设置默认选中的模型
+        const defaultModel = selectedConfig.models.find((m: any) => m.isDefault)
+        if (defaultModel) {
+          setSelectedModelId(defaultModel.id)
+        } else if (selectedConfig.models.length > 0 && selectedConfig.models[0]) {
+          setSelectedModelId(selectedConfig.models[0].id)
+        }
       }
     } catch (error: any) {
       console.error('加载 AI 配置失败:', error)
@@ -603,11 +619,11 @@ export function GameImportConfirmDialog({
       const currentKeywords = batchGenerateLocale === 'en'
         ? form.watch('keywords')
         : (() => {
-            const translationIndex = form.watch('translations')?.findIndex(t => t.locale === batchGenerateLocale)
-            return translationIndex !== undefined && translationIndex >= 0
-              ? form.watch(`translations.${translationIndex}.keywords`)
-              : ''
-          })()
+          const translationIndex = form.watch('translations')?.findIndex(t => t.locale === batchGenerateLocale)
+          return translationIndex !== undefined && translationIndex >= 0
+            ? form.watch(`translations.${translationIndex}.keywords`)
+            : ''
+        })()
 
       if (currentKeywords) {
         const keywords = currentKeywords.split(',').map(k => k.trim()).filter(k => k)
@@ -716,17 +732,32 @@ export function GameImportConfirmDialog({
   }, [game, form])
 
   // 执行导入的核心逻辑
-  const executeImport = async (data: any) => {
-    console.log('🚀 开始执行导入流程')
+  const executeImport = async (data: any, startFromStep?: number, context?: any) => {
+    const actualStartFromStep = startFromStep || 1
+    console.log(`🚀 开始执行导入流程${actualStartFromStep > 1 ? ` (从步骤${actualStartFromStep}恢复)` : ''}`)
 
-    // 重置进度状态
-    setImportSteps(DEFAULT_IMPORT_STEPS.map(step => ({ ...step, status: 'pending' as ImportStepStatus })))
-    setCurrentStepIndex(0)
-    setOverallProgress(0)
-    setImportError(null)
+    // 保存表单数据以便重试
+    setLastFormData(data)
+
+    // 重置或恢复进度状态
+    if (actualStartFromStep === 1) {
+      setImportSteps(DEFAULT_IMPORT_STEPS.map(step => ({ ...step, status: 'pending' as ImportStepStatus })))
+      setCurrentStepIndex(0)
+      setOverallProgress(0)
+      setImportError(null)
+      setStepContext({})
+    } else {
+      // 从指定步骤恢复,前面的步骤标记为成功
+      setImportSteps(DEFAULT_IMPORT_STEPS.map((step, index) => ({
+        ...step,
+        status: index < actualStartFromStep - 1 ? 'success' as ImportStepStatus : 'pending' as ImportStepStatus
+      })))
+    }
 
     // 显示进度弹窗
-    setShowImportProgress(true)
+    if (!showImportProgress) {
+      setShowImportProgress(true)
+    }
 
     // 辅助函数：更新步骤状态
     const updateStep = (stepId: string, status: ImportStepStatus, progress?: number, error?: string) => {
@@ -780,10 +811,15 @@ export function GameImportConfirmDialog({
       console.log('📤 提交游戏数据:', submitData)
 
       // ========== 调用 SSE 导入 API ==========
-      const response = await fetch('/api/admin/import-game-with-progress', {
+      const response = await fetch('/api/admin/import-game-v2', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ game, config: submitData }),
+        body: JSON.stringify({
+          game,
+          config: submitData,
+          startFromStep: actualStartFromStep,
+          context: context || stepContext
+        }),
       })
 
       if (!response.ok) {
@@ -816,7 +852,14 @@ export function GameImportConfirmDialog({
             const jsonStr = line.substring(5).trim()
             const eventData = JSON.parse(jsonStr)
 
-            if (eventData.step && eventData.message) {
+            if (eventData.type === 'step_completed' && eventData.context) {
+              // 步骤完成,保存上下文数据
+              console.log(`[步骤完成] 步骤 ${eventData.stepIndex + 1}, 上下文:`, eventData.context)
+              setStepContext((prev: any) => ({
+                ...prev,
+                ...eventData.context
+              }))
+            } else if (eventData.step && eventData.message) {
               // 进度更新
               const stepIndex = eventData.step - 1
               setStep(stepIndex)
@@ -835,6 +878,14 @@ export function GameImportConfirmDialog({
               })
               finalResult = eventData
               console.log('✅ 导入成功:', eventData)
+
+              // 保存最终的上下文
+              if (eventData.context) {
+                setStepContext((prev: any) => ({
+                  ...prev,
+                  ...eventData.context
+                }))
+              }
             } else if (eventData.error) {
               // 错误
               const currentStep = DEFAULT_IMPORT_STEPS[currentStepIndex]
@@ -842,6 +893,15 @@ export function GameImportConfirmDialog({
                 updateStep(currentStep.id, 'error', undefined, eventData.error)
               }
               setImportError(eventData.error)
+
+              // 保存错误时的上下文
+              if (eventData.context) {
+                setStepContext((prev: any) => ({
+                  ...prev,
+                  ...eventData.context
+                }))
+              }
+
               throw new Error(eventData.error)
             }
           } catch (e) {
@@ -1043,19 +1103,16 @@ export function GameImportConfirmDialog({
     console.log('✅ 插件数据处理完成：标签匹配 + 多媒体填充 + 开发者信息 + Markdown 内容')
   }
 
-  // ========== AI 批量生成 - GamePix 导入专用逻辑 ==========
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [generationProgress, setGenerationProgress] = useState('')
-  const [generationPercentage, setGenerationPercentage] = useState(0)
-  const [generationStep, setGenerationStep] = useState(0)
-  const [generationTotal, setGenerationTotal] = useState(0)
-
   // 导入进度状态（使用独立弹窗）
   const [showImportProgress, setShowImportProgress] = useState(false)
   const [importSteps, setImportSteps] = useState<ImportStep[]>(DEFAULT_IMPORT_STEPS)
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [overallProgress, setOverallProgress] = useState(0)
   const [importError, setImportError] = useState<string | null>(null)
+
+  // 步骤执行上下文(用于恢复执行)
+  const [stepContext, setStepContext] = useState<any>({})
+  const [lastFormData, setLastFormData] = useState<any>(null)
 
   const handleGamePixAIGenerate = async () => {
     if (!game || !extraDetails?.markdownContent) {
@@ -1441,11 +1498,10 @@ export function GameImportConfirmDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={`${
-          isFullscreen
-            ? 'w-screen h-screen max-w-none max-h-none m-0 rounded-none'
-            : 'w-[70vw] sm:max-w-[70vw] max-h-[85vh]'
-        } overflow-hidden flex flex-col`}
+        className={`${isFullscreen
+          ? 'w-screen h-screen !max-w-none !max-h-none m-0 rounded-none'
+          : 'w-[70vw] h-[70vh] sm:max-w-[70vw] sm:max-h-[70vh]'
+          } overflow-hidden flex flex-col`}
       >
         <DialogHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
@@ -1473,1033 +1529,181 @@ export function GameImportConfirmDialog({
 
         <div className="flex-1 overflow-y-auto px-6">
 
-        <Form {...form}>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* 游戏预览 */}
-          <div className="flex gap-4 p-4 bg-muted/50 rounded-lg">
-            <div className="relative w-32 h-32 rounded overflow-hidden flex-shrink-0">
-              <Image
-                src={removeWidthParameter(game.banner_image || game.image)}
-                alt={game.title}
-                fill
-                className="object-cover"
-                unoptimized
-              />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between mb-2">
-                <h3 className="font-semibold text-lg">{game.title}</h3>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  asChild
-                >
-                  <a
-                    href={`https://www.gamepix.com/play/${game.namespace}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <ExternalLink className="h-3 w-3 mr-1" />
-                    查看原页面
-                  </a>
-                </Button>
-              </div>
-              <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-                {game.description}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline">{game.category}</Badge>
-                <Badge variant="outline">{game.orientation}</Badge>
-                <Badge variant="outline">⭐ {(game.quality_score * 10).toFixed(1)}</Badge>
-                <Badge variant="outline">{game.width}x{game.height}</Badge>
-              </div>
-              {/* 日期信息 */}
-              {(game.date_published || game.date_modified) && (
-                <div className="mt-2 text-xs text-muted-foreground space-y-1">
-                  {game.date_published && (
-                    <div>发布日期: {new Date(game.date_published).toLocaleDateString('zh-CN')}</div>
-                  )}
-                  {game.date_modified && (
-                    <div>最后更新: {new Date(game.date_modified).toLocaleDateString('zh-CN')}</div>
-                  )}
+          <Form {...form}>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* 游戏预览 */}
+              <div className="flex gap-4 p-4 bg-muted/50 rounded-lg">
+                <div className="relative w-32 h-32 rounded overflow-hidden flex-shrink-0">
+                  <Image
+                    src={removeWidthParameter(game.banner_image || game.image)}
+                    alt={game.title}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
                 </div>
-              )}
-              {extraDetails?.tags && extraDetails.tags.length > 0 && (
-                <div className="mt-2">
-                  <p className="text-xs text-muted-foreground mb-1">发现的标签：</p>
-                  <div className="flex flex-wrap gap-1">
-                    {extraDetails.tags.slice(0, 5).map((tag, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs">
-                        {tag.icon && <span className="mr-1">{tag.icon}</span>}
-                        {tag.name}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* ========== 1. 核心字段（必填）========== */}
-          <div className="space-y-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
-            <Label className="text-base font-semibold text-blue-900">1️⃣ 核心字段（必填）</Label>
-
-            {/* Slug */}
-            <FormField
-              control={form.control}
-              name="slug"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    URL Slug <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <div className="flex gap-2">
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="game-title-slug"
-                      />
-                    </FormControl>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="font-semibold text-lg">{game.title}</h3>
                     <Button
                       type="button"
-                      variant="outline"
-                      onClick={handleGenerateSlug}
-                      className="whitespace-nowrap"
+                      variant="ghost"
+                      size="sm"
+                      asChild
                     >
-                      自动生成
+                      <a
+                        href={`https://www.gamepix.com/play/${game.namespace}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        查看原页面
+                      </a>
                     </Button>
                   </div>
-                  <FormDescription className="text-xs">
-                    URL 标识符，用于游戏详情页链接（如：/games/play/game-title-slug）
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Thumbnail */}
-            <FormField
-              control={form.control}
-              name="thumbnail"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    游戏缩略图 URL <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <ImageFieldWithUpload
-                      value={field.value}
-                      onChange={field.onChange}
-                      placeholder="https://example.com/thumbnail.jpg"
-                      folder="games/thumbnails"
-                      showLabel={false}
-                    />
-                  </FormControl>
-                  <FormDescription className="text-xs">
-                    推荐尺寸：800x600 或 16:9 比例。GamePix 图片会自动上传到 R2 CDN
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* EmbedUrl */}
-            <FormField
-              control={form.control}
-              name="embedUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    游戏嵌入 URL <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      type="url"
-                      placeholder="https://example.com/embed/game"
-                    />
-                  </FormControl>
-                  <FormDescription className="text-xs">
-                    游戏 iframe 嵌入地址，用于在网站上显示游戏（必须是 HTTPS）
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          {/* ========== 2. 游戏尺寸和方向 ========== */}
-          <div className="space-y-4 p-4 bg-purple-50 border-2 border-purple-200 rounded-lg">
-            <Label className="text-base font-semibold text-purple-900">2️⃣ 游戏尺寸和方向</Label>
-
-            <div className="grid grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="width"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>宽度 (px) <span className="text-destructive">*</span></FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="800"
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="height"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>高度 (px) <span className="text-destructive">*</span></FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="600"
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="orientation"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      屏幕方向 <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="landscape">横屏 (Landscape)</SelectItem>
-                        <SelectItem value="portrait">竖屏 (Portrait)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* 显示计算的 AspectRatio */}
-            <div className="p-3 bg-white border rounded-md">
-              <p className="text-sm">
-                <span className="font-medium">计算比例：</span>
-                <span className="ml-2 text-muted-foreground">{aspectRatio}</span>
-                <span className="ml-4 text-xs text-muted-foreground">
-                  ({currentWidth} × {currentHeight})
-                </span>
-              </p>
-            </div>
-          </div>
-
-          {/* ========== 3. 状态和质量评分 ========== */}
-          <div className="space-y-4 p-4 bg-green-50 border-2 border-green-200 rounded-lg">
-            <Label className="text-base font-semibold text-green-900">3️⃣ 状态和质量评分</Label>
-
-            {/* Status - RadioGroup */}
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>
-                    发布状态 <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="grid grid-cols-2 gap-4"
-                    >
-                      <FormItem className="flex items-center space-x-3 rounded-lg border p-3 hover:bg-accent transition-colors cursor-pointer">
-                        <FormControl>
-                          <RadioGroupItem value="DRAFT" id="status-draft" />
-                        </FormControl>
-                        <FormLabel htmlFor="status-draft" className="flex-1 font-normal cursor-pointer">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-gray-400" />
-                            <div>
-                              <div className="font-medium">草稿</div>
-                              <div className="text-xs text-muted-foreground">未发布</div>
-                            </div>
-                          </div>
-                        </FormLabel>
-                      </FormItem>
-
-                      <FormItem className="flex items-center space-x-3 rounded-lg border p-3 hover:bg-accent transition-colors cursor-pointer">
-                        <FormControl>
-                          <RadioGroupItem value="PUBLISHED" id="status-published" />
-                        </FormControl>
-                        <FormLabel htmlFor="status-published" className="flex-1 font-normal cursor-pointer">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-green-500" />
-                            <div>
-                              <div className="font-medium">已发布</div>
-                              <div className="text-xs text-muted-foreground">网站可见</div>
-                            </div>
-                          </div>
-                        </FormLabel>
-                      </FormItem>
-
-                      <FormItem className="flex items-center space-x-3 rounded-lg border p-3 hover:bg-accent transition-colors cursor-pointer">
-                        <FormControl>
-                          <RadioGroupItem value="MAINTENANCE" id="status-maintenance" />
-                        </FormControl>
-                        <FormLabel htmlFor="status-maintenance" className="flex-1 font-normal cursor-pointer">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-amber-500" />
-                            <div>
-                              <div className="font-medium">维护中</div>
-                              <div className="text-xs text-muted-foreground">暂时下线</div>
-                            </div>
-                          </div>
-                        </FormLabel>
-                      </FormItem>
-
-                      <FormItem className="flex items-center space-x-3 rounded-lg border p-3 hover:bg-accent transition-colors cursor-pointer">
-                        <FormControl>
-                          <RadioGroupItem value="ARCHIVED" id="status-archived" />
-                        </FormControl>
-                        <FormLabel htmlFor="status-archived" className="flex-1 font-normal cursor-pointer">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-red-500" />
-                            <div>
-                              <div className="font-medium">已归档</div>
-                              <div className="text-xs text-muted-foreground">已下架</div>
-                            </div>
-                          </div>
-                        </FormLabel>
-                      </FormItem>
-                    </RadioGroup>
-                  </FormControl>
-                  <FormDescription className="text-xs">
-                    选择游戏的发布状态（草稿和归档不会在网站显示）
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* 精选设置 - RadioGroup */}
-            <FormField
-              control={form.control}
-              name="isFeatured"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>精选游戏</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={(value) => field.onChange(value === 'true')}
-                      defaultValue={field.value ? 'true' : 'false'}
-                      className="grid grid-cols-2 gap-4"
-                    >
-                      <FormItem className="flex items-center space-x-3 rounded-lg border p-3 hover:bg-accent transition-colors cursor-pointer">
-                        <FormControl>
-                          <RadioGroupItem value="false" id="featured-no" />
-                        </FormControl>
-                        <FormLabel htmlFor="featured-no" className="flex-1 font-normal cursor-pointer">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-gray-400" />
-                            <div>
-                              <div className="font-medium">普通游戏</div>
-                              <div className="text-xs text-muted-foreground">正常显示</div>
-                            </div>
-                          </div>
-                        </FormLabel>
-                      </FormItem>
-
-                      <FormItem className="flex items-center space-x-3 rounded-lg border p-3 hover:bg-accent transition-colors cursor-pointer">
-                        <FormControl>
-                          <RadioGroupItem value="true" id="featured-yes" />
-                        </FormControl>
-                        <FormLabel htmlFor="featured-yes" className="flex-1 font-normal cursor-pointer">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                            <div>
-                              <div className="font-medium">⭐ 精选游戏</div>
-                              <div className="text-xs text-muted-foreground">优先展示</div>
-                            </div>
-                          </div>
-                        </FormLabel>
-                      </FormItem>
-                    </RadioGroup>
-                  </FormControl>
-                  <FormDescription className="text-xs">
-                    精选游戏会在首页和分类页面优先显示
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-
-              {/* Quality Score */}
-              <div className="space-y-2">
-                <Label>质量评分</Label>
-                <div className="p-3 bg-white border rounded-md">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-2xl font-bold">
-                      {game.quality_score ? (game.quality_score * 10).toFixed(1) : 'N/A'}
-                    </span>
-                    <span className="text-sm text-muted-foreground">/ 10.0</span>
+                  <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                    {game.description}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline">{game.category}</Badge>
+                    <Badge variant="outline">{game.orientation}</Badge>
+                    <Badge variant="outline">⭐ {(game.quality_score * 10).toFixed(1)}</Badge>
+                    <Badge variant="outline">{game.width}x{game.height}</Badge>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-green-600 h-2 rounded-full transition-all"
-                      style={{ width: `${(game.quality_score || 0) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ========== 4. 来源信息（只读）========== */}
-          <div className="space-y-4 p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
-            <Label className="text-base font-semibold text-yellow-900">4️⃣ 来源信息（自动填充）</Label>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">来源平台</Label>
-                <div className="p-2 bg-white border rounded-md">
-                  <Badge variant="outline">GamePix</Badge>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">平台游戏 ID</Label>
-                <div className="p-2 bg-white border rounded-md text-sm font-mono">
-                  {game.id}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ========== 5. 开发者信息（可选）========== */}
-          <div className="space-y-4 p-4 bg-orange-50 border-2 border-orange-200 rounded-lg">
-            <Label className="text-base font-semibold text-orange-900">5️⃣ 开发者信息（可选）</Label>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="developer"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>开发者名称</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="开发商或工作室名称"
-                      />
-                    </FormControl>
-                    <FormDescription className="text-xs">
-                      游戏开发商或工作室的名称
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="developerUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>开发者网站</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="url"
-                        placeholder="https://developer-website.com"
-                      />
-                    </FormControl>
-                    <FormDescription className="text-xs">
-                      开发者官方网站 URL（可选）
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-
-          {/* ========== 6. 时间信息（只读）========== */}
-          <div className="space-y-4 p-4 bg-gray-50 border-2 border-gray-200 rounded-lg">
-            <Label className="text-base font-semibold text-gray-900">6️⃣ 时间信息（自动填充）</Label>
-
-            <div className="grid grid-cols-3 gap-4">
-              {game.date_published && (
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">原始发布日期</Label>
-                  <div className="p-2 bg-white border rounded-md text-sm">
-                    {new Date(game.date_published).toLocaleDateString('zh-CN', {
-                      year: 'numeric',
-                      month: '2-digit',
-                      day: '2-digit'
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {game.date_modified && (
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">平台最后更新</Label>
-                  <div className="p-2 bg-white border rounded-md text-sm">
-                    {new Date(game.date_modified).toLocaleDateString('zh-CN', {
-                      year: 'numeric',
-                      month: '2-digit',
-                      day: '2-digit'
-                    })}
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">导入时间</Label>
-                <div className="p-2 bg-white border rounded-md text-sm">
-                  {new Date().toLocaleDateString('zh-CN', {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit'
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 从浏览器插件提取更多信息 */}
-          <div className="space-y-4 p-4 border-2 border-dashed border-primary/20 rounded-lg bg-primary/5">
-            <div className="space-y-2">
-              <Label className="text-base font-semibold">🔍 获取更多游戏信息</Label>
-              <p className="text-sm text-muted-foreground">
-                使用浏览器插件从 GamePix 页面提取完整的游戏信息（标签、说明、截图等）
-              </p>
-            </div>
-
-            {/* 有缓存数据时显示提示和重新提取按钮 */}
-            {extraDetails && extraDetails.markdownContent && extraDetails.tags && extraDetails.tags.length > 0 ? (
-              <div className="space-y-3">
-                <Alert className="bg-green-50 border-green-200">
-                  <Info className="h-4 w-4 text-green-600" />
-                  <AlertDescription className="text-sm text-green-800">
-                    ✅ 已从缓存加载游戏信息（{extraDetails.tags.length} 个标签，{extraDetails.videos?.length || 0} 个视频，{extraDetails.screenshots?.length || 0} 张截图，{extraDetails.markdownContent.length} 字符内容）
-                  </AlertDescription>
-                </Alert>
-
-                <Button
-                  onClick={() => setExtraDetails(null)}
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  重新提取最新数据
-                </Button>
-              </div>
-            ) : (
-              /* 无缓存数据时显示提取按钮 */
-              <>
-                <GamePixExtractButton
-                  namespace={game.namespace || ''}
-                  onDataExtracted={handleDataExtracted}
-                  disabled={!game.namespace}
-                />
-
-                {/* 部分数据提示 */}
-                {extraDetails && (!extraDetails.markdownContent || !extraDetails.tags || extraDetails.tags.length === 0) && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-sm">
-                      ⚠️ 数据不完整：
-                      {!extraDetails.markdownContent && ' 缺少内容描述'}
-                      {(!extraDetails.tags || extraDetails.tags.length === 0) && ' 缺少标签'}
-                      。请重新提取。
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </>
-            )}
-
-            {/* 显示提取到的数据 */}
-            {extraDetails && (
-              <Collapsible className="space-y-2">
-                <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:underline">
-                  <ChevronDown className="h-4 w-4" />
-                  查看提取到的完整数据
-                </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-3 pt-2">
-                  {/* 标签 */}
-                  {extraDetails.tags && extraDetails.tags.length > 0 && (
-                    <div className="space-y-1">
-                      <Label className="text-xs">提取到的标签</Label>
-                      <div className="flex flex-wrap gap-2 p-3 bg-muted rounded-md">
-                        {extraDetails.tags.map((tag: any, index: number) => (
-                          <Badge key={index} variant="secondary">
+                  {/* 日期信息 */}
+                  {(game.date_published || game.date_modified) && (
+                    <div className="mt-2 text-xs text-muted-foreground space-y-1">
+                      {game.date_published && (
+                        <div>发布日期: {new Date(game.date_published).toLocaleDateString('zh-CN')}</div>
+                      )}
+                      {game.date_modified && (
+                        <div>最后更新: {new Date(game.date_modified).toLocaleDateString('zh-CN')}</div>
+                      )}
+                    </div>
+                  )}
+                  {extraDetails?.tags && extraDetails.tags.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-xs text-muted-foreground mb-1">发现的标签：</p>
+                      <div className="flex flex-wrap gap-1">
+                        {extraDetails.tags.slice(0, 5).map((tag, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {(tag as any).icon && <span className="mr-1">{(tag as any).icon}</span>}
                             {tag.name}
                           </Badge>
                         ))}
                       </div>
                     </div>
                   )}
-
-                  {/* 开发者信息 */}
-                  {extraDetails.developer && (
-                    <div className="space-y-1">
-                      <Label className="text-xs">开发者信息</Label>
-                      <div className="p-3 bg-muted rounded-md text-sm">
-                        <p>
-                          <strong>{extraDetails.developer}</strong>
-                          {extraDetails.developerUrl && (
-                            <a
-                              href={extraDetails.developerUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="ml-2 text-blue-600 hover:underline"
-                            >
-                              访问网站
-                            </a>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 评分信息 */}
-                  {extraDetails.rating && (
-                    <div className="space-y-1">
-                      <Label className="text-xs">评分信息</Label>
-                      <div className="p-3 bg-muted rounded-md text-sm">
-                        <p>
-                          ⭐ {extraDetails.rating} / 5.0
-                          {extraDetails.ratingCount && ` (${extraDetails.ratingCount} 次评分)`}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Markdown 内容预览 */}
-                  {extraDetails.markdownContent && (
-                    <div className="space-y-1">
-                      <Label className="text-xs">Markdown 内容预览（供 AI 使用）</Label>
-                      <div className="p-3 bg-muted rounded-md text-xs max-h-60 overflow-y-auto">
-                        <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed">
-                          {extraDetails.markdownContent.substring(0, 1000)}
-                          {extraDetails.markdownContent.length > 1000 && '\n\n...(已截断，完整内容已保存)'}
-                        </pre>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 多媒体资源统计 */}
-                  {(extraDetails.screenshots || extraDetails.videos) && (
-                    <div className="space-y-1">
-                      <Label className="text-xs">多媒体资源</Label>
-                      <div className="p-3 bg-muted rounded-md text-sm space-y-1">
-                        {extraDetails.screenshots && extraDetails.screenshots.length > 0 && (
-                          <p>📸 截图: {extraDetails.screenshots.length} 张</p>
-                        )}
-                        {extraDetails.videos && extraDetails.videos.length > 0 && (
-                          <p>🎥 视频: {extraDetails.videos.length} 个</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </CollapsibleContent>
-              </Collapsible>
-            )}
-          </div>
-
-          {/* 分类信息对比 */}
-          <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-            {/* 第一行：原始分类和自动匹配按钮 */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-muted-foreground">原始分类（GamePix）</Label>
-                <div className="flex items-center gap-2 p-3 bg-background rounded border">
-                  <Badge variant="outline">{game.category}</Badge>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>智能匹配</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleAutoMatchCategory}
-                  disabled={isMatchingCategory || isImporting}
-                >
-                  {isMatchingCategory ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      匹配中...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      自动匹配分类
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
 
-            {/* 匹配结果提示 */}
-            {matchedCategoryInfo && (
-              <Alert className="border-green-600 bg-green-600">
-                <Sparkles className="h-4 w-4 text-white" />
-                <AlertDescription className="text-white font-medium">
-                  ✓ 已匹配：<strong>{matchedCategoryInfo.mainCategoryName}</strong> → <strong>{matchedCategoryInfo.categoryName}</strong>
-                </AlertDescription>
-              </Alert>
-            )}
+              {/* ========== 1. 核心字段（必填）========== */}
+              <div className="space-y-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                <Label className="text-base font-semibold text-blue-900">1️⃣ 核心字段（必填）</Label>
 
-            {/* 第二行：目标分类选择 */}
-            <FormField
-              control={form.control}
-              name="categoryId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    目标分类（子分类） <span className="text-destructive">*</span>
-                  </FormLabel>
-                  {isLoadingCategories ? (
-                    <div className="flex items-center gap-2 p-3 bg-muted rounded border">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span className="text-sm text-muted-foreground">加载分类中...</span>
-                    </div>
-                  ) : categories.length === 0 ? (
-                    <div className="flex items-center gap-2 p-3 bg-muted rounded border">
-                      <span className="text-sm text-muted-foreground">暂无可用分类</span>
-                    </div>
-                  ) : (
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={isLoadingCategories}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="选择要导入到的子分类">
-                            {field.value && (() => {
-                              const selected = categories.find(c => c.id === field.value)
-                              if (!selected) return null
-                              // 只显示 "主分类>子分类" 格式
-                              return `${selected.parentName} > ${selected.name}`
-                            })()}
-                          </SelectValue>
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {categories
-                          .filter(cat => cat.parentId !== null)  // 只显示子分类
-                          .map((cat) => (
-                            <SelectItem key={cat.id} value={cat.id}>
-                              {`${cat.parentName} > ${cat.name}`}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                  <FormDescription className="text-xs">
-                    选择游戏所属的子分类，游戏将显示在该分类下
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          {/* 媒体资源管理 */}
-          <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-            <div className="flex items-center justify-between">
-              <Label>媒体资源</Label>
-              <p className="text-xs text-muted-foreground">可选</p>
-            </div>
-
-            {/* Banner 图片 */}
-            <FormField
-              control={form.control}
-              name="banner"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Banner 图片 URL</FormLabel>
-                  <FormControl>
-                    <ImageFieldWithUpload
-                      value={field.value || ''}
-                      onChange={field.onChange}
-                      placeholder="https://example.com/banner.jpg"
-                      folder="games/banners"
-                      showLabel={false}
-                    />
-                  </FormControl>
-                  <FormDescription className="text-xs">
-                    游戏横幅图片，推荐尺寸：1920x600 或 16:5 比例（可选）
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* 游戏链接 */}
-            <FormField
-              control={form.control}
-              name="gameUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>游戏外部链接</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      type="url"
-                      placeholder="https://example.com/play"
-                    />
-                  </FormControl>
-                  <FormDescription className="text-xs">
-                    游戏的外部链接（可选）
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* 截图列表 */}
-            <FormField
-              control={form.control}
-              name="screenshots"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>游戏截图</FormLabel>
-                  <FormControl>
-                    <ScreenshotsFieldWithUpload
-                      screenshots={field.value || []}
-                      onChange={field.onChange}
-                      folder="games/screenshots"
-                      showLabel={false}
-                    />
-                  </FormControl>
-                  <FormDescription className="text-xs">
-                    推荐上传 3-6 张游戏截图，展示游戏特色和玩法
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* 视频列表 */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>游戏视频</Label>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => appendVideo('')}
-                >
-                  + 添加视频
-                </Button>
-              </div>
-              {videoFields.length === 0 ? (
-                <p className="text-sm text-muted-foreground p-3 border rounded">
-                  暂无视频，点击"添加视频"按钮添加
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {videoFields.map((field, index) => (
-                    <FormField
-                      key={field.id}
-                      control={form.control}
-                      name={`videos.${index}` as const}
-                      render={({ field }) => (
-                        <FormItem>
-                          <div className="flex gap-2">
-                            <FormControl>
-                              <Input
-                                {...field}
-                                type="url"
-                                placeholder={`视频 ${index + 1} URL`}
-                              />
-                            </FormControl>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => removeVideo(index)}
-                            >
-                              删除
-                            </Button>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  ))}
-                </div>
-              )}
-              <p className="text-xs text-muted-foreground">
-                添加游戏宣传视频或游玩录像的 URL（可选）
-              </p>
-            </div>
-          </div>
-
-          {/* 游戏标签 - 统一输入组件 */}
-          <FormField
-            control={form.control}
-            name="existingTagIds"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-base font-semibold">游戏标签</FormLabel>
-                <FormControl>
-                  <TagInputField
-                    existingTagIds={form.watch('existingTagIds') || []}
-                    newTagNames={form.watch('newTagNames') || []}
-                    onExistingTagsChange={(ids) => {
-                      form.setValue('existingTagIds', ids)
-                    }}
-                    onNewTagsChange={(names) => {
-                      form.setValue('newTagNames', names)
-                    }}
-                    availableTags={tags}
-                    maxTags={20}
-                  />
-                </FormControl>
-                <FormDescription className="text-xs">
-                  从列表选择已存在的标签，或输入新标签名称。最多 20 个标签。
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* 游戏内容管理 */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label className="text-base font-semibold">游戏内容管理</Label>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setBatchGenerateLocale(activeLocale)
-                  setShowAiConfigDialog(true)
-                }}
-                disabled={
-                  isGenerating ||
-                  !extraDetails?.markdownContent ||
-                  !extraDetails?.tags ||
-                  extraDetails.tags.length === 0
-                }
-                title={
-                  !extraDetails?.markdownContent || !extraDetails?.tags || extraDetails.tags.length === 0
-                    ? '需要先提取游戏信息（标签和内容）'
-                    : ''
-                }
-                className="text-purple-600 border-purple-200 hover:bg-purple-50"
-              >
-                {isGenerating ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Sparkles className="w-4 h-4 mr-2" />
-                )}
-                AI 生成游戏内容
-              </Button>
-            </div>
-
-            {/* 生成进度提示 */}
-            {isGenerating && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
-                {/* 步骤和百分比 */}
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium text-blue-900">
-                    {generationStep > 0 ? `步骤 ${generationStep}/${generationTotal}` : '准备中...'}
-                  </span>
-                  <span className="text-blue-700 font-semibold">
-                    {generationPercentage}%
-                  </span>
-                </div>
-
-                {/* 进度条 */}
-                <Progress value={generationPercentage} className="h-2" />
-
-                {/* 详细消息 */}
-                <div className="flex items-center gap-2 text-sm text-blue-800">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>{generationProgress}</span>
-                </div>
-              </div>
-            )}
-
-            {/* 提示信息 */}
-            {!extraDetails?.markdownContent && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-900">
-                <Info className="w-4 h-4 inline mr-2" />
-                请先使用"从网页获取更多信息"提取游戏的完整内容，然后才能使用 AI 生成功能
-              </div>
-            )}
-
-            <Tabs value={activeLocale} onValueChange={setActiveLocale}>
-              <TabsList>
-                <TabsTrigger value="en">英文 (EN)</TabsTrigger>
-                <TabsTrigger value="zh">中文 (ZH)</TabsTrigger>
-              </TabsList>
-
-              {/* 英文内容标签页 */}
-              <TabsContent value="en" className="space-y-6">
-                {/* 基础字段 */}
-                <div className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>游戏标题 <span className="text-destructive">*</span></FormLabel>
+                {/* Slug */}
+                <FormField
+                  control={form.control}
+                  name="slug"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        URL Slug <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <div className="flex gap-2">
                         <FormControl>
-                          <Input {...field} placeholder="游戏标题" />
-                        </FormControl>
-                        <FormDescription className="text-xs">
-                          英文游戏标题，将显示在游戏详情页
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>简短描述</FormLabel>
-                        <FormControl>
-                          <Textarea
+                          <Input
                             {...field}
-                            placeholder="简短的游戏描述"
-                            rows={2}
+                            placeholder="game-title-slug"
                           />
                         </FormControl>
-                        <FormDescription className="text-xs">
-                          英文游戏简介，建议 100-200 字符
-                        </FormDescription>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleGenerateSlug}
+                          className="whitespace-nowrap"
+                        >
+                          自动生成
+                        </Button>
+                      </div>
+                      <FormDescription className="text-xs">
+                        URL 标识符，用于游戏详情页链接（如：/games/play/game-title-slug）
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Thumbnail */}
+                <FormField
+                  control={form.control}
+                  name="thumbnail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        游戏缩略图 URL <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <ImageFieldWithUpload
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="https://example.com/thumbnail.jpg"
+                          folder="games/thumbnails"
+                          showLabel={false}
+                        />
+                      </FormControl>
+                      <FormDescription className="text-xs">
+                        推荐尺寸：800x600 或 16:9 比例。GamePix 图片会自动上传到 R2 CDN
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* EmbedUrl */}
+                <FormField
+                  control={form.control}
+                  name="embedUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        游戏嵌入 URL <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="url"
+                          placeholder="https://example.com/embed/game"
+                        />
+                      </FormControl>
+                      <FormDescription className="text-xs">
+                        游戏 iframe 嵌入地址，用于在网站上显示游戏（必须是 HTTPS）
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* ========== 2. 游戏尺寸和方向 ========== */}
+              <div className="space-y-4 p-4 bg-purple-50 border-2 border-purple-200 rounded-lg">
+                <Label className="text-base font-semibold text-purple-900">2️⃣ 游戏尺寸和方向</Label>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="width"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>宽度 (px) <span className="text-destructive">*</span></FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="800"
+                            {...field}
+                            onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -2507,23 +1711,18 @@ export function GameImportConfirmDialog({
 
                   <FormField
                     control={form.control}
-                    name="metaTitle"
+                    name="height"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>SEO 标题</FormLabel>
+                        <FormLabel>高度 (px) <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
-                          <SeoTextInput
-                            value={field.value || ''}
-                            onChange={field.onChange}
-                            placeholder="用于搜索引擎显示的标题"
-                            limit={60}
-                            locale="en"
-                            type="metaTitle"
+                          <Input
+                            type="number"
+                            placeholder="600"
+                            {...field}
+                            onChange={(e) => field.onChange(e.target.valueAsNumber)}
                           />
                         </FormControl>
-                        <FormDescription className="text-xs">
-                          推荐长度：50-60 字符，用于搜索引擎显示
-                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -2531,294 +1730,1151 @@ export function GameImportConfirmDialog({
 
                   <FormField
                     control={form.control}
-                    name="metaDescription"
+                    name="orientation"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>SEO 描述</FormLabel>
-                        <FormControl>
-                          <SeoTextInput
-                            value={field.value || ''}
-                            onChange={field.onChange}
-                            placeholder="用于搜索引擎显示的描述"
-                            limit={160}
-                            locale="en"
-                            type="metaDescription"
-                            className="whitespace-normal"
-                          />
-                        </FormControl>
-                        <FormDescription className="text-xs">
-                          推荐长度：150-160 字符，简洁描述游戏内容
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="keywords"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>SEO 关键词</FormLabel>
-                        <FormControl>
-                          <KeywordsTagInput
-                            value={field.value || ''}
-                            onChange={field.onChange}
-                            placeholder="输入关键词后按 Enter"
-                            limit={10}
-                          />
-                        </FormControl>
-                        <FormDescription className="text-xs">
-                          关键词将用于 AI 生成内容时的参考依据
-                        </FormDescription>
+                        <FormLabel>
+                          屏幕方向 <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="landscape">横屏 (Landscape)</SelectItem>
+                            <SelectItem value="portrait">竖屏 (Portrait)</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
 
-                {/* ContentSections - 英文 */}
-                <ContentSectionsEditor pathPrefix="contentSections" form={form} />
-              </TabsContent>
+                {/* 显示计算的 AspectRatio */}
+                <div className="p-3 bg-white border rounded-md">
+                  <p className="text-sm">
+                    <span className="font-medium">计算比例：</span>
+                    <span className="ml-2 text-muted-foreground">{aspectRatio}</span>
+                    <span className="ml-4 text-xs text-muted-foreground">
+                      ({currentWidth} × {currentHeight})
+                    </span>
+                  </p>
+                </div>
+              </div>
 
-              {/* 中文内容标签页 */}
-              <TabsContent value="zh" className="space-y-6">
-                {(() => {
-                  const zhIndex = translationFields.findIndex((f: any) => f.locale === 'zh')
-                  if (zhIndex === -1) {
-                    return <p className="text-sm text-muted-foreground">未找到中文翻译</p>
-                  }
+              {/* ========== 3. 状态和质量评分 ========== */}
+              <div className="space-y-4 p-4 bg-green-50 border-2 border-green-200 rounded-lg">
+                <Label className="text-base font-semibold text-green-900">3️⃣ 状态和质量评分</Label>
 
-                  return (
-                    <>
-                      {/* 基础字段 */}
-                      <div className="space-y-4">
-                        <FormField
-                          control={form.control}
-                          name={`translations.${zhIndex}.title` as any}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>游戏标题</FormLabel>
-                              <FormControl>
-                                <Input {...field} placeholder="游戏标题" />
-                              </FormControl>
-                              <FormDescription className="text-xs">
-                                中文游戏标题，将显示在游戏详情页
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                {/* Status - RadioGroup */}
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>
+                        发布状态 <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="grid grid-cols-2 gap-4"
+                        >
+                          <FormItem className="flex items-center space-x-3 rounded-lg border p-3 hover:bg-accent transition-colors cursor-pointer">
+                            <FormControl>
+                              <RadioGroupItem value="DRAFT" id="status-draft" />
+                            </FormControl>
+                            <FormLabel htmlFor="status-draft" className="flex-1 font-normal cursor-pointer">
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-gray-400" />
+                                <div>
+                                  <div className="font-medium">草稿</div>
+                                  <div className="text-xs text-muted-foreground">未发布</div>
+                                </div>
+                              </div>
+                            </FormLabel>
+                          </FormItem>
 
-                        <FormField
-                          control={form.control}
-                          name={`translations.${zhIndex}.description` as any}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>简短描述</FormLabel>
-                              <FormControl>
-                                <Textarea
-                                  {...field}
-                                  placeholder="简短的游戏描述"
-                                  rows={2}
-                                />
-                              </FormControl>
-                              <FormDescription className="text-xs">
-                                中文游戏简介，建议 100-200 字符
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                          <FormItem className="flex items-center space-x-3 rounded-lg border p-3 hover:bg-accent transition-colors cursor-pointer">
+                            <FormControl>
+                              <RadioGroupItem value="PUBLISHED" id="status-published" />
+                            </FormControl>
+                            <FormLabel htmlFor="status-published" className="flex-1 font-normal cursor-pointer">
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-green-500" />
+                                <div>
+                                  <div className="font-medium">已发布</div>
+                                  <div className="text-xs text-muted-foreground">网站可见</div>
+                                </div>
+                              </div>
+                            </FormLabel>
+                          </FormItem>
 
-                        <FormField
-                          control={form.control}
-                          name={`translations.${zhIndex}.metaTitle` as any}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>SEO 标题</FormLabel>
-                              <FormControl>
-                                <SeoTextInput
-                                  value={field.value || ''}
-                                  onChange={field.onChange}
-                                  placeholder="用于搜索引擎显示的标题"
-                                  limit={60}
-                                  locale="zh"
-                                  type="metaTitle"
-                                />
-                              </FormControl>
-                              <FormDescription className="text-xs">
-                                推荐长度：50-60 字符，用于搜索引擎显示
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                          <FormItem className="flex items-center space-x-3 rounded-lg border p-3 hover:bg-accent transition-colors cursor-pointer">
+                            <FormControl>
+                              <RadioGroupItem value="MAINTENANCE" id="status-maintenance" />
+                            </FormControl>
+                            <FormLabel htmlFor="status-maintenance" className="flex-1 font-normal cursor-pointer">
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-amber-500" />
+                                <div>
+                                  <div className="font-medium">维护中</div>
+                                  <div className="text-xs text-muted-foreground">暂时下线</div>
+                                </div>
+                              </div>
+                            </FormLabel>
+                          </FormItem>
 
-                        <FormField
-                          control={form.control}
-                          name={`translations.${zhIndex}.metaDescription` as any}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>SEO 描述</FormLabel>
-                              <FormControl>
-                                <SeoTextInput
-                                  value={field.value || ''}
-                                  onChange={field.onChange}
-                                  placeholder="用于搜索引擎显示的描述"
-                                  limit={160}
-                                  locale="zh"
-                                  type="metaDescription"
-                                  className="whitespace-normal"
-                                />
-                              </FormControl>
-                              <FormDescription className="text-xs">
-                                推荐长度：150-160 字符，简洁描述游戏内容
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                          <FormItem className="flex items-center space-x-3 rounded-lg border p-3 hover:bg-accent transition-colors cursor-pointer">
+                            <FormControl>
+                              <RadioGroupItem value="ARCHIVED" id="status-archived" />
+                            </FormControl>
+                            <FormLabel htmlFor="status-archived" className="flex-1 font-normal cursor-pointer">
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-red-500" />
+                                <div>
+                                  <div className="font-medium">已归档</div>
+                                  <div className="text-xs text-muted-foreground">已下架</div>
+                                </div>
+                              </div>
+                            </FormLabel>
+                          </FormItem>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormDescription className="text-xs">
+                        选择游戏的发布状态（草稿和归档不会在网站显示）
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                        <FormField
-                          control={form.control}
-                          name={`translations.${zhIndex}.keywords` as any}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>SEO 关键词</FormLabel>
-                              <FormControl>
-                                <KeywordsTagInput
-                                  value={field.value || ''}
-                                  onChange={field.onChange}
-                                  placeholder="输入关键词后按 Enter"
-                                  limit={10}
-                                />
-                              </FormControl>
-                              <FormDescription className="text-xs">
-                                关键词将用于 AI 生成内容时的参考依据
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
+                {/* 精选设置 - RadioGroup */}
+                <FormField
+                  control={form.control}
+                  name="isFeatured"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>精选游戏</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={(value) => field.onChange(value === 'true')}
+                          defaultValue={field.value ? 'true' : 'false'}
+                          className="grid grid-cols-2 gap-4"
+                        >
+                          <FormItem className="flex items-center space-x-3 rounded-lg border p-3 hover:bg-accent transition-colors cursor-pointer">
+                            <FormControl>
+                              <RadioGroupItem value="false" id="featured-no" />
+                            </FormControl>
+                            <FormLabel htmlFor="featured-no" className="flex-1 font-normal cursor-pointer">
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-gray-400" />
+                                <div>
+                                  <div className="font-medium">普通游戏</div>
+                                  <div className="text-xs text-muted-foreground">正常显示</div>
+                                </div>
+                              </div>
+                            </FormLabel>
+                          </FormItem>
+
+                          <FormItem className="flex items-center space-x-3 rounded-lg border p-3 hover:bg-accent transition-colors cursor-pointer">
+                            <FormControl>
+                              <RadioGroupItem value="true" id="featured-yes" />
+                            </FormControl>
+                            <FormLabel htmlFor="featured-yes" className="flex-1 font-normal cursor-pointer">
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                                <div>
+                                  <div className="font-medium">⭐ 精选游戏</div>
+                                  <div className="text-xs text-muted-foreground">优先展示</div>
+                                </div>
+                              </div>
+                            </FormLabel>
+                          </FormItem>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormDescription className="text-xs">
+                        精选游戏会在首页和分类页面优先显示
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+
+                  {/* Quality Score */}
+                  <div className="space-y-2">
+                    <Label>质量评分</Label>
+                    <div className="p-3 bg-white border rounded-md">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-2xl font-bold">
+                          {game.quality_score ? (game.quality_score * 10).toFixed(1) : 'N/A'}
+                        </span>
+                        <span className="text-sm text-muted-foreground">/ 10.0</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-green-600 h-2 rounded-full transition-all"
+                          style={{ width: `${(game.quality_score || 0) * 100}%` }}
                         />
                       </div>
-
-                      {/* ContentSections - 中文 */}
-                      <ContentSectionsEditor
-                        pathPrefix={`translations.${zhIndex}.contentSections`}
-                        form={form}
-                      />
-                    </>
-                  )
-                })()}
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          {/* 导入摘要 */}
-          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-            <h4 className="font-medium mb-2 flex items-center gap-2">
-              <Info className="h-4 w-4" />
-              导入信息摘要
-            </h4>
-            <ul className="text-sm space-y-1 text-muted-foreground">
-              <li>• 游戏来源：GamePix ({game.namespace || game.id})</li>
-              <li>• 游戏分类：{game.category}</li>
-              <li>• 质量评分：{(game.quality_score * 10).toFixed(1)} / 10</li>
-              <li>• 游戏尺寸：{game.width} x {game.height} ({game.orientation})</li>
-              {game.url && (
-                <li>• 游戏 URL：<a href={game.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline break-all">{game.url}</a></li>
-              )}
-              {game.date_published && (
-                <li>• 发布日期：{new Date(game.date_published).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}</li>
-              )}
-              {game.date_modified && (
-                <li>• 最后更新：{new Date(game.date_modified).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}</li>
-              )}
-              <li>• 支持语言：英文、中文</li>
-              <li>
-                • 发布状态：
-                {form.watch('status') === 'PUBLISHED' ? '已发布' :
-                 form.watch('status') === 'DRAFT' ? '草稿' :
-                 form.watch('status') === 'MAINTENANCE' ? '维护中' : '已归档'}
-                {form.watch('isFeatured') && '，标记为精选'}
-              </li>
-              {(form.watch('existingTagIds')?.length > 0 || form.watch('newTagNames')?.length > 0) && (
-                <li>• 已选标签：{(form.watch('existingTagIds')?.length || 0) + (form.watch('newTagNames')?.length || 0)} 个</li>
-              )}
-            </ul>
-          </div>
-
-          <DialogFooter className="flex-col gap-3 sm:flex-row">
-            {/* 显示详细的验证错误提示（提交后） */}
-            {form.formState.isSubmitted && Object.keys(form.formState.errors).length > 0 && (
-              <div className="sm:order-first sm:flex-1 space-y-2">
-                <div className="flex items-start gap-2 text-sm text-destructive">
-                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  <div className="flex-1">
-                    <p className="font-medium mb-1">以下字段需要修正：</p>
-                    <ul className="space-y-1 text-xs">
-                      {form.formState.errors.slug && (
-                        <li>• URL Slug: {form.formState.errors.slug.message}</li>
-                      )}
-                      {form.formState.errors.thumbnail && (
-                        <li>• 游戏缩略图: {form.formState.errors.thumbnail.message}</li>
-                      )}
-                      {form.formState.errors.embedUrl && (
-                        <li>• 游戏嵌入链接: {form.formState.errors.embedUrl.message}</li>
-                      )}
-                      {form.formState.errors.categoryId && (
-                        <li>• 游戏分类: {form.formState.errors.categoryId.message}</li>
-                      )}
-                      {form.formState.errors.title && (
-                        <li>• 英文标题: {form.formState.errors.title.message}</li>
-                      )}
-                      {form.formState.errors.width && (
-                        <li>• 游戏宽度: {form.formState.errors.width.message}</li>
-                      )}
-                      {form.formState.errors.height && (
-                        <li>• 游戏高度: {form.formState.errors.height.message}</li>
-                      )}
-                      {form.formState.errors.banner && (
-                        <li>• 横幅图片: {form.formState.errors.banner.message}</li>
-                      )}
-                      {form.formState.errors.gameUrl && (
-                        <li>• 游戏链接: {form.formState.errors.gameUrl.message}</li>
-                      )}
-                      {form.formState.errors.developerUrl && (
-                        <li>• 开发者链接: {form.formState.errors.developerUrl.message}</li>
-                      )}
-                    </ul>
+                    </div>
                   </div>
                 </div>
               </div>
-            )}
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isImporting || showImportProgress}
-            >
-              取消
-            </Button>
-            <Button
-              type="submit"
-              disabled={isImporting || showImportProgress}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              {(isImporting || showImportProgress) ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  导入中...
-                </>
-              ) : (
-                '确认导入'
-              )}
-            </Button>
-          </DialogFooter>
-        </form>
-        </Form>
+              {/* ========== 4. 来源信息（只读）========== */}
+              <div className="space-y-4 p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
+                <Label className="text-base font-semibold text-yellow-900">4️⃣ 来源信息（自动填充）</Label>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">来源平台</Label>
+                    <div className="p-2 bg-white border rounded-md">
+                      <Badge variant="outline">GamePix</Badge>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">平台游戏 ID</Label>
+                    <div className="p-2 bg-white border rounded-md text-sm font-mono">
+                      {game.id}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ========== 5. 开发者信息（可选）========== */}
+              <div className="space-y-4 p-4 bg-orange-50 border-2 border-orange-200 rounded-lg">
+                <Label className="text-base font-semibold text-orange-900">5️⃣ 开发者信息（可选）</Label>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="developer"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>开发者名称</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="开发商或工作室名称"
+                          />
+                        </FormControl>
+                        <FormDescription className="text-xs">
+                          游戏开发商或工作室的名称
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="developerUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>开发者网站</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="url"
+                            placeholder="https://developer-website.com"
+                          />
+                        </FormControl>
+                        <FormDescription className="text-xs">
+                          开发者官方网站 URL（可选）
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* ========== 6. 时间信息（只读）========== */}
+              <div className="space-y-4 p-4 bg-gray-50 border-2 border-gray-200 rounded-lg">
+                <Label className="text-base font-semibold text-gray-900">6️⃣ 时间信息（自动填充）</Label>
+
+                <div className="grid grid-cols-3 gap-4">
+                  {game.date_published && (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">原始发布日期</Label>
+                      <div className="p-2 bg-white border rounded-md text-sm">
+                        {new Date(game.date_published).toLocaleDateString('zh-CN', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit'
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {game.date_modified && (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">平台最后更新</Label>
+                      <div className="p-2 bg-white border rounded-md text-sm">
+                        {new Date(game.date_modified).toLocaleDateString('zh-CN', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit'
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">导入时间</Label>
+                    <div className="p-2 bg-white border rounded-md text-sm">
+                      {new Date().toLocaleDateString('zh-CN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 从浏览器插件提取更多信息 */}
+              <div className="space-y-4 p-4 border-2 border-dashed border-primary/20 rounded-lg bg-primary/5">
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold">🔍 获取更多游戏信息</Label>
+                  <p className="text-sm text-muted-foreground">
+                    使用浏览器插件从 GamePix 页面提取完整的游戏信息（标签、说明、截图等）
+                  </p>
+                </div>
+
+                {/* 有缓存数据时显示提示和重新提取按钮 */}
+                {extraDetails && extraDetails.markdownContent && extraDetails.tags && extraDetails.tags.length > 0 ? (
+                  <div className="space-y-3">
+                    <Alert className="bg-green-50 border-green-200">
+                      <Info className="h-4 w-4 text-green-600" />
+                      <AlertDescription className="text-sm text-green-800">
+                        ✅ 已从缓存加载游戏信息（{extraDetails.tags.length} 个标签，{extraDetails.videos?.length || 0} 个视频，{extraDetails.screenshots?.length || 0} 张截图，{extraDetails.markdownContent.length} 字符内容）
+                      </AlertDescription>
+                    </Alert>
+
+                    <Button
+                      onClick={() => setExtraDetails(null)}
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      重新提取最新数据
+                    </Button>
+                  </div>
+                ) : (
+                  /* 无缓存数据时显示提取按钮 */
+                  <>
+                    <GamePixExtractButton
+                      namespace={game.namespace || ''}
+                      onDataExtracted={handleDataExtracted}
+                      disabled={!game.namespace}
+                    />
+
+                    {/* 部分数据提示 */}
+                    {extraDetails && (!extraDetails.markdownContent || !extraDetails.tags || extraDetails.tags.length === 0) && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription className="text-sm">
+                          ⚠️ 数据不完整：
+                          {!extraDetails.markdownContent && ' 缺少内容描述'}
+                          {(!extraDetails.tags || extraDetails.tags.length === 0) && ' 缺少标签'}
+                          。请重新提取。
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </>
+                )}
+
+                {/* 显示提取到的数据 */}
+                {extraDetails && (
+                  <Collapsible className="space-y-2">
+                    <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:underline">
+                      <ChevronDown className="h-4 w-4" />
+                      查看提取到的完整数据
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-3 pt-2">
+                      {/* 标签 */}
+                      {extraDetails.tags && extraDetails.tags.length > 0 && (
+                        <div className="space-y-1">
+                          <Label className="text-xs">提取到的标签</Label>
+                          <div className="flex flex-wrap gap-2 p-3 bg-muted rounded-md">
+                            {extraDetails.tags.map((tag: any, index: number) => (
+                              <Badge key={index} variant="secondary">
+                                {tag.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 开发者信息 */}
+                      {extraDetails.developer && (
+                        <div className="space-y-1">
+                          <Label className="text-xs">开发者信息</Label>
+                          <div className="p-3 bg-muted rounded-md text-sm">
+                            <p>
+                              <strong>{extraDetails.developer}</strong>
+                              {extraDetails.developerUrl && (
+                                <a
+                                  href={extraDetails.developerUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="ml-2 text-blue-600 hover:underline"
+                                >
+                                  访问网站
+                                </a>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 评分信息 */}
+                      {extraDetails.rating && (
+                        <div className="space-y-1">
+                          <Label className="text-xs">评分信息</Label>
+                          <div className="p-3 bg-muted rounded-md text-sm">
+                            <p>
+                              ⭐ {extraDetails.rating} / 5.0
+                              {extraDetails.ratingCount && ` (${extraDetails.ratingCount} 次评分)`}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Markdown 内容预览 */}
+                      {extraDetails.markdownContent && (
+                        <div className="space-y-1">
+                          <Label className="text-xs">Markdown 内容预览（供 AI 使用）</Label>
+                          <div className="p-3 bg-muted rounded-md text-xs max-h-60 overflow-y-auto">
+                            <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed">
+                              {extraDetails.markdownContent.substring(0, 1000)}
+                              {extraDetails.markdownContent.length > 1000 && '\n\n...(已截断，完整内容已保存)'}
+                            </pre>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 多媒体资源统计 */}
+                      {(extraDetails.screenshots || extraDetails.videos) && (
+                        <div className="space-y-1">
+                          <Label className="text-xs">多媒体资源</Label>
+                          <div className="p-3 bg-muted rounded-md text-sm space-y-1">
+                            {extraDetails.screenshots && extraDetails.screenshots.length > 0 && (
+                              <p>📸 截图: {extraDetails.screenshots.length} 张</p>
+                            )}
+                            {extraDetails.videos && extraDetails.videos.length > 0 && (
+                              <p>🎥 视频: {extraDetails.videos.length} 个</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+              </div>
+
+              {/* 分类信息对比 */}
+              <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                {/* 第一行：原始分类和自动匹配按钮 */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-muted-foreground">原始分类（GamePix）</Label>
+                    <div className="flex items-center gap-2 p-3 bg-background rounded border">
+                      <Badge variant="outline">{game.category}</Badge>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>智能匹配</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleAutoMatchCategory}
+                      disabled={isMatchingCategory || isImporting}
+                    >
+                      {isMatchingCategory ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          匹配中...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          自动匹配分类
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* 匹配结果提示 */}
+                {matchedCategoryInfo && (
+                  <Alert className="border-green-600 bg-green-600">
+                    <Sparkles className="h-4 w-4 text-white" />
+                    <AlertDescription className="text-white font-medium">
+                      ✓ 已匹配：<strong>{matchedCategoryInfo.mainCategoryName}</strong> → <strong>{matchedCategoryInfo.categoryName}</strong>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {/* 第二行：目标分类选择 */}
+                <FormField
+                  control={form.control}
+                  name="categoryId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        目标分类（子分类） <span className="text-destructive">*</span>
+                      </FormLabel>
+                      {isLoadingCategories ? (
+                        <div className="flex items-center gap-2 p-3 bg-muted rounded border">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span className="text-sm text-muted-foreground">加载分类中...</span>
+                        </div>
+                      ) : categories.length === 0 ? (
+                        <div className="flex items-center gap-2 p-3 bg-muted rounded border">
+                          <span className="text-sm text-muted-foreground">暂无可用分类</span>
+                        </div>
+                      ) : (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          disabled={isLoadingCategories}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="选择要导入到的子分类">
+                                {field.value && (() => {
+                                  const selected = categories.find(c => c.id === field.value)
+                                  if (!selected) return null
+                                  // 只显示 "主分类>子分类" 格式
+                                  return `${selected.parentName} > ${selected.name}`
+                                })()}
+                              </SelectValue>
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {categories
+                              .filter(cat => cat.parentId !== null)  // 只显示子分类
+                              .map((cat) => (
+                                <SelectItem key={cat.id} value={cat.id}>
+                                  {`${cat.parentName} > ${cat.name}`}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      <FormDescription className="text-xs">
+                        选择游戏所属的子分类，游戏将显示在该分类下
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* 媒体资源管理 */}
+              <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <Label>媒体资源</Label>
+                  <p className="text-xs text-muted-foreground">可选</p>
+                </div>
+
+                {/* Banner 图片 */}
+                <FormField
+                  control={form.control}
+                  name="banner"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Banner 图片 URL</FormLabel>
+                      <FormControl>
+                        <ImageFieldWithUpload
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          placeholder="https://example.com/banner.jpg"
+                          folder="games/banners"
+                          showLabel={false}
+                        />
+                      </FormControl>
+                      <FormDescription className="text-xs">
+                        游戏横幅图片，推荐尺寸：1920x600 或 16:5 比例（可选）
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 游戏链接 */}
+                <FormField
+                  control={form.control}
+                  name="gameUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>游戏外部链接</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="url"
+                          placeholder="https://example.com/play"
+                        />
+                      </FormControl>
+                      <FormDescription className="text-xs">
+                        游戏的外部链接（可选）
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 截图列表 */}
+                <FormField
+                  control={form.control}
+                  name="screenshots"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>游戏截图</FormLabel>
+                      <FormControl>
+                        <ScreenshotsFieldWithUpload
+                          screenshots={field.value || []}
+                          onChange={field.onChange}
+                          folder="games/screenshots"
+                          showLabel={false}
+                        />
+                      </FormControl>
+                      <FormDescription className="text-xs">
+                        推荐上传 3-6 张游戏截图，展示游戏特色和玩法
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 视频列表 */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>游戏视频</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => appendVideo('')}
+                    >
+                      + 添加视频
+                    </Button>
+                  </div>
+                  {videoFields.length === 0 ? (
+                    <p className="text-sm text-muted-foreground p-3 border rounded">
+                      暂无视频，点击"添加视频"按钮添加
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {videoFields.map((field, index) => (
+                        <FormField
+                          key={field.id}
+                          control={form.control}
+                          name={`videos.${index}` as const}
+                          render={({ field }) => (
+                            <FormItem>
+                              <div className="flex gap-2">
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    type="url"
+                                    placeholder={`视频 ${index + 1} URL`}
+                                  />
+                                </FormControl>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => removeVideo(index)}
+                                >
+                                  删除
+                                </Button>
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    添加游戏宣传视频或游玩录像的 URL（可选）
+                  </p>
+                </div>
+              </div>
+
+              {/* 游戏标签 - 统一输入组件 */}
+              <FormField
+                control={form.control}
+                name="existingTagIds"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base font-semibold">游戏标签</FormLabel>
+                    <FormControl>
+                      <TagInputField
+                        existingTagIds={form.watch('existingTagIds') || []}
+                        newTagNames={form.watch('newTagNames') || []}
+                        onExistingTagsChange={(ids) => {
+                          form.setValue('existingTagIds', ids)
+                        }}
+                        onNewTagsChange={(names) => {
+                          form.setValue('newTagNames', names)
+                        }}
+                        availableTags={tags}
+                        maxTags={20}
+                      />
+                    </FormControl>
+                    <FormDescription className="text-xs">
+                      从列表选择已存在的标签，或输入新标签名称。最多 20 个标签。
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* 游戏内容管理 */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-semibold">游戏内容管理</Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setBatchGenerateLocale(activeLocale)
+                      setShowAiConfigDialog(true)
+                    }}
+                    disabled={
+                      isGenerating ||
+                      !extraDetails?.markdownContent ||
+                      !extraDetails?.tags ||
+                      extraDetails.tags.length === 0
+                    }
+                    title={
+                      !extraDetails?.markdownContent || !extraDetails?.tags || extraDetails.tags.length === 0
+                        ? '需要先提取游戏信息（标签和内容）'
+                        : ''
+                    }
+                    className="text-purple-600 border-purple-200 hover:bg-purple-50"
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4 mr-2" />
+                    )}
+                    AI 生成游戏内容
+                  </Button>
+                </div>
+
+                {/* 生成进度提示 */}
+                {isGenerating && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+                    {/* 步骤和百分比 */}
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-blue-900">
+                        {generationStep > 0 ? `步骤 ${generationStep}/${generationTotal}` : '准备中...'}
+                      </span>
+                      <span className="text-blue-700 font-semibold">
+                        {generationPercentage}%
+                      </span>
+                    </div>
+
+                    {/* 进度条 */}
+                    <Progress value={generationPercentage} className="h-2" />
+
+                    {/* 详细消息 */}
+                    <div className="flex items-center gap-2 text-sm text-blue-800">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>{generationProgress}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* 提示信息 */}
+                {!extraDetails?.markdownContent && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-900">
+                    <Info className="w-4 h-4 inline mr-2" />
+                    请先使用"从网页获取更多信息"提取游戏的完整内容，然后才能使用 AI 生成功能
+                  </div>
+                )}
+
+                <Tabs value={activeLocale} onValueChange={setActiveLocale}>
+                  <TabsList>
+                    <TabsTrigger value="en">英文 (EN)</TabsTrigger>
+                    <TabsTrigger value="zh">中文 (ZH)</TabsTrigger>
+                  </TabsList>
+
+                  {/* 英文内容标签页 */}
+                  <TabsContent value="en" className="space-y-6">
+                    {/* 基础字段 */}
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="title"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>游戏标题 <span className="text-destructive">*</span></FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="游戏标题" />
+                            </FormControl>
+                            <FormDescription className="text-xs">
+                              英文游戏标题，将显示在游戏详情页
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>简短描述</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                {...field}
+                                placeholder="简短的游戏描述"
+                                rows={2}
+                              />
+                            </FormControl>
+                            <FormDescription className="text-xs">
+                              英文游戏简介，建议 100-200 字符
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="metaTitle"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>SEO 标题</FormLabel>
+                            <FormControl>
+                              <SeoTextInput
+                                value={field.value || ''}
+                                onChange={field.onChange}
+                                placeholder="用于搜索引擎显示的标题"
+                                limit={60}
+                                locale="en"
+                                type="metaTitle"
+                              />
+                            </FormControl>
+                            <FormDescription className="text-xs">
+                              推荐长度：50-60 字符，用于搜索引擎显示
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="metaDescription"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>SEO 描述</FormLabel>
+                            <FormControl>
+                              <SeoTextInput
+                                value={field.value || ''}
+                                onChange={field.onChange}
+                                placeholder="用于搜索引擎显示的描述"
+                                limit={160}
+                                locale="en"
+                                type="metaDescription"
+                                className="whitespace-normal"
+                              />
+                            </FormControl>
+                            <FormDescription className="text-xs">
+                              推荐长度：150-160 字符，简洁描述游戏内容
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="keywords"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>SEO 关键词</FormLabel>
+                            <FormControl>
+                              <KeywordsTagInput
+                                value={field.value || ''}
+                                onChange={field.onChange}
+                                placeholder="输入关键词后按 Enter"
+                                limit={10}
+                              />
+                            </FormControl>
+                            <FormDescription className="text-xs">
+                              关键词将用于 AI 生成内容时的参考依据
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* ContentSections - 英文 */}
+                    <ContentSectionsEditor pathPrefix="contentSections" form={form} />
+                  </TabsContent>
+
+                  {/* 中文内容标签页 */}
+                  <TabsContent value="zh" className="space-y-6">
+                    {(() => {
+                      const zhIndex = translationFields.findIndex((f: any) => f.locale === 'zh')
+                      if (zhIndex === -1) {
+                        return <p className="text-sm text-muted-foreground">未找到中文翻译</p>
+                      }
+
+                      return (
+                        <>
+                          {/* 基础字段 */}
+                          <div className="space-y-4">
+                            <FormField
+                              control={form.control}
+                              name={`translations.${zhIndex}.title` as any}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>游戏标题</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} placeholder="游戏标题" />
+                                  </FormControl>
+                                  <FormDescription className="text-xs">
+                                    中文游戏标题，将显示在游戏详情页
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={form.control}
+                              name={`translations.${zhIndex}.description` as any}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>简短描述</FormLabel>
+                                  <FormControl>
+                                    <Textarea
+                                      {...field}
+                                      placeholder="简短的游戏描述"
+                                      rows={2}
+                                    />
+                                  </FormControl>
+                                  <FormDescription className="text-xs">
+                                    中文游戏简介，建议 100-200 字符
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={form.control}
+                              name={`translations.${zhIndex}.metaTitle` as any}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>SEO 标题</FormLabel>
+                                  <FormControl>
+                                    <SeoTextInput
+                                      value={field.value || ''}
+                                      onChange={field.onChange}
+                                      placeholder="用于搜索引擎显示的标题"
+                                      limit={60}
+                                      locale="zh"
+                                      type="metaTitle"
+                                    />
+                                  </FormControl>
+                                  <FormDescription className="text-xs">
+                                    推荐长度：50-60 字符，用于搜索引擎显示
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={form.control}
+                              name={`translations.${zhIndex}.metaDescription` as any}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>SEO 描述</FormLabel>
+                                  <FormControl>
+                                    <SeoTextInput
+                                      value={field.value || ''}
+                                      onChange={field.onChange}
+                                      placeholder="用于搜索引擎显示的描述"
+                                      limit={160}
+                                      locale="zh"
+                                      type="metaDescription"
+                                      className="whitespace-normal"
+                                    />
+                                  </FormControl>
+                                  <FormDescription className="text-xs">
+                                    推荐长度：150-160 字符，简洁描述游戏内容
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={form.control}
+                              name={`translations.${zhIndex}.keywords` as any}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>SEO 关键词</FormLabel>
+                                  <FormControl>
+                                    <KeywordsTagInput
+                                      value={field.value || ''}
+                                      onChange={field.onChange}
+                                      placeholder="输入关键词后按 Enter"
+                                      limit={10}
+                                    />
+                                  </FormControl>
+                                  <FormDescription className="text-xs">
+                                    关键词将用于 AI 生成内容时的参考依据
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          {/* ContentSections - 中文 */}
+                          <ContentSectionsEditor
+                            pathPrefix={`translations.${zhIndex}.contentSections`}
+                            form={form}
+                          />
+                        </>
+                      )
+                    })()}
+                  </TabsContent>
+                </Tabs>
+              </div>
+
+              {/* 导入摘要 */}
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                <h4 className="font-medium mb-2 flex items-center gap-2">
+                  <Info className="h-4 w-4" />
+                  导入信息摘要
+                </h4>
+                <ul className="text-sm space-y-1 text-muted-foreground">
+                  <li>• 游戏来源：GamePix ({game.namespace || game.id})</li>
+                  <li>• 游戏分类：{game.category}</li>
+                  <li>• 质量评分：{(game.quality_score * 10).toFixed(1)} / 10</li>
+                  <li>• 游戏尺寸：{game.width} x {game.height} ({game.orientation})</li>
+                  {game.url && (
+                    <li>• 游戏 URL：<a href={game.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline break-all">{game.url}</a></li>
+                  )}
+                  {game.date_published && (
+                    <li>• 发布日期：{new Date(game.date_published).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}</li>
+                  )}
+                  {game.date_modified && (
+                    <li>• 最后更新：{new Date(game.date_modified).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}</li>
+                  )}
+                  <li>• 支持语言：英文、中文</li>
+                  <li>
+                    • 发布状态：
+                    {form.watch('status') === 'PUBLISHED' ? '已发布' :
+                      form.watch('status') === 'DRAFT' ? '草稿' :
+                        form.watch('status') === 'MAINTENANCE' ? '维护中' : '已归档'}
+                    {form.watch('isFeatured') && '，标记为精选'}
+                  </li>
+                  {(form.watch('existingTagIds')?.length > 0 || form.watch('newTagNames')?.length > 0) && (
+                    <li>• 已选标签：{(form.watch('existingTagIds')?.length || 0) + (form.watch('newTagNames')?.length || 0)} 个</li>
+                  )}
+                </ul>
+              </div>
+
+              <DialogFooter className="flex-col gap-3 sm:flex-row">
+                {/* 显示详细的验证错误提示（提交后） */}
+                {form.formState.isSubmitted && Object.keys(form.formState.errors).length > 0 && (
+                  <div className="sm:order-first sm:flex-1 space-y-2">
+                    <div className="flex items-start gap-2 text-sm text-destructive">
+                      <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="font-medium mb-1">以下字段需要修正：</p>
+                        <ul className="space-y-1 text-xs">
+                          {form.formState.errors.slug && (
+                            <li>• URL Slug: {form.formState.errors.slug.message}</li>
+                          )}
+                          {form.formState.errors.thumbnail && (
+                            <li>• 游戏缩略图: {form.formState.errors.thumbnail.message}</li>
+                          )}
+                          {form.formState.errors.embedUrl && (
+                            <li>• 游戏嵌入链接: {form.formState.errors.embedUrl.message}</li>
+                          )}
+                          {form.formState.errors.categoryId && (
+                            <li>• 游戏分类: {form.formState.errors.categoryId.message}</li>
+                          )}
+                          {form.formState.errors.title && (
+                            <li>• 英文标题: {form.formState.errors.title.message}</li>
+                          )}
+                          {form.formState.errors.width && (
+                            <li>• 游戏宽度: {form.formState.errors.width.message}</li>
+                          )}
+                          {form.formState.errors.height && (
+                            <li>• 游戏高度: {form.formState.errors.height.message}</li>
+                          )}
+                          {form.formState.errors.banner && (
+                            <li>• 横幅图片: {form.formState.errors.banner.message}</li>
+                          )}
+                          {form.formState.errors.gameUrl && (
+                            <li>• 游戏链接: {form.formState.errors.gameUrl.message}</li>
+                          )}
+                          {form.formState.errors.developerUrl && (
+                            <li>• 开发者链接: {form.formState.errors.developerUrl.message}</li>
+                          )}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  disabled={isImporting || showImportProgress}
+                >
+                  取消
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isImporting || showImportProgress}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {(isImporting || showImportProgress) ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      导入中...
+                    </>
+                  ) : (
+                    '确认导入'
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </div>
 
       </DialogContent>
@@ -2881,10 +2937,15 @@ export function GameImportConfirmDialog({
         steps={importSteps}
         currentStepIndex={currentStepIndex}
         overallProgress={overallProgress}
-        onRetry={async () => {
-          // 重新执行导入
-          const formData = form.getValues()
-          await executeImport(formData)
+        onRetryStep={async (stepIndex) => {
+          // 重试指定的步骤(步骤索引是从0开始,API需要从1开始)
+          const formData = lastFormData || form.getValues()
+          await executeImport(formData, stepIndex + 1, stepContext)
+        }}
+        onExecuteStep={async (stepIndex) => {
+          // 执行指定的步骤(跳过之前的步骤)
+          const formData = lastFormData || form.getValues()
+          await executeImport(formData, stepIndex + 1, stepContext)
         }}
         allowClose={false}
       />

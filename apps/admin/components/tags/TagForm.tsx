@@ -51,7 +51,7 @@ export function TagForm({ tag, mode }: TagFormProps) {
   const { languages, isLoading: isLoadingLanguages } = useEnabledLanguages()
 
   const form = useForm<TagFormData>({
-    resolver: zodResolver(tagSchema),
+    resolver: zodResolver(tagSchema) as any,
     defaultValues: {
       slug: "",
       icon: "",
@@ -129,7 +129,7 @@ export function TagForm({ tag, mode }: TagFormProps) {
         }))
       }
 
-      reset(initialData)
+      reset(initialData as any)
     }
   }, [isLoadingLanguages, languages, tag, reset])
 

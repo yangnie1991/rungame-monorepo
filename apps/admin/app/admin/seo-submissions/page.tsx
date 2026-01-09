@@ -26,11 +26,10 @@ async function getSearchEnginesStats() {
   if (googleConfig) {
     const [total, indexed] = await Promise.all([
       prismaAdmin.urlSubmission.count({
-        where: { searchEngineConfigId: googleConfig.id },
+        where: {},
       }),
       prismaAdmin.urlSubmission.count({
         where: {
-          searchEngineConfigId: googleConfig.id,
           indexedByGoogle: true,
         },
       }),
@@ -47,11 +46,10 @@ async function getSearchEnginesStats() {
   if (bingConfig) {
     const [total, indexed] = await Promise.all([
       prismaAdmin.urlSubmission.count({
-        where: { searchEngineConfigId: bingConfig.id },
+        where: {},
       }),
       prismaAdmin.urlSubmission.count({
         where: {
-          searchEngineConfigId: bingConfig.id,
           indexedByBing: true,
         },
       }),

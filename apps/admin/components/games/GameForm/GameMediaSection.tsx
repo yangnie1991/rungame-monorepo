@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { UseFormRegister, UseFieldArrayReturn } from "react-hook-form"
+import type { UseFormRegister, UseFieldArrayReturn } from "react-hook-form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,9 +14,9 @@ interface GameFormValues {
 }
 
 interface GameMediaSectionProps {
-  register: UseFormRegister<GameFormValues>
-  screenshotFields: UseFieldArrayReturn<GameFormValues, "screenshots", "id">
-  videoFields: UseFieldArrayReturn<GameFormValues, "videos", "id">
+  register: UseFormRegister<any>
+  screenshotFields: UseFieldArrayReturn<any, any, any>
+  videoFields: UseFieldArrayReturn<any, any, any>
 }
 
 export function GameMediaSection({

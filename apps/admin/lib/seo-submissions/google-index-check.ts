@@ -86,8 +86,8 @@ export async function checkGoogleIndexSimple(
     // 检查是否有搜索结果
     // Google 如果没有收录会显示 "did not match any documents"
     const hasResults = !html.includes('did not match any documents') &&
-                      !html.includes('没有找到和您查询') &&
-                      html.includes('Search Results')
+      !html.includes('没有找到和您查询') &&
+      html.includes('Search Results')
 
     console.log('[Google 简单搜索] 搜索结果:', {
       url,
@@ -253,14 +253,14 @@ export async function checkGoogleIndexWithAPI(
 
     // 构建完整的状态信息对象（保存原始API数据）
     const statusRaw: GoogleIndexStatusRaw = {
-      verdict: indexStatusResult.verdict || '',
-      indexingState: indexStatusResult.indexingState,
-      coverageState: indexStatusResult.coverageState,
-      pageFetchState: indexStatusResult.pageFetchState,
-      robotsTxtState: indexStatusResult.robotsTxtState,
-      lastCrawlTime: indexStatusResult.lastCrawlTime,
-      crawledAs: indexStatusResult.crawledAs,
-      referringUrls: indexStatusResult.referringUrls,
+      verdict: indexStatusResult.verdict || undefined,
+      indexingState: indexStatusResult.indexingState || undefined,
+      coverageState: indexStatusResult.coverageState || undefined,
+      pageFetchState: indexStatusResult.pageFetchState || undefined,
+      robotsTxtState: indexStatusResult.robotsTxtState || undefined,
+      lastCrawlTime: indexStatusResult.lastCrawlTime || undefined,
+      crawledAs: indexStatusResult.crawledAs || undefined,
+      referringUrls: indexStatusResult.referringUrls || undefined,
     }
 
     // 判断是否已收录（verdict === 'PASS'）

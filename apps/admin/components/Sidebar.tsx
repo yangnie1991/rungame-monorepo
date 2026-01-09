@@ -65,7 +65,15 @@ const navigation: NavigationItem[] = [
       { name: "外部 API", href: "/admin/external-apis" },
     ]
   },
-  { name: "网站配置", href: "/admin/site-config", icon: Settings },
+  {
+    name: "网站配置",
+    href: "/admin/site-settings",
+    icon: Settings,
+    children: [
+      { name: "基础信息", href: "/admin/site-config" },
+      { name: "R2 配置", href: "/admin/site-settings/r2-config" },
+    ]
+  },
 ]
 
 export function AdminSidebar() {

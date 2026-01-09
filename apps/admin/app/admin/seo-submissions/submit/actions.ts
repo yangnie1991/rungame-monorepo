@@ -64,9 +64,9 @@ export async function submitSelectedUrls(
     // 1. 生成所有 URLs
     const allUrls: Array<{
       url: string
-      type: 'game' | 'category' | 'tag' | 'pagetype'
-      entityId: string
-      locale: string
+      type: 'game' | 'category' | 'tag' | 'pagetype' | 'sitemap' | 'other'
+      entityId?: string
+      locale?: string
     }> = []
 
     // 游戏 URLs
@@ -165,27 +165,27 @@ export async function submitSelectedUrls(
 
       console.log(`[提交] 📤 开始提交到 ${engineConfig.name}...`)
 
-      // 为当前引擎创建提交记录
-      const submissionPromises = allUrls.map(async (urlInfo) => {
-        return prismaAdmin.urlSubmission.create({
-          data: {
-            url: urlInfo.url,
-            urlType: urlInfo.type,
-            entityId: urlInfo.entityId,
-            locale: urlInfo.locale || undefined,
-            searchEngineConfigId: engineConfig.id,
-            searchEngineName: engineConfig.name,
-            status: 'PENDING',
-            submitMethod: 'manual',
-          },
-        })
-      })
-
-      const submissions = await Promise.all(submissionPromises)
-      totalSubmitted += submissions.length
-
-      // 根据引擎类型调用对应的 API
+      // 目前只支持 IndexNow (Bing)
       if (engineConfig.type === 'indexnow') {
+        const submissionPromises = allUrls.map(async (urlInfo) => {
+          return prismaAdmin.urlSubmission.upsert({
+            where: { url: urlInfo.url },
+            create: {
+              url: urlInfo.url,
+              urlType: urlInfo.type,
+              entityId: urlInfo.entityId,
+              locale: urlInfo.locale || undefined,
+              bingSubmitStatus: 'PENDING',
+            },
+            update: {
+              bingSubmitStatus: 'PENDING',
+            },
+          })
+        })
+
+        const submissions = await Promise.all(submissionPromises)
+        totalSubmitted += submissions.length
+
         try {
           const urlList = allUrls.map((u) => u.url)
 
@@ -193,7 +193,7 @@ export async function submitSelectedUrls(
             urlList,
             {
               apiKey: engineConfig.apiKey!,
-              keyLocation: engineConfig.extraConfig?.keyLocation || '',
+              keyLocation: (engineConfig.extraConfig as any)?.keyLocation || '',
               host: new URL(engineConfig.siteUrl!).hostname,
               apiEndpoint: engineConfig.apiEndpoint,
             },
@@ -209,16 +209,15 @@ export async function submitSelectedUrls(
               await prismaAdmin.urlSubmission.update({
                 where: { id: submission.id },
                 data: {
-                  status: result.success ? 'SUCCESS' : 'FAILED',
-                  statusMessage: result.message,
-                  httpStatus: result.statusCode,
-                  responseTime: result.responseTime,
-                  submittedAt: new Date(),
-                  completedAt: new Date(),
+                  bingSubmitStatus: result?.success ? 'SUCCESS' : 'FAILED',
+                  bingSubmitStatusMessage: result?.message,
+                  bingSubmitHttpStatus: result?.statusCode,
+                  bingSubmitResponseTime: result?.responseTime,
+                  bingSubmittedAt: new Date(),
                 },
               })
 
-              if (result.success) {
+              if (result?.success) {
                 totalSuccess++
               } else {
                 totalFailed++
@@ -251,12 +250,11 @@ export async function submitSelectedUrls(
               prismaAdmin.urlSubmission.update({
                 where: { id: submission.id },
                 data: {
-                  status: 'FAILED',
-                  statusMessage:
+                  bingSubmitStatus: 'FAILED',
+                  bingSubmitStatusMessage:
                     error instanceof Error
                       ? error.message
                       : '提交过程中发生错误',
-                  completedAt: new Date(),
                 },
               })
             )
@@ -264,22 +262,8 @@ export async function submitSelectedUrls(
 
           totalFailed += submissions.length
         }
-      } else if (engineConfig.type === 'baidu') {
-        // 暂时跳过百度（用户要求先完成 Bing 和 Google）
-        console.log('[提交] ⏭️  跳过百度推送（暂未启用）')
-
-        // 标记为 PENDING
-        await Promise.all(
-          submissions.map((submission) =>
-            prismaAdmin.urlSubmission.update({
-              where: { id: submission.id },
-              data: {
-                status: 'PENDING',
-                statusMessage: '百度推送暂未启用',
-              },
-            })
-          )
-        )
+      } else {
+        console.log(`[提交] ⏭️  跳过 ${engineConfig.name}（暂不支持主动推送）`)
       }
     }
 

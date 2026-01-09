@@ -1,6 +1,6 @@
 import { Link } from "@/i18n/routing"
 
-interface GamesC TAProps {
+interface GamesCTAProps {
   locale: string
   title?: string
   description?: string

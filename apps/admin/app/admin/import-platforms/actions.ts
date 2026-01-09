@@ -11,8 +11,8 @@ const platformConfigSchema = z.object({
   slug: z.string().min(1, '平台标识不能为空'),
   type: z.string().min(1, '平台类型不能为空'),
   icon: z.string().optional(),
-  apiConfig: z.record(z.any()),
-  defaultConfig: z.record(z.any()).optional(),
+  apiConfig: z.record(z.string(), z.any()),
+  defaultConfig: z.record(z.string(), z.any()).optional(),
   isEnabled: z.boolean().default(true),
   sortOrder: z.number().int().default(0),
 })
@@ -24,9 +24,10 @@ export type PlatformConfig = z.infer<typeof platformConfigSchema>
  */
 export async function getAllImportPlatforms() {
   try {
-    // 使用缓存层而不是直接查询数据库
-    const { getAllImportPlatforms: getCachedPlatforms } = await import('@rungame/database')
-    const platforms = await getCachedPlatforms()
+    // 直接查询数据库
+    const platforms = await prismaAdmin.importPlatform.findMany({
+      orderBy: { sortOrder: 'asc' }
+    })
 
     return {
       success: true,
@@ -124,15 +125,15 @@ export async function createImportPlatform(config: PlatformConfig) {
         slug: validated.slug,
         type: validated.type,
         icon: validated.icon,
-        apiConfig: validated.apiConfig,
-        defaultConfig: validated.defaultConfig || {},
+        apiConfig: validated.apiConfig as any,
+        defaultConfig: (validated.defaultConfig || {}) as any,
         isEnabled: validated.isEnabled,
         sortOrder: validated.sortOrder,
       },
     })
 
     // 失效导入平台缓存
-    revalidateTag(CACHE_TAGS.IMPORT_PLATFORMS)
+    // revalidateTag(CACHE_TAGS.IMPORT_PLATFORMS)
     revalidatePath('/admin/import-platforms')
     revalidatePath('/admin/import-games')
 
@@ -187,11 +188,11 @@ export async function updateImportPlatform(id: string, config: Partial<PlatformC
 
     const platform = await prismaAdmin.importPlatform.update({
       where: { id },
-      data: config,
+      data: config as any,
     })
 
     // 失效导入平台缓存
-    revalidateTag(CACHE_TAGS.IMPORT_PLATFORMS)
+    // revalidateTag(CACHE_TAGS.IMPORT_PLATFORMS)
     revalidatePath('/admin/import-platforms')
     revalidatePath('/admin/import-games')
 
@@ -218,7 +219,7 @@ export async function deleteImportPlatform(id: string) {
     })
 
     // 失效导入平台缓存
-    revalidateTag(CACHE_TAGS.IMPORT_PLATFORMS)
+    // revalidateTag(CACHE_TAGS.IMPORT_PLATFORMS)
     revalidatePath('/admin/import-platforms')
     revalidatePath('/admin/import-games')
 
@@ -256,7 +257,7 @@ export async function togglePlatformEnabled(id: string) {
     })
 
     // 失效导入平台缓存
-    revalidateTag(CACHE_TAGS.IMPORT_PLATFORMS)
+    // revalidateTag(CACHE_TAGS.IMPORT_PLATFORMS)
     revalidatePath('/admin/import-platforms')
     revalidatePath('/admin/import-games')
 
@@ -288,7 +289,7 @@ export async function updatePlatformStats(id: string, importedCount: number) {
     })
 
     // 失效导入平台缓存
-    revalidateTag(CACHE_TAGS.IMPORT_PLATFORMS)
+    // revalidateTag(CACHE_TAGS.IMPORT_PLATFORMS)
     revalidatePath('/admin/import-platforms')
 
     return {

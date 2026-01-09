@@ -102,10 +102,12 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
   const popularCategories = categories
     .sort((a, b) => b.gameCount - a.gameCount)
     .slice(0, 6)
+    .map(cat => ({ ...cat, icon: cat.icon || undefined }))
 
   const popularTags = tags
     .sort((a, b) => b.gameCount - a.gameCount)
     .slice(0, 12)
+    .map(tag => ({ ...tag, icon: tag.icon || undefined }))
 
   // 生成面包屑Schema
   const breadcrumbSchema = generateBreadcrumbSchema([
@@ -165,31 +167,28 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
                 <div className="flex gap-1.5">
                   <Link
                     href={`/search?q=${encodeURIComponent(query)}&sort=popular`}
-                    className={`inline-flex items-center px-2.5 py-1 text-xs rounded transition-colors ${
-                      currentSort === "popular"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted/60 hover:bg-muted"
-                    }`}
+                    className={`inline-flex items-center px-2.5 py-1 text-xs rounded transition-colors ${currentSort === "popular"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted/60 hover:bg-muted"
+                      }`}
                   >
                     {tCommon("sortByPopular")}
                   </Link>
                   <Link
                     href={`/search?q=${encodeURIComponent(query)}&sort=newest`}
-                    className={`inline-flex items-center px-2.5 py-1 text-xs rounded transition-colors ${
-                      currentSort === "newest"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted/60 hover:bg-muted"
-                    }`}
+                    className={`inline-flex items-center px-2.5 py-1 text-xs rounded transition-colors ${currentSort === "newest"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted/60 hover:bg-muted"
+                      }`}
                   >
                     {tCommon("sortByNewest")}
                   </Link>
                   <Link
                     href={`/search?q=${encodeURIComponent(query)}&sort=name`}
-                    className={`inline-flex items-center px-2.5 py-1 text-xs rounded transition-colors ${
-                      currentSort === "name"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted/60 hover:bg-muted"
-                    }`}
+                    className={`inline-flex items-center px-2.5 py-1 text-xs rounded transition-colors ${currentSort === "name"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted/60 hover:bg-muted"
+                      }`}
                   >
                     {tCommon("sortByName")}
                   </Link>

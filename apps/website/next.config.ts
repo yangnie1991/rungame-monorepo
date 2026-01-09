@@ -1,5 +1,6 @@
 import type { NextConfig } from "next"
 import createNextIntlPlugin from "next-intl/plugin"
+import path from "path"
 
 // ⚠️ 环境变量验证已移至运行时（在 middleware.ts 中调用）
 // 不再在构建时验证，避免 Docker 构建阶段需要真实的数据库地址
@@ -7,23 +8,20 @@ import createNextIntlPlugin from "next-intl/plugin"
 
 const withNextIntl = createNextIntlPlugin("./i18n/config.ts")
 
+const isDocker = process.env.DOCKER_BUILD === 'true'
+
 const nextConfig: NextConfig = {
-  output: 'standalone',
+  output: isDocker ? 'standalone' : undefined,
+  outputFileTracingRoot: isDocker ? path.join(__dirname, '../../') : undefined,
   // 设置 Turbopack 根目录为 Monorepo 根目录
   turbopack: {
-    root: '../..',
+    root: path.resolve(__dirname, '../../'),
   },
   typescript: {
-    ignoreBuildErrors: true,
+    // 强制检查 TS 错误
+    ignoreBuildErrors: false,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  // 强制清除缓存
-  generateBuildId: async () => {
-    // 使用时间戳作为 build ID，确保每次构建都是新的
-    return `build-${Date.now()}`
-  },
+
   async redirects() {
     return []
   },

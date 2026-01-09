@@ -18,7 +18,7 @@ const intlMiddleware = createMiddleware(routing)
  * 1. 检查是否需要排除在国际化之外（API、静态文件等）
  * 2. 如果需要国际化，则使用 next-intl 中间件处理
  */
-export async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // 检查是否应该跳过国际化处理

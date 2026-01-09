@@ -93,7 +93,7 @@ export async function checkGoogleIndexStatus(
         indexedByGoogle: result.isIndexed,
         googleIndexedAt: result.isIndexed ? (submission.googleIndexedAt || new Date()) : null,
         googleLastCheckAt: new Date(),
-        googleIndexStatusRaw: result.statusRaw || null, // 保存完整的 API 响应数据
+        googleIndexStatusRaw: (result.statusRaw || null) as any, // 保存完整的 API 响应数据
         googleCheckMessage: result.error || null,
       },
     })
@@ -284,7 +284,7 @@ export async function checkGoogleIndexBatch(
             indexedByGoogle: result.isIndexed,
             googleIndexedAt: result.isIndexed ? (submission.googleIndexedAt || new Date()) : null,
             googleLastCheckAt: new Date(),
-            googleIndexStatusRaw: result.statusRaw || null, // 保存完整的 API 响应数据
+            googleIndexStatusRaw: (result.statusRaw || null) as any, // 保存完整的 API 响应数据
             googleCheckMessage: result.error || null,
           },
         })

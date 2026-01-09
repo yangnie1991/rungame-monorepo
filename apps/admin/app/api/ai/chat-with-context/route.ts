@@ -227,14 +227,18 @@ async function executeToolCall(name: string, args: any, categoryId?: string) {
       case 'search_similar_games':
         const games = await prisma.game.findMany({
           where: {
-            isPublished: true,
-            ...(args.category ? {
-              category: {
-                slug: args.category
+            status: 'PUBLISHED',
+            gameCategories: {
+              some: {
+                OR: [
+                  { categoryId: args.category ? undefined : categoryId },
+                  { mainCategoryId: args.category ? undefined : categoryId },
+                  ...(args.category ? [{
+                    category: { slug: args.category }
+                  }] : [])
+                ]
               }
-            } : categoryId ? {
-              categoryId
-            } : {})
+            }
           },
           take: args.limit || 3,
           orderBy: {
@@ -268,7 +272,8 @@ async function executeToolCall(name: string, args: any, categoryId?: string) {
             },
             _count: {
               select: {
-                games: true
+                gameMainCategories: true,
+                gameSubCategories: true
               }
             }
           }
@@ -279,7 +284,7 @@ async function executeToolCall(name: string, args: any, categoryId?: string) {
         return {
           name: category.translations[0]?.name || category.slug,
           description: category.translations[0]?.description,
-          gamesCount: category._count.games
+          gamesCount: (category._count.gameMainCategories || 0) + (category._count.gameSubCategories || 0)
         }
 
       default:
@@ -302,8 +307,8 @@ async function decryptApiKey(encryptedKey: string): Promise<string> {
 
   try {
     const parts = encryptedKey.split(':')
-    const iv = Buffer.from(parts[0], 'hex')
-    const encrypted = Buffer.from(parts[1], 'hex')
+    const iv = Buffer.from(parts[0] || '', 'hex')
+    const encrypted = Buffer.from(parts[1] || '', 'hex')
     const key = crypto.createHash('sha256').update(encryptionKey).digest()
     const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv)
     let decrypted = decipher.update(encrypted)

@@ -94,7 +94,7 @@ export function analyzeSeoMetadata(
   mainKeyword: string,
   subKeywords: string[]
 ) {
-  const mainKeywordCount: Record<string, number> = { total: 0 }
+  const mainKeywordCount: { total: number;[key: string]: number } = { total: 0 }
   let totalWords = 0
   const subKeywordsUsed: Set<string> = new Set()
 

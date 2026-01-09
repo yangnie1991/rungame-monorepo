@@ -41,8 +41,7 @@ import {
 } from "@/app/admin/ai-config/actions"
 import { maskSensitiveData } from "@/lib/crypto"
 import { getProviderDisplayInfo } from "@/lib/ai-providers"
-import type { AiConfig } from "@/types/ai-config"
-import type { AiProviderTemplate } from "@/types/ai-config"
+import type { AiConfig, AiModelConfig, AiProviderTemplate } from "@/types/ai-config"
 
 interface AiProviderCardProps {
   provider: AiProviderTemplate
@@ -56,8 +55,9 @@ export function AiProviderCard({ provider, config }: AiProviderCardProps) {
   const [testResult, setTestResult] = useState<string>("")
 
   const providerDisplay = getProviderDisplayInfo(provider.provider)
-  const defaultModel = config?.modelConfig?.models?.find(m => m.isDefault)
-  const enabledModels = config?.modelConfig?.models?.filter(m => m.isEnabled) || []
+  const modelConfig = config?.modelConfig as unknown as AiModelConfig | undefined
+  const defaultModel = modelConfig?.models?.find((m: any) => m.isDefault)
+  const enabledModels = modelConfig?.models?.filter((m: any) => m.isEnabled) || []
 
   const handleDelete = async () => {
     if (!deleteId) return
@@ -103,7 +103,8 @@ export function AiProviderCard({ provider, config }: AiProviderCardProps) {
     setTesting(true)
     setTestResult("")
 
-    const defaultModel = config.modelConfig.models.find(m => m.isDefault && m.isEnabled)
+    const modelConfig = config.modelConfig as unknown as AiModelConfig
+    const defaultModel = modelConfig?.models?.find(m => m.isDefault && m.isEnabled)
     if (!defaultModel) {
       setTestResult("❌ 未找到可用的默认模型")
       setTesting(false)
@@ -286,11 +287,10 @@ export function AiProviderCard({ provider, config }: AiProviderCardProps) {
           <div className="space-y-3">
             {/* 测试结果 */}
             {testResult && (
-              <div className={`p-2 rounded text-sm ${
-                testResult.startsWith("✅")
-                  ? "bg-green-50 text-green-800"
-                  : "bg-red-50 text-red-800"
-              }`}>
+              <div className={`p-2 rounded text-sm ${testResult.startsWith("✅")
+                ? "bg-green-50 text-green-800"
+                : "bg-red-50 text-red-800"
+                }`}>
                 {testResult}
               </div>
             )}
@@ -308,7 +308,7 @@ export function AiProviderCard({ provider, config }: AiProviderCardProps) {
                 )}
               </div>
               <div className="flex flex-wrap gap-1">
-                {config.modelConfig.models.map((model, index) => (
+                {((config.modelConfig as unknown as AiModelConfig)?.models || []).map((model, index) => (
                   <Badge
                     key={index}
                     variant={model.isEnabled ? "default" : "secondary"}

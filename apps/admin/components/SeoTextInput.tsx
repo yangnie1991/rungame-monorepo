@@ -89,7 +89,7 @@ export function SeoTextInput({
           'whitespace-nowrap overflow-x-auto',
           className
         ),
-        placeholder
+        placeholder: placeholder || ''
       },
       // 禁止换行
       handleKeyDown: (view, event) => {
@@ -112,7 +112,7 @@ export function SeoTextInput({
     // 只有当值真的不同时才更新（避免光标跳动）
     if (currentText !== newValue) {
       // 使用 transaction 来更新内容，保持光标位置
-      editor.commands.setContent(newValue, false)
+      editor.commands.setContent(newValue, { emitUpdate: false })
     }
   }, [value, editor])
 

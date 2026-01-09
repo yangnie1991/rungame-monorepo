@@ -205,7 +205,8 @@ export function generateTagListUrl(): UrlInfo[] {
  * 批量生成所有游戏 URL
  */
 export async function generateAllGameUrls(): Promise<UrlInfo[]> {
-  const { prisma } = await import('@/lib/prisma')
+  const { prismaAdmin } = await import('@/lib/prisma')
+  const prisma = prismaAdmin as any
 
   const games = await prisma.game.findMany({
     where: { status: 'PUBLISHED' },
@@ -225,7 +226,8 @@ export async function generateAllGameUrls(): Promise<UrlInfo[]> {
  * 批量生成所有分类 URL
  */
 export async function generateAllCategoryUrls(): Promise<UrlInfo[]> {
-  const { prisma } = await import('@/lib/prisma')
+  const { prismaAdmin } = await import('@/lib/prisma')
+  const prisma = prismaAdmin as any
 
   const categories = await prisma.category.findMany({
     where: { isEnabled: true },
@@ -258,7 +260,8 @@ export async function generateAllCategoryUrls(): Promise<UrlInfo[]> {
  * 批量生成所有标签 URL
  */
 export async function generateAllTagUrls(): Promise<UrlInfo[]> {
-  const { prisma } = await import('@/lib/prisma')
+  const { prismaAdmin } = await import('@/lib/prisma')
+  const prisma = prismaAdmin as any
 
   const tags = await prisma.tag.findMany({
     where: { isEnabled: true },
@@ -278,7 +281,8 @@ export async function generateAllTagUrls(): Promise<UrlInfo[]> {
  * 批量生成所有 PageType URL
  */
 export async function generateAllPageTypeUrls(): Promise<UrlInfo[]> {
-  const { prisma } = await import('@/lib/prisma')
+  const { prismaAdmin } = await import('@/lib/prisma')
+  const prisma = prismaAdmin as any
 
   const pageTypes = await prisma.pageType.findMany({
     where: { isEnabled: true },

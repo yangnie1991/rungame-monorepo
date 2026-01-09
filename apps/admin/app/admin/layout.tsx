@@ -22,7 +22,7 @@ export default async function AdminLayout({
     <div className="flex h-screen bg-gray-100" style={{ colorScheme: 'light' }}>
       <AdminSidebar />
       <div className="flex-1 flex flex-col overflow-hidden bg-gray-100">
-        <AdminHeader user={session.user} />
+        <AdminHeader user={session.user!} />
         <main className="flex-1 overflow-y-auto p-6 bg-gray-100">
           <div className="max-w-[1600px] mx-auto">
             {children}

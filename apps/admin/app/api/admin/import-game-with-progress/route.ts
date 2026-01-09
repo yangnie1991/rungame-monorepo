@@ -56,12 +56,15 @@ function calculateAspectRatio(width: number, height: number): string {
 export async function POST(req: NextRequest) {
   // 验证身份
   const session = await auth()
-  if (!session || !['ADMIN', 'SUPER_ADMIN'].includes(session.user.role)) {
+  const user = session?.user as any
+  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
     return new Response(
       createSSEMessage({ error: '无权限' }),
       { status: 403, headers: { 'Content-Type': 'text/event-stream' } }
     )
   }
+
+
 
   // 创建 SSE 流
   const encoder = new TextEncoder()
@@ -115,6 +118,7 @@ export async function POST(req: NextRequest) {
 
               for (let i = 0; i < imagesToUpload.length; i++) {
                 const image = imagesToUpload[i]
+                if (!image) continue
                 send({
                   step: 1,
                   total: 4,
@@ -242,26 +246,26 @@ export async function POST(req: NextRequest) {
           // 翻译
           ...(config.translations && config.translations.length > 0
             ? {
-                translations: {
-                  create: config.translations.map((t: any) => ({
-                    locale: t.locale,
-                    title: t.title || game.title,
-                    description: t.description || game.description,
-                    keywords: t.keywords || `${game.title}, ${game.category}`,
-                    metaTitle: t.metaTitle || `${game.title}`,
-                    metaDescription: t.metaDescription || game.description.substring(0, 160),
-                    translationInfo: t.contentSections || undefined,
-                  })),
-                },
-              }
+              translations: {
+                create: config.translations.map((t: any) => ({
+                  locale: t.locale,
+                  title: t.title || game.title,
+                  description: t.description || game.description,
+                  keywords: t.keywords || `${game.title}, ${game.category}`,
+                  metaTitle: t.metaTitle || `${game.title}`,
+                  metaDescription: t.metaDescription || game.description.substring(0, 160),
+                  translationInfo: t.contentSections || undefined,
+                })),
+              },
+            }
             : {}),
-          // 关联标签
+          // 关联标签（去重）
           ...(config.tagIds && config.tagIds.length > 0
             ? {
-                tags: {
-                  create: config.tagIds.map((tagId: string) => ({ tagId })),
-                },
-              }
+              tags: {
+                create: [...new Set(config.tagIds as string[])].map((tagId: string) => ({ tagId })),
+              },
+            }
             : {}),
         }
 
@@ -298,11 +302,11 @@ export async function POST(req: NextRequest) {
         // ========== 步骤 5: 失效缓存 ==========
         send({ step: 4, total: 4, percentage: 95, message: '失效相关缓存...' })
 
-        revalidateTag(CACHE_TAGS.CATEGORIES)
-        revalidateTag(CACHE_TAGS.TAGS)
-        revalidateTag(CACHE_TAGS.GAMES)
-        revalidateTag(CACHE_TAGS.FEATURED_GAMES)
-        revalidateTag(CACHE_TAGS.DASHBOARD_STATS)
+        // revalidateTag(CACHE_TAGS.CATEGORIES)
+        // revalidateTag(CACHE_TAGS.TAGS)
+        // revalidateTag(CACHE_TAGS.GAMES)
+        // revalidateTag(CACHE_TAGS.FEATURED_GAMES)
+        // revalidateTag(CACHE_TAGS.DASHBOARD_STATS)
 
         // ========== 完成 ==========
         send({ step: 4, total: 4, percentage: 100, message: '导入完成！' })

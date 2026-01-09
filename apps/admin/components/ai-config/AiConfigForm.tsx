@@ -18,12 +18,21 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Plus, Trash2, Check, X } from "lucide-react"
 import { createAiConfig, updateAiConfig } from "@/app/admin/ai-config/actions"
 import { AI_PROVIDERS, getProviderConfig } from "@/lib/ai-providers"
-import type { AiConfig, AiModel, AiModelParameters } from "@/types/ai-config"
+import type { AiConfig, AiModel, AiModelParameters, AiModelConfig } from "@/types/ai-config"
 
 interface AiConfigFormProps {
   config?: AiConfig
   mode?: "create" | "edit"
   initialProvider?: string  // 预选的供应商
+}
+
+interface AiConfigFormData {
+  name: string
+  provider: string
+  apiKey: string
+  baseUrl: string
+  isActive: boolean
+  isEnabled: boolean
 }
 
 export function AiConfigForm({ config, mode = "create", initialProvider }: AiConfigFormProps) {
@@ -34,14 +43,17 @@ export function AiConfigForm({ config, mode = "create", initialProvider }: AiCon
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
   // 如果有 initialProvider，自动加载预设模型
   const getInitialModels = () => {
-    if (config?.modelConfig?.models) {
-      return config.modelConfig.models
+    if (config?.modelConfig) {
+      const modelConfig = config.modelConfig as unknown as AiModelConfig
+      if (modelConfig.models) {
+        return modelConfig.models
+      }
     }
 
     if (initialProvider) {
       const providerConfig = getProviderConfig(initialProvider as any)
       if (providerConfig) {
-        return providerConfig.defaultModels.map(m => ({ ...m, isEnabled: true }))
+        return providerConfig.defaultModels.map((m: any) => ({ ...m, isEnabled: true }))
       }
     }
 
@@ -72,7 +84,7 @@ export function AiConfigForm({ config, mode = "create", initialProvider }: AiCon
     return "https://openrouter.ai/api/v1/chat/completions"
   }
 
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<AiConfigFormData>({
     defaultValues: {
       name: config?.name || "",
       provider: config?.provider || initialProvider || "openrouter",
@@ -98,7 +110,7 @@ export function AiConfigForm({ config, mode = "create", initialProvider }: AiCon
       setValue("baseUrl", providerConfig.baseUrl)
 
       // 自动填充预设模型
-      const presetsModels = providerConfig.defaultModels.map(model => ({
+      const presetsModels = providerConfig.defaultModels.map((model: any) => ({
         ...model,
         isEnabled: true,
       }))
@@ -110,7 +122,7 @@ export function AiConfigForm({ config, mode = "create", initialProvider }: AiCon
   const loadProviderPresetModels = () => {
     if (!currentProviderConfig) return
 
-    const presetModels = currentProviderConfig.defaultModels.map(model => ({
+    const presetModels = currentProviderConfig.defaultModels.map((model: any) => ({
       ...model,
       isEnabled: true,
     }))
@@ -146,8 +158,11 @@ export function AiConfigForm({ config, mode = "create", initialProvider }: AiCon
 
   // 更新模型字段
   const updateModel = (index: number, field: keyof AiModel, value: any) => {
+    const model = models[index]
+    if (!model) return
+
     const updated = [...models]
-    updated[index] = { ...updated[index], [field]: value }
+    updated[index] = { ...model, [field]: value } as AiModel
     setModels(updated)
   }
 
@@ -157,19 +172,23 @@ export function AiConfigForm({ config, mode = "create", initialProvider }: AiCon
     param: keyof AiModelParameters,
     value: any
   ) => {
+    const model = models[index]
+    if (!model) return
+
     const updated = [...models]
     updated[index] = {
-      ...updated[index],
+      ...model,
       parameters: {
-        ...updated[index].parameters,
+        ...(model.parameters || {}),
         [param]: value,
       },
-    }
+    } as AiModel
     setModels(updated)
   }
 
   // 设置默认模型
   const setDefaultModel = (index: number) => {
+    if (index < 0 || index >= models.length) return
     const updated = models.map((m, i) => ({
       ...m,
       isDefault: i === index,
@@ -585,7 +604,7 @@ export function AiConfigForm({ config, mode = "create", initialProvider }: AiCon
                       step="0.1"
                       min="0"
                       max="2"
-                      value={model.parameters.temperature}
+                      value={model.parameters?.temperature}
                       onChange={e =>
                         updateModelParameter(
                           index,
@@ -600,7 +619,7 @@ export function AiConfigForm({ config, mode = "create", initialProvider }: AiCon
                     <Input
                       type="number"
                       min="1"
-                      value={model.parameters.max_tokens}
+                      value={model.parameters?.max_tokens}
                       onChange={e =>
                         updateModelParameter(
                           index,
@@ -617,7 +636,7 @@ export function AiConfigForm({ config, mode = "create", initialProvider }: AiCon
                       step="0.1"
                       min="0"
                       max="1"
-                      value={model.parameters.top_p || ""}
+                      value={model.parameters?.top_p || ""}
                       onChange={e =>
                         updateModelParameter(
                           index,
@@ -657,7 +676,7 @@ export function AiConfigForm({ config, mode = "create", initialProvider }: AiCon
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
-                      checked={model.parameters.stream}
+                      checked={model.parameters?.stream}
                       onChange={e =>
                         updateModelParameter(index, "stream", e.target.checked)
                       }

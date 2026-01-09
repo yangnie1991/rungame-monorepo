@@ -37,7 +37,7 @@ RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 COPY --from=prepare /app/out/json/ .
 
 # 安装依赖
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # 复制完整源代码
 COPY --from=prepare /app/out/full/ .
@@ -48,6 +48,8 @@ ARG NEXTAUTH_SECRET
 ARG NEXTAUTH_URL
 ARG ENCRYPTION_KEY
 ARG NODE_ENV=production
+# 设置 Docker 构建标志
+ENV DOCKER_BUILD=true
 
 # 设置环境变量
 ENV DATABASE_URL=${DATABASE_URL}

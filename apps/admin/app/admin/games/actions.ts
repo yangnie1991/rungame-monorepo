@@ -157,7 +157,7 @@ async function getMainCategoryId(categoryId: string): Promise<string> {
 }
 
 // Create a new game
-export async function createGame(data: GameFormData) {
+export async function createGame(data: GameFormData): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
     const validated = gameSchema.parse(data)
 
@@ -247,7 +247,7 @@ export async function createGame(data: GameFormData) {
     return { success: true, data: game }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return { success: false, error: error.issues[0].message }
+      return { success: false, error: error.issues[0]?.message ?? "未知验证错误" }
     }
     console.error('创建游戏失败:', error)
     return { success: false, error: error instanceof Error ? error.message : '创建游戏失败，请稍后重试' }
@@ -259,7 +259,7 @@ export async function createGame(data: GameFormData) {
  *
  * ✅ 性能优化：不加载翻译数据，翻译数据将在用户切换到对应语言标签时按需加载
  */
-export async function getGame(id: string) {
+export async function getGame(id: string): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
     const game = await prisma.game.findUnique({
       where: { id },
@@ -287,6 +287,7 @@ export async function getGame(id: string) {
       data: {
         ...game,
         tagIds: game.tags.map((gt) => gt.tagId),
+        translations: [], // 为了满足 GameForm 类型要求，返回空数组（实际数据按需加载）
       },
     }
   } catch (error) {
@@ -302,7 +303,7 @@ export async function getGame(id: string) {
  * @param locale 语言代码（如 'en', 'zh'）
  * @returns 该语言的翻译数据，如果不存在则返回空对象
  */
-export async function getGameTranslation(gameId: string, locale: string) {
+export async function getGameTranslation(gameId: string, locale: string): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
     const translation = await prisma.gameTranslation.findUnique({
       where: {
@@ -324,7 +325,7 @@ export async function getGameTranslation(gameId: string, locale: string) {
 }
 
 // Update an existing game
-export async function updateGame(id: string, data: GameFormData) {
+export async function updateGame(id: string, data: GameFormData): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
     const validated = gameSchema.parse(data)
 
@@ -437,7 +438,7 @@ export async function updateGame(id: string, data: GameFormData) {
     return { success: true, data: game }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return { success: false, error: error.issues[0].message }
+      return { success: false, error: error.issues[0]?.message ?? "未知验证错误" }
     }
     console.error('更新游戏失败:', error)
     return { success: false, error: error instanceof Error ? error.message : '更新游戏失败，请稍后重试' }
@@ -508,16 +509,18 @@ export async function getCategories() {
 
 // Get all tags for multi-select
 // 🔥 优化：使用缓存层，避免重复查询数据库
+// ✅ 修复：使用英文标签用于匹配 GamePix 导入
 export async function getTags() {
   try {
-    const { getAllTagsForAdmin } = await import('@rungame/database')
-    const allTags = await getAllTagsForAdmin('zh')
+    const { getAllTagsForMatching } = await import('@/lib/queries/tags')
+    const allTags = await getAllTagsForMatching()
 
     return {
       success: true,
       data: allTags.map((tag) => ({
         id: tag.id,
-        name: tag.name, // 已经是中文翻译
+        name: tag.name, // 英文主表 name
+        slug: tag.slug,
       })),
     }
   } catch (error) {
@@ -527,7 +530,7 @@ export async function getTags() {
 }
 
 // Toggle game published status
-export async function toggleGamePublishStatus(gameId: string, currentStatus: string) {
+export async function toggleGamePublishStatus(gameId: string, currentStatus: string): Promise<{ success: boolean; data?: any; message?: string; error?: string }> {
   try {
     const game = await prisma.game.findUnique({
       where: { id: gameId },
@@ -560,7 +563,7 @@ export async function toggleGamePublishStatus(gameId: string, currentStatus: str
 }
 
 // Toggle game featured status
-export async function toggleGameFeaturedStatus(gameId: string, currentStatus: boolean) {
+export async function toggleGameFeaturedStatus(gameId: string, currentStatus: boolean): Promise<{ success: boolean; data?: any; message?: string; error?: string }> {
   try {
     const game = await prisma.game.findUnique({
       where: { id: gameId },

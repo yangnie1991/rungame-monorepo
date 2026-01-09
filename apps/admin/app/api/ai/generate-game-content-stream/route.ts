@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
   try {
     // 1. 验证身份
     const session = await auth()
-    if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN')) {
+    if (!session || ((session.user as any)?.role !== 'ADMIN' && (session.user as any)?.role !== 'SUPER_ADMIN')) {
       return new Response('Unauthorized', { status: 401 })
     }
 
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
           // ========== 阶段 1: Google 搜索 (1-3s) ==========
           sendProgress({
             phase: 'searching',
-            step: '正在搜索 Google Top 5 页面...',
+            step: '正在搜索 Google Top 10 页面...',
             progress: 0
           })
 
@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
           let snippets: string[] = []
 
           try {
-            searchResults = await searchGoogleTopPages(keywords, 5, locale)
+            searchResults = await searchGoogleTopPages(keywords, 10, locale)
             snippets = searchResults.map(r => r.snippet || '')
 
             sendProgress({
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
               step: `✓ 找到 ${searchResults.length} 个竞品页面`,
               progress: 10,
               current: searchResults.length,
-              total: 5
+              total: 10
             })
           } catch (error: any) {
             console.error('[Google 搜索] 失败:', error)
@@ -192,17 +192,17 @@ export async function GET(request: NextRequest) {
             progress: 50
           })
 
-          // ========== 阶段 2.5: AI 筛选游戏网站 (3-5s) ==========
+          // ========== 阶段 2.5: AI 筛选游戏网站和内容相关性 (3-5s) ==========
           sendProgress({
             phase: 'filtering',
-            step: '正在使用 AI 筛选游戏相关网站...',
+            step: '正在使用 AI 筛选游戏网站并评估内容相关性...',
             progress: 52
           })
 
           let filteredWebsites = searchResults.map((r, i) => ({
             title: r.title,
             url: r.url,
-            content: webContents[i]
+            content: webContents[i] || ''
           }))
 
           try {
@@ -218,18 +218,20 @@ export async function GET(request: NextRequest) {
               filteredWebsites = filtered
               sendProgress({
                 phase: 'filtering',
-                step: `✓ AI 筛选完成: ${filtered.length}/${searchResults.length} 个游戏网站 (置信度 ≥ 60%)`,
+                step: `✓ AI 筛选完成: ${filtered.length}/${searchResults.length} 个相关网站 (网站质量 ≥60%, 内容相关性 ≥50%)`,
                 progress: 55
               })
 
               // 记录筛选结果详情
               filtered.forEach(f => {
-                console.log(`  [筛选] ${f.title} - 置信度: ${f.confidence}% - ${f.reasoning}`)
+                console.log(`  [筛选] ${f.title}`)
+                console.log(`    网站质量: ${f.confidence}%, 内容相关性: ${f.relevanceScore}%`)
+                console.log(`    理由: ${f.reasoning}`)
               })
             } else {
               sendProgress({
                 phase: 'filtering',
-                step: '⚠️ AI 筛选未找到高质量游戏网站，使用所有结果',
+                step: '⚠️ AI 筛选未找到高相关性内容，使用所有结果',
                 progress: 55
               })
             }

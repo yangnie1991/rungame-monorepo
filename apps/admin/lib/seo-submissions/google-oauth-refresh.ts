@@ -118,7 +118,7 @@ export async function getValidGoogleAccessToken(): Promise<string | null> {
     // 获取当前 Token，如果过期 Google SDK 会自动刷新
     const accessToken = await oauth2Client.getAccessToken()
 
-    return accessToken.token
+    return accessToken.token || null
   } catch (error) {
     console.error('[Google OAuth] 获取有效 Access Token 错误:', error)
     return null

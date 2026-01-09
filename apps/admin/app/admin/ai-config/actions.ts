@@ -107,7 +107,7 @@ export async function createAiConfig(data: {
     })
 
     // ✅ 失效缓存
-    revalidateTag(CACHE_TAGS.AI_CONFIGS)
+    // revalidateTag(CACHE_TAGS.AI_CONFIGS)
     revalidatePath("/admin/ai-config")
     return { success: true, data: config }
   } catch (error) {
@@ -152,7 +152,7 @@ export async function updateAiConfig(
     })
 
     // ✅ 失效缓存
-    revalidateTag(CACHE_TAGS.AI_CONFIGS)
+    // revalidateTag(CACHE_TAGS.AI_CONFIGS)
     revalidatePath("/admin/ai-config")
     return { success: true, data: config }
   } catch (error) {
@@ -171,7 +171,7 @@ export async function deleteAiConfig(id: string) {
     })
 
     // ✅ 失效缓存
-    revalidateTag(CACHE_TAGS.AI_CONFIGS)
+    // revalidateTag(CACHE_TAGS.AI_CONFIGS)
     revalidatePath("/admin/ai-config")
     return { success: true }
   } catch (error) {
@@ -197,7 +197,7 @@ export async function toggleAiConfigActive(id: string) {
     })
 
     // ✅ 失效缓存
-    revalidateTag(CACHE_TAGS.AI_CONFIGS)
+    // revalidateTag(CACHE_TAGS.AI_CONFIGS)
     revalidatePath("/admin/ai-config")
     return { success: true, data: config }
   } catch (error) {
@@ -230,7 +230,7 @@ export async function toggleAiConfigEnabled(id: string) {
     })
 
     // ✅ 失效缓存
-    revalidateTag(CACHE_TAGS.AI_CONFIGS)
+    // revalidateTag(CACHE_TAGS.AI_CONFIGS)
     revalidatePath("/admin/ai-config")
     return { success: true, data: updated }
   } catch (error) {

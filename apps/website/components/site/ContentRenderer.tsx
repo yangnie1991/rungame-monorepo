@@ -3,7 +3,7 @@
  * 根据 GameInfo 的 ContentSection 类型动态渲染 Tiptap JSON 内容
  */
 
-import { GameInfo } from "@/lib/types/game-info"
+import type { GameInfo } from "@/lib/types/game-info"
 import { renderTiptapToHTML, parseTiptapContent } from "@/lib/tiptap-renderer"
 
 interface ContentRendererProps {
@@ -101,7 +101,7 @@ export function ContentRenderer({ gameInfo, locale }: ContentRendererProps) {
         return (
           <div
             key={section.key}
-            // className={`px-6 py-2 prose prose-slate max-w-none ${!showTitle ? '[&>div>*:first-child]:mt-0' : ''}`}
+          // className={`px-6 py-2 prose prose-slate max-w-none ${!showTitle ? '[&>div>*:first-child]:mt-0' : ''}`}
           >
             {showTitle && (
               <h2>{sectionLabel}</h2>

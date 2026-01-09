@@ -12,7 +12,7 @@ import { Check, AlertCircle } from "lucide-react"
 export default function AiConfigPage() {
   const router = useRouter()
   const [configs, setConfigs] = useState<any[]>([])
-  const [activeTab, setActiveTab] = useState(AI_PROVIDERS[0].provider)
+  const [activeTab, setActiveTab] = useState(AI_PROVIDERS[0]?.provider || "")
   const [loading, setLoading] = useState(true)
 
   // 加载配置
@@ -69,7 +69,7 @@ export default function AiConfigPage() {
                   )}
                 </div>
                 <span className="text-xs text-gray-500">
-                  {isConfigured ? `${config.modelConfig.models.length} 个模型` : "0 个模型"}
+                  {isConfigured ? `${(config.modelConfig as any)?.models?.length || 0} 个模型` : "0 个模型"}
                 </span>
               </TabsTrigger>
             )

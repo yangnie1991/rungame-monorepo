@@ -364,10 +364,10 @@ export function GoogleSubmissionsClient({ config, submissions: initialSubmission
           const updated = prev.map(sub =>
             sub.id === submissionId
               ? {
-                  ...sub,
-                  indexedByGoogle: result.stats?.googleIndexed === 1,
-                  googleLastCheckAt: new Date()
-                }
+                ...sub,
+                indexedByGoogle: result.stats?.googleIndexed === 1,
+                googleLastCheckAt: new Date()
+              }
               : sub
           )
           // 重新计算统计数据
@@ -487,11 +487,7 @@ export function GoogleSubmissionsClient({ config, submissions: initialSubmission
         toast.success(
           <div>
             <div className="font-semibold">批量检查完成</div>
-            <div className="text-xs mt-1">
-              仍收录: {result.stats.stillIndexed} |
-              已移除: {result.stats.removed} |
-              失败: {result.stats.failed}
-            </div>
+            <div className="text-xs mt-1">{result.message}</div>
           </div>
         )
         setTimeout(() => router.refresh(), 1000)
@@ -543,10 +539,10 @@ export function GoogleSubmissionsClient({ config, submissions: initialSubmission
           const updated = prev.map(sub =>
             pushSelectedIds.includes(sub.id)
               ? {
-                  ...sub,
-                  googleSubmitStatus: 'SUBMITTED',
-                  googleSubmittedAt: new Date()
-                }
+                ...sub,
+                googleSubmitStatus: 'SUBMITTED',
+                googleSubmittedAt: new Date()
+              }
               : sub
           )
           return updated
@@ -581,10 +577,10 @@ export function GoogleSubmissionsClient({ config, submissions: initialSubmission
         setSubmissions(prev => prev.map(sub =>
           sub.id === submissionId
             ? {
-                ...sub,
-                googleSubmitStatus: 'SUBMITTED',
-                googleSubmittedAt: new Date()
-              }
+              ...sub,
+              googleSubmitStatus: 'SUBMITTED',
+              googleSubmittedAt: new Date()
+            }
             : sub
         ))
       } else {
@@ -609,10 +605,10 @@ export function GoogleSubmissionsClient({ config, submissions: initialSubmission
           const updated = prev.map(sub =>
             sub.id === submissionId
               ? {
-                  ...sub,
-                  indexedByGoogle: result.stats?.googleIndexed === 1,
-                  googleLastCheckAt: new Date()
-                }
+                ...sub,
+                indexedByGoogle: result.stats?.googleIndexed === 1,
+                googleLastCheckAt: new Date()
+              }
               : sub
           )
           // 重新计算统计数据
@@ -789,199 +785,199 @@ export function GoogleSubmissionsClient({ config, submissions: initialSubmission
       </div>
 
       <Tabs defaultValue="check" className="space-y-6">
-      <TabsList>
-        <TabsTrigger value="check">
-          <FileText className="h-4 w-4 mr-2" />
-          收录检查
-        </TabsTrigger>
-        <TabsTrigger value="submit">
-          <Send className="h-4 w-4 mr-2" />
-          URL 推送
-        </TabsTrigger>
-        <TabsTrigger value="config">
-          <Settings className="h-4 w-4 mr-2" />
-          配置管理
-        </TabsTrigger>
-      </TabsList>
+        <TabsList>
+          <TabsTrigger value="check">
+            <FileText className="h-4 w-4 mr-2" />
+            收录检查
+          </TabsTrigger>
+          <TabsTrigger value="submit">
+            <Send className="h-4 w-4 mr-2" />
+            URL 推送
+          </TabsTrigger>
+          <TabsTrigger value="config">
+            <Settings className="h-4 w-4 mr-2" />
+            配置管理
+          </TabsTrigger>
+        </TabsList>
 
-      {/* 收录检查 Tab */}
-      <TabsContent value="check" className="space-y-6">
-        {/* 批量操作栏 */}
-        {selectedIds.length > 0 && (
-          <Card>
-            <CardContent className="py-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  已选择 {selectedIds.length} 个 URL
-                </span>
-                <Button
-                  onClick={handleBatchCheck}
-                  disabled={isBatchChecking}
-                  size="sm"
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${isBatchChecking ? 'animate-spin' : ''}`} />
-                  批量检查收录
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* 提交记录表格 */}
-        <Card>
-          <CardHeader>
-            <CardTitle>提交记录</CardTitle>
-            <CardDescription>
-              查看提交到 Google Sitemap 的 URL 和收录状态
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={filter} onValueChange={(v) => setFilter(v as any)}>
-              <div className="flex items-center gap-4 mb-4">
-                <TabsList>
-                  <TabsTrigger value="all">全部</TabsTrigger>
-                  <TabsTrigger value="indexed">已收录</TabsTrigger>
-                  <TabsTrigger value="not-indexed">未收录</TabsTrigger>
-                  <TabsTrigger value="unchecked">未检查</TabsTrigger>
-                </TabsList>
-
-                <div className="flex items-center gap-2 ml-auto">
-                  <Select value={localeFilter} onValueChange={setLocaleFilter}>
-                    <SelectTrigger className="w-[120px]">
-                      <SelectValue placeholder="语言" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">全部语言</SelectItem>
-                      {availableLocales.map((locale) => (
-                        <SelectItem key={locale} value={locale || ''}>
-                          {locale?.toUpperCase() || '未知'}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger className="w-[120px]">
-                      <SelectValue placeholder="类型" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">全部类型</SelectItem>
-                      {availableTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {typeNames[type] || type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+        {/* 收录检查 Tab */}
+        <TabsContent value="check" className="space-y-6">
+          {/* 批量操作栏 */}
+          {selectedIds.length > 0 && (
+            <Card>
+              <CardContent className="py-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    已选择 {selectedIds.length} 个 URL
+                  </span>
+                  <Button
+                    onClick={handleBatchCheck}
+                    disabled={isBatchChecking}
+                    size="sm"
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${isBatchChecking ? 'animate-spin' : ''}`} />
+                    批量检查收录
+                  </Button>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
+          )}
 
-              <TabsContent value={filter} className="mt-0">
-                {filteredSubmissions.length === 0 ? (
-                  <div className="py-12 text-center text-muted-foreground">
-                    <p className="mb-2">暂无提交记录</p>
-                    <p className="text-sm">
-                      请先到"URL 推送"标签页提交 URL
-                    </p>
+          {/* 提交记录表格 */}
+          <Card>
+            <CardHeader>
+              <CardTitle>提交记录</CardTitle>
+              <CardDescription>
+                查看提交到 Google Sitemap 的 URL 和收录状态
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs value={filter} onValueChange={(v) => setFilter(v as any)}>
+                <div className="flex items-center gap-4 mb-4">
+                  <TabsList>
+                    <TabsTrigger value="all">全部</TabsTrigger>
+                    <TabsTrigger value="indexed">已收录</TabsTrigger>
+                    <TabsTrigger value="not-indexed">未收录</TabsTrigger>
+                    <TabsTrigger value="unchecked">未检查</TabsTrigger>
+                  </TabsList>
+
+                  <div className="flex items-center gap-2 ml-auto">
+                    <Select value={localeFilter} onValueChange={setLocaleFilter}>
+                      <SelectTrigger className="w-[120px]">
+                        <SelectValue placeholder="语言" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">全部语言</SelectItem>
+                        {availableLocales.map((locale) => (
+                          <SelectItem key={locale} value={locale || ''}>
+                            {locale?.toUpperCase() || '未知'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={typeFilter} onValueChange={setTypeFilter}>
+                      <SelectTrigger className="w-[120px]">
+                        <SelectValue placeholder="类型" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">全部类型</SelectItem>
+                        {availableTypes.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {typeNames[type] || type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-12">
-                          <Checkbox
-                            checked={selectedIds.length === filteredSubmissions.length}
-                            onCheckedChange={handleSelectAll}
-                          />
-                        </TableHead>
-                        <TableHead>URL</TableHead>
-                        <TableHead>类型</TableHead>
-                        <TableHead>语言</TableHead>
-                        <TableHead>收录状态</TableHead>
-                        <TableHead>详细状态</TableHead>
-                        <TableHead>收录时间</TableHead>
-                        <TableHead>最后检查</TableHead>
-                        <TableHead>操作</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredSubmissions.map((submission) => (
-                        <TableRow key={submission.id}>
-                          <TableCell>
+                </div>
+
+                <TabsContent value={filter} className="mt-0">
+                  {filteredSubmissions.length === 0 ? (
+                    <div className="py-12 text-center text-muted-foreground">
+                      <p className="mb-2">暂无提交记录</p>
+                      <p className="text-sm">
+                        请先到"URL 推送"标签页提交 URL
+                      </p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-12">
                             <Checkbox
-                              checked={selectedIds.includes(submission.id)}
-                              onCheckedChange={(checked) =>
-                                handleSelectOne(submission.id, checked as boolean)
-                              }
+                              checked={selectedIds.length === filteredSubmissions.length}
+                              onCheckedChange={handleSelectAll}
                             />
-                          </TableCell>
-                          <TableCell className="font-mono text-xs max-w-xs truncate">
-                            <a
-                              href={submission.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline"
-                              title={submission.url}
-                            >
-                              {submission.url}
-                            </a>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {typeNames[submission.urlType] || submission.urlType}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="secondary">
-                              {submission.locale?.toUpperCase()}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {submission.indexedByGoogle === true ? (
-                              <Badge className="bg-green-100 text-green-700">
-                                <CheckCircle2 className="h-3 w-3 mr-1" />
-                                已收录
+                          </TableHead>
+                          <TableHead>URL</TableHead>
+                          <TableHead>类型</TableHead>
+                          <TableHead>语言</TableHead>
+                          <TableHead>收录状态</TableHead>
+                          <TableHead>详细状态</TableHead>
+                          <TableHead>收录时间</TableHead>
+                          <TableHead>最后检查</TableHead>
+                          <TableHead>操作</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredSubmissions.map((submission) => (
+                          <TableRow key={submission.id}>
+                            <TableCell>
+                              <Checkbox
+                                checked={selectedIds.includes(submission.id)}
+                                onCheckedChange={(checked) =>
+                                  handleSelectOne(submission.id, checked as boolean)
+                                }
+                              />
+                            </TableCell>
+                            <TableCell className="font-mono text-xs max-w-xs truncate">
+                              <a
+                                href={submission.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline"
+                                title={submission.url}
+                              >
+                                {submission.url}
+                              </a>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {typeNames[submission.urlType] || submission.urlType}
                               </Badge>
-                            ) : submission.indexedByGoogle === false ? (
-                              <Badge className="bg-red-100 text-red-700">
-                                <XCircle className="h-3 w-3 mr-1" />
-                                未收录
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="secondary">
+                                {submission.locale?.toUpperCase()}
                               </Badge>
-                            ) : (
-                              <Badge className="bg-gray-100 text-gray-700">
-                                <Clock className="h-3 w-3 mr-1" />
-                                未检查
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-xs">
-                            {/* 只在未收录时显示详细状态 */}
-                            {submission.indexedByGoogle === false && submission.googleIndexStatusRaw ? (
-                              <Dialog>
-                                <TooltipProvider>
-                                  <Tooltip delayDuration={300}>
-                                    <TooltipTrigger asChild>
-                                      <DialogTrigger asChild>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-7 px-2 text-xs"
-                                        >
-                                          <Info className="h-3 w-3 mr-1" />
-                                          详细
-                                        </Button>
-                                      </DialogTrigger>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="top" className="max-w-xs bg-white text-gray-900 border-gray-200 shadow-lg">
-                                      <div className="space-y-1 text-xs">
-                                        <div><span className="font-semibold">判定结果:</span> {translateValue(submission.googleIndexStatusRaw.verdict, verdictTranslations)}</div>
-                                        <div><span className="font-semibold">索引状态:</span> {translateValue(submission.googleIndexStatusRaw.indexingState, indexingStateTranslations)}</div>
-                                        <div><span className="font-semibold">覆盖状态:</span> {translateValue(submission.googleIndexStatusRaw.coverageState, coverageStateTranslations)}</div>
-                                      </div>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                            </TableCell>
+                            <TableCell>
+                              {submission.indexedByGoogle === true ? (
+                                <Badge className="bg-green-100 text-green-700">
+                                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                                  已收录
+                                </Badge>
+                              ) : submission.indexedByGoogle === false ? (
+                                <Badge className="bg-red-100 text-red-700">
+                                  <XCircle className="h-3 w-3 mr-1" />
+                                  未收录
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-gray-100 text-gray-700">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  未检查
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {/* 只在未收录时显示详细状态 */}
+                              {submission.indexedByGoogle === false && submission.googleIndexStatusRaw ? (
+                                <Dialog>
+                                  <TooltipProvider>
+                                    <Tooltip delayDuration={300}>
+                                      <TooltipTrigger asChild>
+                                        <DialogTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-7 px-2 text-xs"
+                                          >
+                                            <Info className="h-3 w-3 mr-1" />
+                                            详细
+                                          </Button>
+                                        </DialogTrigger>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="max-w-xs bg-white text-gray-900 border-gray-200 shadow-lg">
+                                        <div className="space-y-1 text-xs">
+                                          <div><span className="font-semibold">判定结果:</span> {translateValue(submission.googleIndexStatusRaw.verdict, verdictTranslations)}</div>
+                                          <div><span className="font-semibold">索引状态:</span> {translateValue(submission.googleIndexStatusRaw.indexingState, indexingStateTranslations)}</div>
+                                          <div><span className="font-semibold">覆盖状态:</span> {translateValue(submission.googleIndexStatusRaw.coverageState, coverageStateTranslations)}</div>
+                                        </div>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                  <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                                     <DialogHeader>
                                       <DialogTitle>Google 收录详细状态</DialogTitle>
                                     </DialogHeader>
@@ -1068,675 +1064,675 @@ export function GoogleSubmissionsClient({ config, submissions: initialSubmission
                                         </div>
                                       )}
                                     </div>
-                                </DialogContent>
-                              </Dialog>
+                                  </DialogContent>
+                                </Dialog>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {submission.googleIndexedAt
+                                ? new Date(submission.googleIndexedAt).toLocaleDateString('zh-CN')
+                                : '-'}
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {submission.googleLastCheckAt
+                                ? new Date(submission.googleLastCheckAt).toLocaleDateString('zh-CN')
+                                : '-'}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleCheckOne(submission.id)}
+                                disabled={checkingIds.has(submission.id)}
+                              >
+                                <RefreshCw className={`h-3 w-3 mr-1 ${checkingIds.has(submission.id) ? 'animate-spin' : ''}`} />
+                                检查
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* URL 推送 Tab */}
+        <TabsContent value="submit" className="space-y-6">
+          {/* 批量操作栏 */}
+          {pushSelectedIds.length > 0 && (
+            <Card>
+              <CardContent className="py-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    已选择 {pushSelectedIds.length} 个 URL
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handlePushCopyUrls}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      复制选中链接
+                    </Button>
+                    <Button
+                      onClick={handlePushMarkAsSubmitted}
+                      size="sm"
+                    >
+                      <Check className="h-4 w-4 mr-2" />
+                      标记为已提交
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* URL 列表 */}
+          <Card>
+            <CardHeader>
+              <CardTitle>URL 推送列表</CardTitle>
+              <CardDescription>
+                选择 URL 并复制后，前往 Google Search Console 手动提交
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* 筛选器 */}
+              <div className="flex flex-wrap items-center gap-4 mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">提交状态:</span>
+                  <Select value={pushSubmitFilter} onValueChange={setPushSubmitFilter}>
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="not_submitted">未提交</SelectItem>
+                      <SelectItem value="submitted">已提交</SelectItem>
+                      <SelectItem value="all">全部</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">收录状态:</span>
+                  <Select value={pushIndexFilter} onValueChange={setPushIndexFilter}>
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="not_indexed">未收录</SelectItem>
+                      <SelectItem value="indexed">已收录</SelectItem>
+                      <SelectItem value="all">全部</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">语言:</span>
+                  <Select value={pushLocaleFilter} onValueChange={setPushLocaleFilter}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">全部语言</SelectItem>
+                      {availableLocales.map((locale) => (
+                        <SelectItem key={locale} value={locale || ''}>
+                          {locale?.toUpperCase() || '未知'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">类型:</span>
+                  <Select value={pushTypeFilter} onValueChange={setPushTypeFilter}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">全部类型</SelectItem>
+                      {availableTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {typeNames[type] || type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-2 ml-auto">
+                  <span className="text-sm font-medium">每页:</span>
+                  <Select
+                    value={pushPageSize.toString()}
+                    onValueChange={(v) => {
+                      setPushPageSize(Number(v))
+                      setPushCurrentPage(1) // 重置到第一页
+                    }}
+                  >
+                    <SelectTrigger className="w-[100px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="20">20 条</SelectItem>
+                      <SelectItem value="50">50 条</SelectItem>
+                      <SelectItem value="100">100 条</SelectItem>
+                      <SelectItem value="200">200 条</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* 统计信息 */}
+              <div className="text-sm text-muted-foreground mb-4">
+                共 {pushFilteredSubmissions.length} 个 URL，显示第 {pushPaginatedSubmissions.length > 0 ? (pushCurrentPage - 1) * pushPageSize + 1 : 0} - {Math.min(pushCurrentPage * pushPageSize, pushFilteredSubmissions.length)} 条
+              </div>
+
+              {/* URL 表格 */}
+              {pushPaginatedSubmissions.length === 0 ? (
+                <div className="py-12 text-center text-muted-foreground">
+                  <Send className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="mb-2">没有符合条件的 URL</p>
+                  <p className="text-sm">尝试调整筛选条件</p>
+                </div>
+              ) : (
+                <>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">
+                          <Checkbox
+                            checked={pushSelectedIds.length === pushPaginatedSubmissions.length}
+                            onCheckedChange={handlePushSelectAll}
+                          />
+                        </TableHead>
+                        <TableHead>URL</TableHead>
+                        <TableHead>类型</TableHead>
+                        <TableHead>语言</TableHead>
+                        <TableHead>提交状态</TableHead>
+                        <TableHead>收录状态</TableHead>
+                        <TableHead>提交时间</TableHead>
+                        <TableHead className="text-right">操作</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pushPaginatedSubmissions.map((submission) => (
+                        <TableRow key={submission.id}>
+                          <TableCell>
+                            <Checkbox
+                              checked={pushSelectedIds.includes(submission.id)}
+                              onCheckedChange={(checked) =>
+                                handlePushSelectOne(submission.id, checked as boolean)
+                              }
+                            />
+                          </TableCell>
+                          <TableCell className="font-mono text-xs max-w-md truncate">
+                            <a
+                              href={submission.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline"
+                            >
+                              {submission.url}
+                            </a>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {typeNames[submission.urlType] || submission.urlType}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">
+                              {submission.locale?.toUpperCase()}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {submission.googleSubmitStatus === 'SUBMITTED' || submission.googleSubmitStatus === 'SUCCESS' ? (
+                              <Badge className="bg-blue-100 text-blue-700">
+                                已提交
+                              </Badge>
                             ) : (
-                              <span className="text-muted-foreground">-</span>
+                              <Badge variant="outline" className="text-gray-600">
+                                未提交
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {submission.indexedByGoogle === true ? (
+                              <Badge className="bg-green-100 text-green-700">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                已收录
+                              </Badge>
+                            ) : submission.indexedByGoogle === false ? (
+                              <Badge className="bg-red-100 text-red-700">
+                                <XCircle className="h-3 w-3 mr-1" />
+                                未收录
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-gray-100 text-gray-700">
+                                <Clock className="h-3 w-3 mr-1" />
+                                未检查
+                              </Badge>
                             )}
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground">
-                            {submission.googleIndexedAt
-                              ? new Date(submission.googleIndexedAt).toLocaleDateString('zh-CN')
+                            {submission.googleSubmittedAt
+                              ? new Date(submission.googleSubmittedAt).toLocaleDateString('zh-CN')
                               : '-'}
                           </TableCell>
-                          <TableCell className="text-xs text-muted-foreground">
-                            {submission.googleLastCheckAt
-                              ? new Date(submission.googleLastCheckAt).toLocaleDateString('zh-CN')
-                              : '-'}
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleCheckOne(submission.id)}
-                              disabled={checkingIds.has(submission.id)}
-                            >
-                              <RefreshCw className={`h-3 w-3 mr-1 ${checkingIds.has(submission.id) ? 'animate-spin' : ''}`} />
-                              检查
-                            </Button>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                onClick={() => handlePushCopyOneUrl(submission.url)}
+                                size="sm"
+                                variant="ghost"
+                                title="复制 URL"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                onClick={() => handlePushMarkOneAsSubmitted(submission.id)}
+                                size="sm"
+                                variant="ghost"
+                                title="标记为已提交"
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                onClick={() => handlePushCheckOneIndex(submission.id)}
+                                disabled={checkingIds.has(submission.id)}
+                                size="sm"
+                                variant="ghost"
+                                title="检查收录状态"
+                              >
+                                <RefreshCw className={`h-4 w-4 ${checkingIds.has(submission.id) ? 'animate-spin' : ''}`} />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
-                )}
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </TabsContent>
 
-      {/* URL 推送 Tab */}
-      <TabsContent value="submit" className="space-y-6">
-        {/* 批量操作栏 */}
-        {pushSelectedIds.length > 0 && (
+                  {/* 分页控件 */}
+                  {pushTotalPages > 1 && (
+                    <div className="flex items-center justify-between mt-4">
+                      <div className="text-sm text-muted-foreground">
+                        第 {pushCurrentPage} / {pushTotalPages} 页
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPushCurrentPage(pushCurrentPage - 1)}
+                          disabled={pushCurrentPage === 1}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                          上一页
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPushCurrentPage(pushCurrentPage + 1)}
+                          disabled={pushCurrentPage === pushTotalPages}
+                        >
+                          下一页
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 提示信息 */}
+          <Card className="bg-blue-50 border-blue-200">
+            <CardContent className="py-4">
+              <h3 className="text-sm font-medium mb-2">提交步骤</h3>
+              <ol className="text-sm text-muted-foreground space-y-1">
+                <li>1. 使用筛选器筛选要提交的 URL（默认显示未提交且未收录的 URL）</li>
+                <li>2. 选中要提交的 URL，点击"复制选中链接"</li>
+                <li>
+                  3. 前往{' '}
+                  <a
+                    href="https://search.google.com/search-console"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    Google Search Console
+                  </a>{' '}
+                  手动提交
+                </li>
+                <li>4. 提交完成后，点击"标记为已提交"按钮</li>
+              </ol>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* 配置管理 Tab */}
+        <TabsContent value="config" className="space-y-6">
+          {/* 提示信息 */}
+          <Alert>
+            <AlertDescription>
+              配置 Google Search Console API 可以启用官方的收录检查功能（每日 2000 次查询配额）。如果不配置 OAuth Token，系统将使用简单的网页爬取方式检查收录（准确性较低，可能被反爬虫限制）。
+            </AlertDescription>
+          </Alert>
+
+          {/* Google Search Console API 配置 */}
           <Card>
-            <CardContent className="py-3">
+            <CardHeader>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  已选择 {pushSelectedIds.length} 个 URL
-                </span>
-                <div className="flex gap-2">
+                <div>
+                  <CardTitle>Google Search Console API</CardTitle>
+                  <CardDescription>
+                    使用官方 Search Console URL Inspection API 检查收录状态
+                  </CardDescription>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor="google-enabled">启用</Label>
+                  <Switch
+                    id="google-enabled"
+                    checked={googleEnabled}
+                    onCheckedChange={setGoogleEnabled}
+                  />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="google-site-url">Site URL</Label>
+                <Input
+                  id="google-site-url"
+                  placeholder="https://example.com"
+                  value={googleSiteUrl}
+                  onChange={(e) => setGoogleSiteUrl(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  在 Google Search Console 中验证的网站 URL
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="google-access-token">OAuth Access Token</Label>
+                <Input
+                  id="google-access-token"
+                  type="password"
+                  placeholder="ya29.a0AfH6SMB..."
+                  value={googleAccessToken}
+                  onChange={(e) => setGoogleAccessToken(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  OAuth 2.0 访问令牌（需要 webmasters 或 webmasters.readonly 权限）
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="google-refresh-token">OAuth Refresh Token</Label>
+                <Input
+                  id="google-refresh-token"
+                  type="password"
+                  placeholder="1//0gJRnKz..."
+                  value={googleRefreshToken}
+                  onChange={(e) => setGoogleRefreshToken(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  用于自动刷新过期的 Access Token（强烈推荐填写）
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="google-client-id">OAuth Client ID</Label>
+                <Input
+                  id="google-client-id"
+                  type="password"
+                  placeholder="613565854284-xxx.apps.googleusercontent.com"
+                  value={googleClientId}
+                  onChange={(e) => setGoogleClientId(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  从 Google Cloud Console 创建的 OAuth 2.0 客户端 ID（自动刷新 Token 时需要）
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="google-client-secret">OAuth Client Secret</Label>
+                <Input
+                  id="google-client-secret"
+                  type="password"
+                  placeholder="GOCSPX-xxx"
+                  value={googleClientSecret}
+                  onChange={(e) => setGoogleClientSecret(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  从 Google Cloud Console 创建的 OAuth 2.0 客户端密钥（自动刷新 Token 时需要）
+                </p>
+              </div>
+
+              {/* 一键授权按钮 */}
+              <div className="space-y-2 pt-4 border-t">
+                <Label>快速授权（推荐）</Label>
+                <div className="flex flex-col gap-2">
                   <Button
-                    onClick={handlePushCopyUrls}
-                    size="sm"
-                    variant="outline"
+                    variant="default"
+                    onClick={() => {
+                      // 检查是否配置了 Client ID 和 Secret
+                      if (!googleClientId || !googleClientSecret) {
+                        toast.error('请先填写并保存 OAuth Client ID 和 Client Secret')
+                        return
+                      }
+                      if (!googleSiteUrl) {
+                        toast.error('请先填写并保存 Site URL')
+                        return
+                      }
+                      // 重定向到 OAuth 授权端点
+                      window.location.href = '/api/auth/google'
+                    }}
+                    disabled={!googleClientId || !googleClientSecret || !googleSiteUrl}
                   >
-                    <Copy className="h-4 w-4 mr-2" />
-                    复制选中链接
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    一键授权 Google
                   </Button>
+                  <p className="text-xs text-muted-foreground">
+                    点击后将跳转到 Google 登录页面完成授权，授权成功后 Access Token 和 Refresh Token 会自动保存（需要先保存 Client ID、Client Secret 和 Site URL）
+                  </p>
+                </div>
+              </div>
+
+              {/* 测试 API */}
+              <div className="space-y-2 pt-4 border-t">
+                <Label htmlFor="google-test-url">测试 URL (可选)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="google-test-url"
+                    placeholder="https://example.com/page (留空则测试 Site URL)"
+                    value={googleTestUrl}
+                    onChange={(e) => setGoogleTestUrl(e.target.value)}
+                  />
                   <Button
-                    onClick={handlePushMarkAsSubmitted}
-                    size="sm"
+                    variant="outline"
+                    onClick={handleTestGoogleApi}
+                    disabled={isGoogleTesting || !googleAccessToken || !googleSiteUrl}
                   >
-                    <Check className="h-4 w-4 mr-2" />
-                    标记为已提交
+                    {isGoogleTesting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        测试中
+                      </>
+                    ) : (
+                      <>
+                        <TestTube className="h-4 w-4 mr-2" />
+                        测试 API
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
 
-        {/* URL 列表 */}
-        <Card>
-          <CardHeader>
-            <CardTitle>URL 推送列表</CardTitle>
-            <CardDescription>
-              选择 URL 并复制后，前往 Google Search Console 手动提交
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {/* 筛选器 */}
-            <div className="flex flex-wrap items-center gap-4 mb-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">提交状态:</span>
-                <Select value={pushSubmitFilter} onValueChange={setPushSubmitFilter}>
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="not_submitted">未提交</SelectItem>
-                    <SelectItem value="submitted">已提交</SelectItem>
-                    <SelectItem value="all">全部</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">收录状态:</span>
-                <Select value={pushIndexFilter} onValueChange={setPushIndexFilter}>
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="not_indexed">未收录</SelectItem>
-                    <SelectItem value="indexed">已收录</SelectItem>
-                    <SelectItem value="all">全部</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">语言:</span>
-                <Select value={pushLocaleFilter} onValueChange={setPushLocaleFilter}>
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">全部语言</SelectItem>
-                    {availableLocales.map((locale) => (
-                      <SelectItem key={locale} value={locale || ''}>
-                        {locale?.toUpperCase() || '未知'}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">类型:</span>
-                <Select value={pushTypeFilter} onValueChange={setPushTypeFilter}>
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">全部类型</SelectItem>
-                    {availableTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {typeNames[type] || type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center gap-2 ml-auto">
-                <span className="text-sm font-medium">每页:</span>
-                <Select
-                  value={pushPageSize.toString()}
-                  onValueChange={(v) => {
-                    setPushPageSize(Number(v))
-                    setPushCurrentPage(1) // 重置到第一页
-                  }}
-                >
-                  <SelectTrigger className="w-[100px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="20">20 条</SelectItem>
-                    <SelectItem value="50">50 条</SelectItem>
-                    <SelectItem value="100">100 条</SelectItem>
-                    <SelectItem value="200">200 条</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* 统计信息 */}
-            <div className="text-sm text-muted-foreground mb-4">
-              共 {pushFilteredSubmissions.length} 个 URL，显示第 {pushPaginatedSubmissions.length > 0 ? (pushCurrentPage - 1) * pushPageSize + 1 : 0} - {Math.min(pushCurrentPage * pushPageSize, pushFilteredSubmissions.length)} 条
-            </div>
-
-            {/* URL 表格 */}
-            {pushPaginatedSubmissions.length === 0 ? (
-              <div className="py-12 text-center text-muted-foreground">
-                <Send className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="mb-2">没有符合条件的 URL</p>
-                <p className="text-sm">尝试调整筛选条件</p>
-              </div>
-            ) : (
-              <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">
-                        <Checkbox
-                          checked={pushSelectedIds.length === pushPaginatedSubmissions.length}
-                          onCheckedChange={handlePushSelectAll}
-                        />
-                      </TableHead>
-                      <TableHead>URL</TableHead>
-                      <TableHead>类型</TableHead>
-                      <TableHead>语言</TableHead>
-                      <TableHead>提交状态</TableHead>
-                      <TableHead>收录状态</TableHead>
-                      <TableHead>提交时间</TableHead>
-                      <TableHead className="text-right">操作</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {pushPaginatedSubmissions.map((submission) => (
-                      <TableRow key={submission.id}>
-                        <TableCell>
-                          <Checkbox
-                            checked={pushSelectedIds.includes(submission.id)}
-                            onCheckedChange={(checked) =>
-                              handlePushSelectOne(submission.id, checked as boolean)
-                            }
-                          />
-                        </TableCell>
-                        <TableCell className="font-mono text-xs max-w-md truncate">
-                          <a
-                            href={submission.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline"
-                          >
-                            {submission.url}
-                          </a>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {typeNames[submission.urlType] || submission.urlType}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">
-                            {submission.locale?.toUpperCase()}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {submission.googleSubmitStatus === 'SUBMITTED' || submission.googleSubmitStatus === 'SUCCESS' ? (
-                            <Badge className="bg-blue-100 text-blue-700">
-                              已提交
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-gray-600">
-                              未提交
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {submission.indexedByGoogle === true ? (
-                            <Badge className="bg-green-100 text-green-700">
-                              <CheckCircle2 className="h-3 w-3 mr-1" />
-                              已收录
-                            </Badge>
-                          ) : submission.indexedByGoogle === false ? (
-                            <Badge className="bg-red-100 text-red-700">
-                              <XCircle className="h-3 w-3 mr-1" />
-                              未收录
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-gray-100 text-gray-700">
-                              <Clock className="h-3 w-3 mr-1" />
-                              未检查
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {submission.googleSubmittedAt
-                            ? new Date(submission.googleSubmittedAt).toLocaleDateString('zh-CN')
-                            : '-'}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              onClick={() => handlePushCopyOneUrl(submission.url)}
-                              size="sm"
-                              variant="ghost"
-                              title="复制 URL"
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              onClick={() => handlePushMarkOneAsSubmitted(submission.id)}
-                              size="sm"
-                              variant="ghost"
-                              title="标记为已提交"
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              onClick={() => handlePushCheckOneIndex(submission.id)}
-                              disabled={checkingIds.has(submission.id)}
-                              size="sm"
-                              variant="ghost"
-                              title="检查收录状态"
-                            >
-                              <RefreshCw className={`h-4 w-4 ${checkingIds.has(submission.id) ? 'animate-spin' : ''}`} />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-
-                {/* 分页控件 */}
-                {pushTotalPages > 1 && (
-                  <div className="flex items-center justify-between mt-4">
-                    <div className="text-sm text-muted-foreground">
-                      第 {pushCurrentPage} / {pushTotalPages} 页
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPushCurrentPage(pushCurrentPage - 1)}
-                        disabled={pushCurrentPage === 1}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                        上一页
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPushCurrentPage(pushCurrentPage + 1)}
-                        disabled={pushCurrentPage === pushTotalPages}
-                      >
-                        下一页
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* 提示信息 */}
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="py-4">
-            <h3 className="text-sm font-medium mb-2">提交步骤</h3>
-            <ol className="text-sm text-muted-foreground space-y-1">
-              <li>1. 使用筛选器筛选要提交的 URL（默认显示未提交且未收录的 URL）</li>
-              <li>2. 选中要提交的 URL，点击"复制选中链接"</li>
-              <li>
-                3. 前往{' '}
-                <a
-                  href="https://search.google.com/search-console"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
-                >
-                  Google Search Console
-                </a>{' '}
-                手动提交
-              </li>
-              <li>4. 提交完成后，点击"标记为已提交"按钮</li>
-            </ol>
-          </CardContent>
-        </Card>
-      </TabsContent>
-
-      {/* 配置管理 Tab */}
-      <TabsContent value="config" className="space-y-6">
-        {/* 提示信息 */}
-        <Alert>
-          <AlertDescription>
-            配置 Google Search Console API 可以启用官方的收录检查功能（每日 2000 次查询配额）。如果不配置 OAuth Token，系统将使用简单的网页爬取方式检查收录（准确性较低，可能被反爬虫限制）。
-          </AlertDescription>
-        </Alert>
-
-        {/* Google Search Console API 配置 */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Google Search Console API</CardTitle>
-                <CardDescription>
-                  使用官方 Search Console URL Inspection API 检查收录状态
-                </CardDescription>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Label htmlFor="google-enabled">启用</Label>
-                <Switch
-                  id="google-enabled"
-                  checked={googleEnabled}
-                  onCheckedChange={setGoogleEnabled}
-                />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="google-site-url">Site URL</Label>
-              <Input
-                id="google-site-url"
-                placeholder="https://example.com"
-                value={googleSiteUrl}
-                onChange={(e) => setGoogleSiteUrl(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                在 Google Search Console 中验证的网站 URL
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="google-access-token">OAuth Access Token</Label>
-              <Input
-                id="google-access-token"
-                type="password"
-                placeholder="ya29.a0AfH6SMB..."
-                value={googleAccessToken}
-                onChange={(e) => setGoogleAccessToken(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                OAuth 2.0 访问令牌（需要 webmasters 或 webmasters.readonly 权限）
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="google-refresh-token">OAuth Refresh Token</Label>
-              <Input
-                id="google-refresh-token"
-                type="password"
-                placeholder="1//0gJRnKz..."
-                value={googleRefreshToken}
-                onChange={(e) => setGoogleRefreshToken(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                用于自动刷新过期的 Access Token（强烈推荐填写）
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="google-client-id">OAuth Client ID</Label>
-              <Input
-                id="google-client-id"
-                type="password"
-                placeholder="613565854284-xxx.apps.googleusercontent.com"
-                value={googleClientId}
-                onChange={(e) => setGoogleClientId(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                从 Google Cloud Console 创建的 OAuth 2.0 客户端 ID（自动刷新 Token 时需要）
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="google-client-secret">OAuth Client Secret</Label>
-              <Input
-                id="google-client-secret"
-                type="password"
-                placeholder="GOCSPX-xxx"
-                value={googleClientSecret}
-                onChange={(e) => setGoogleClientSecret(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                从 Google Cloud Console 创建的 OAuth 2.0 客户端密钥（自动刷新 Token 时需要）
-              </p>
-            </div>
-
-            {/* 一键授权按钮 */}
-            <div className="space-y-2 pt-4 border-t">
-              <Label>快速授权（推荐）</Label>
-              <div className="flex flex-col gap-2">
-                <Button
-                  variant="default"
-                  onClick={() => {
-                    // 检查是否配置了 Client ID 和 Secret
-                    if (!googleClientId || !googleClientSecret) {
-                      toast.error('请先填写并保存 OAuth Client ID 和 Client Secret')
-                      return
-                    }
-                    if (!googleSiteUrl) {
-                      toast.error('请先填写并保存 Site URL')
-                      return
-                    }
-                    // 重定向到 OAuth 授权端点
-                    window.location.href = '/api/auth/google'
-                  }}
-                  disabled={!googleClientId || !googleClientSecret || !googleSiteUrl}
-                >
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  一键授权 Google
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  点击后将跳转到 Google 登录页面完成授权，授权成功后 Access Token 和 Refresh Token 会自动保存（需要先保存 Client ID、Client Secret 和 Site URL）
-                </p>
-              </div>
-            </div>
-
-            {/* 测试 API */}
-            <div className="space-y-2 pt-4 border-t">
-              <Label htmlFor="google-test-url">测试 URL (可选)</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="google-test-url"
-                  placeholder="https://example.com/page (留空则测试 Site URL)"
-                  value={googleTestUrl}
-                  onChange={(e) => setGoogleTestUrl(e.target.value)}
-                />
-                <Button
-                  variant="outline"
-                  onClick={handleTestGoogleApi}
-                  disabled={isGoogleTesting || !googleAccessToken || !googleSiteUrl}
-                >
-                  {isGoogleTesting ? (
+              {/* 保存按钮 */}
+              <div className="flex justify-end pt-4">
+                <Button onClick={handleSaveGoogleConfig} disabled={isGoogleSaving}>
+                  {isGoogleSaving ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      测试中
+                      保存中
                     </>
                   ) : (
-                    <>
-                      <TestTube className="h-4 w-4 mr-2" />
-                      测试 API
-                    </>
+                    '保存配置'
                   )}
                 </Button>
               </div>
-            </div>
-
-            {/* 保存按钮 */}
-            <div className="flex justify-end pt-4">
-              <Button onClick={handleSaveGoogleConfig} disabled={isGoogleSaving}>
-                {isGoogleSaving ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    保存中
-                  </>
-                ) : (
-                  '保存配置'
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 使用说明 */}
-        <Card>
-          <CardHeader>
-            <CardTitle>使用说明</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <h4 className="font-medium mb-2 flex items-center gap-2">
-                <span>Google Search Console API (官方 API)</span>
-                <Badge variant="default">推荐使用一键授权</Badge>
-              </h4>
-
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                <p className="text-sm font-medium text-blue-900 mb-2">🚀 快速配置（推荐）</p>
-                <ol className="list-decimal list-inside space-y-1 text-sm text-blue-800">
-                  <li>前往{' '}
-                    <a
-                      href="https://search.google.com/search-console"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline font-medium"
-                    >
-                      Google Search Console
-                    </a>{' '}
-                    验证并添加您的网站
-                  </li>
-                  <li>访问{' '}
-                    <a
-                      href="https://console.cloud.google.com/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline font-medium"
-                    >
-                      Google Cloud Console
-                    </a>{' '}
-                    创建项目并启用 "Search Console API"
-                  </li>
-                  <li>配置 OAuth 2.0 客户端 ID（Web 应用程序类型），添加授权回调 URL：<code className="bg-white px-1 py-0.5 rounded text-xs">https://您的域名/api/auth/google/callback</code></li>
-                  <li>复制 Client ID 和 Client Secret，填写上方表单中的 Site URL、Client ID、Client Secret</li>
-                  <li>点击"保存配置"，然后点击"<strong>一键授权 Google</strong>"按钮</li>
-                  <li>在 Google 登录页面完成授权，系统会自动保存 Token</li>
-                </ol>
-              </div>
-
-              <details className="text-sm">
-                <summary className="cursor-pointer font-medium text-muted-foreground hover:text-foreground">
-                  手动配置（高级用户）
-                </summary>
-                <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground mt-2 ml-4">
-                  <li>使用{' '}
-                    <a
-                      href="https://developers.google.com/oauthplayground"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
-                    >
-                      OAuth 2.0 Playground
-                    </a>{' '}
-                    手动获取 Access Token 和 Refresh Token（需要 <code>webmasters</code> 或 <code>webmasters.readonly</code> 权限）
-                  </li>
-                  <li>在上方表单中手动填写所有字段（Site URL、Access Token、Refresh Token、Client ID、Client Secret）</li>
-                  <li>点击"测试 API"验证配置，然后点击"保存配置"</li>
-                </ol>
-              </details>
-            </div>
-
-            <Alert className="mt-4">
-              <AlertDescription>
-                <strong>自动刷新 Token（推荐配置）：</strong>
-                <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
-                  <li><strong>填写 Refresh Token + Client ID + Client Secret</strong>：系统会使用 Google 官方 SDK 自动刷新过期的 Access Token，无需手动更新</li>
-                  <li><strong>仅填写 Access Token</strong>：Token 过期后（通常 1 小时）需要手动重新获取并更新</li>
-                  <li>自动刷新使用 <code>googleapis</code> npm 包，Token 刷新后会自动更新到数据库</li>
-                  <li>首次配置时，建议从 OAuth Playground 获取完整的 Tokens（包含 Refresh Token）</li>
-                </ul>
-              </AlertDescription>
-            </Alert>
-
-            <Alert className="mt-4">
-              <AlertDescription>
-                <strong>重要提示：</strong>
-                <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
-                  <li>使用官方 Search Console API，准确性高于搜索方式</li>
-                  <li>每日查询配额：2000 次（超出后会自动降级到简单搜索方式）</li>
-                  <li>OAuth 令牌和客户端凭据会加密存储在数据库的 extraConfig 字段中</li>
-                  <li>如果不配置 API，系统会使用简单爬取方式（准确性较低，可能被反爬虫限制）</li>
-                </ul>
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
-
-        {/* Sitemap 配置信息 */}
-        {config && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                Google Sitemap 配置
-              </CardTitle>
-              <CardDescription>自动生成和提交 Sitemap 到 Google</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">状态</span>
-                  <Badge variant={config.isEnabled ? 'default' : 'secondary'}>
-                    {config.isEnabled ? '已启用' : '已禁用'}
-                  </Badge>
-                </div>
-
-                {config.apiEndpoint && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Sitemap URL</span>
-                    <a
-                      href={config.apiEndpoint}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-blue-600 hover:underline flex items-center gap-1"
-                    >
-                      查看 Sitemap
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </div>
-                )}
-
-                <div className="pt-4 border-t">
-                  <h4 className="text-sm font-medium mb-2">说明</h4>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• Sitemap 会自动包含所有已发布的游戏、分类、标签和页面</li>
-                    <li>• Google 会定期抓取 Sitemap 并更新索引</li>
-                    <li>• 在 Search Console 中提交 Sitemap URL 可以加快收录</li>
-                  </ul>
-                </div>
-              </div>
             </CardContent>
           </Card>
-        )}
-      </TabsContent>
-    </Tabs>
+
+          {/* 使用说明 */}
+          <Card>
+            <CardHeader>
+              <CardTitle>使用说明</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <h4 className="font-medium mb-2 flex items-center gap-2">
+                  <span>Google Search Console API (官方 API)</span>
+                  <Badge variant="default">推荐使用一键授权</Badge>
+                </h4>
+
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <p className="text-sm font-medium text-blue-900 mb-2">🚀 快速配置（推荐）</p>
+                  <ol className="list-decimal list-inside space-y-1 text-sm text-blue-800">
+                    <li>前往{' '}
+                      <a
+                        href="https://search.google.com/search-console"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline font-medium"
+                      >
+                        Google Search Console
+                      </a>{' '}
+                      验证并添加您的网站
+                    </li>
+                    <li>访问{' '}
+                      <a
+                        href="https://console.cloud.google.com/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline font-medium"
+                      >
+                        Google Cloud Console
+                      </a>{' '}
+                      创建项目并启用 "Search Console API"
+                    </li>
+                    <li>配置 OAuth 2.0 客户端 ID（Web 应用程序类型），添加授权回调 URL：<code className="bg-white px-1 py-0.5 rounded text-xs">https://您的域名/api/auth/google/callback</code></li>
+                    <li>复制 Client ID 和 Client Secret，填写上方表单中的 Site URL、Client ID、Client Secret</li>
+                    <li>点击"保存配置"，然后点击"<strong>一键授权 Google</strong>"按钮</li>
+                    <li>在 Google 登录页面完成授权，系统会自动保存 Token</li>
+                  </ol>
+                </div>
+
+                <details className="text-sm">
+                  <summary className="cursor-pointer font-medium text-muted-foreground hover:text-foreground">
+                    手动配置（高级用户）
+                  </summary>
+                  <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground mt-2 ml-4">
+                    <li>使用{' '}
+                      <a
+                        href="https://developers.google.com/oauthplayground"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        OAuth 2.0 Playground
+                      </a>{' '}
+                      手动获取 Access Token 和 Refresh Token（需要 <code>webmasters</code> 或 <code>webmasters.readonly</code> 权限）
+                    </li>
+                    <li>在上方表单中手动填写所有字段（Site URL、Access Token、Refresh Token、Client ID、Client Secret）</li>
+                    <li>点击"测试 API"验证配置，然后点击"保存配置"</li>
+                  </ol>
+                </details>
+              </div>
+
+              <Alert className="mt-4">
+                <AlertDescription>
+                  <strong>自动刷新 Token（推荐配置）：</strong>
+                  <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+                    <li><strong>填写 Refresh Token + Client ID + Client Secret</strong>：系统会使用 Google 官方 SDK 自动刷新过期的 Access Token，无需手动更新</li>
+                    <li><strong>仅填写 Access Token</strong>：Token 过期后（通常 1 小时）需要手动重新获取并更新</li>
+                    <li>自动刷新使用 <code>googleapis</code> npm 包，Token 刷新后会自动更新到数据库</li>
+                    <li>首次配置时，建议从 OAuth Playground 获取完整的 Tokens（包含 Refresh Token）</li>
+                  </ul>
+                </AlertDescription>
+              </Alert>
+
+              <Alert className="mt-4">
+                <AlertDescription>
+                  <strong>重要提示：</strong>
+                  <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+                    <li>使用官方 Search Console API，准确性高于搜索方式</li>
+                    <li>每日查询配额：2000 次（超出后会自动降级到简单搜索方式）</li>
+                    <li>OAuth 令牌和客户端凭据会加密存储在数据库的 extraConfig 字段中</li>
+                    <li>如果不配置 API，系统会使用简单爬取方式（准确性较低，可能被反爬虫限制）</li>
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+
+          {/* Sitemap 配置信息 */}
+          {config && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Google Sitemap 配置
+                </CardTitle>
+                <CardDescription>自动生成和提交 Sitemap 到 Google</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">状态</span>
+                    <Badge variant={config.isEnabled ? 'default' : 'secondary'}>
+                      {config.isEnabled ? '已启用' : '已禁用'}
+                    </Badge>
+                  </div>
+
+                  {config.apiEndpoint && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Sitemap URL</span>
+                      <a
+                        href={config.apiEndpoint}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                      >
+                        查看 Sitemap
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                  )}
+
+                  <div className="pt-4 border-t">
+                    <h4 className="text-sm font-medium mb-2">说明</h4>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      <li>• Sitemap 会自动包含所有已发布的游戏、分类、标签和页面</li>
+                      <li>• Google 会定期抓取 Sitemap 并更新索引</li>
+                      <li>• 在 Search Console 中提交 Sitemap URL 可以加快收录</li>
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </>
   )
 }

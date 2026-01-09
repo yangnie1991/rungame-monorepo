@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { CharacterCount } from '@tiptap/extensions'
+import CharacterCount from '@tiptap/extension-character-count'
 
 export default function TestCharacterModesPage() {
   const [content, setContent] = useState('<p>测试内容 Hello World 你好世界</p>')
@@ -286,14 +286,14 @@ export default function TestCharacterModesPage() {
           <div>
             <div className="text-blue-400 font-medium mb-2">// 方式 1: 默认配置</div>
             <pre className="bg-gray-800 p-3 rounded overflow-x-auto">
-{`CharacterCount  // 不需要任何配置`}
+              {`CharacterCount  // 不需要任何配置`}
             </pre>
           </div>
 
           <div>
             <div className="text-green-400 font-medium mb-2">// 方式 2: 中文字符=2字节</div>
             <pre className="bg-gray-800 p-3 rounded overflow-x-auto">
-{`CharacterCount.configure({
+              {`CharacterCount.configure({
   textCounter: (text: string) => {
     let byteLength = 0
     for (const char of text) {
@@ -313,7 +313,7 @@ export default function TestCharacterModesPage() {
           <div>
             <div className="text-purple-400 font-medium mb-2">// 方式 3: Intl.Segmenter（官方推荐）</div>
             <pre className="bg-gray-800 p-3 rounded overflow-x-auto">
-{`CharacterCount.configure({
+              {`CharacterCount.configure({
   textCounter: (text: string) => {
     return [...new Intl.Segmenter().segment(text)].length
   }
@@ -324,7 +324,7 @@ export default function TestCharacterModesPage() {
           <div>
             <div className="text-orange-400 font-medium mb-2">// 方式 4: UTF-8 字节长度</div>
             <pre className="bg-gray-800 p-3 rounded overflow-x-auto">
-{`CharacterCount.configure({
+              {`CharacterCount.configure({
   textCounter: (text: string) => {
     return new TextEncoder().encode(text).length
   }

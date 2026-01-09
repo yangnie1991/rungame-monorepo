@@ -18,6 +18,36 @@ export interface TagForAdmin {
 }
 
 /**
+ * 标签匹配数据结构 - 用于 GamePix 等英文标签的匹配
+ */
+export interface TagForMatching {
+  id: string
+  slug: string
+  name: string // 主表英文名称（不翻译）
+}
+
+/**
+ * 获取所有标签用于匹配（返回英文主表数据，不翻译）
+ *
+ * 用于匹配 GamePix 等平台抓取的英文标签
+ * 直接返回 Tag 主表的英文 name 和 slug，不做任何翻译
+ */
+export async function getAllTagsForMatching(): Promise<TagForMatching[]> {
+  const tags = await prisma.tag.findMany({
+    select: {
+      id: true,
+      slug: true,
+      name: true, // 主表的英文名称
+    },
+    orderBy: {
+      name: 'asc',
+    },
+  })
+
+  return tags
+}
+
+/**
  * 获取所有标签（包括已禁用的）- 管理端专用
  *
  * 直接查询管理数据库，包含所有标签

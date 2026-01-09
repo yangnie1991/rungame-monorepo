@@ -119,7 +119,7 @@ export function GameForm({ game, mode }: GameFormProps) {
     setValue,
     formState: { errors }
   } = useForm<GameFormValues>({
-    resolver: zodResolver(gameSchema),
+    resolver: zodResolver(gameSchema) as any,
     defaultValues: {
       slug: "",
       categoryId: "",
@@ -148,12 +148,12 @@ export function GameForm({ game, mode }: GameFormProps) {
   })
 
   const screenshotFields = useFieldArray({
-    control,
+    control: control as any,
     name: "screenshots"
   })
 
   const videoFields = useFieldArray({
-    control,
+    control: control as any,
     name: "videos"
   })
 
@@ -166,10 +166,10 @@ export function GameForm({ game, mode }: GameFormProps) {
       ])
 
       if (categoriesRes.success) {
-        setCategories(categoriesRes.data)
+        setCategories(categoriesRes.data || [])
       }
       if (tagsRes.success) {
-        setTags(tagsRes.data)
+        setTags(tagsRes.data || [])
       }
     }
     loadData()

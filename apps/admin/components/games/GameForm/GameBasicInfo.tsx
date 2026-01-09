@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { UseFormRegister, UseFormWatch, UseFormSetValue, FieldErrors } from "react-hook-form"
+import type { UseFormRegister, UseFormWatch, UseFormSetValue, FieldErrors } from "react-hook-form"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -26,10 +26,10 @@ interface GameFormValues {
 }
 
 interface GameBasicInfoProps {
-  register: UseFormRegister<GameFormValues>
-  watch: UseFormWatch<GameFormValues>
-  setValue: UseFormSetValue<GameFormValues>
-  errors: FieldErrors<GameFormValues>
+  register: UseFormRegister<any>
+  watch: UseFormWatch<any>
+  setValue: UseFormSetValue<any>
+  errors: FieldErrors<any>
   categories: CategoryOption[]
   tags: Array<{ id: string; name: string }>
   mode?: 'create' | 'edit'  // 新建或编辑模式
@@ -252,7 +252,7 @@ export function GameBasicInfo({
             </Button>
           </div>
           <div className="flex flex-wrap gap-2 p-3 border rounded-md min-h-[100px]">
-            {watch("tagIds")?.map((tagId) => {
+            {watch("tagIds")?.map((tagId: any) => {
               const tag = tags.find(t => t.id === tagId)
               return tag ? (
                 <div
@@ -264,7 +264,7 @@ export function GameBasicInfo({
                     type="button"
                     onClick={() => {
                       const current = watch("tagIds") || []
-                      setValue("tagIds", current.filter(id => id !== tagId))
+                      setValue("tagIds", current.filter((id: any) => id !== tagId))
                     }}
                     className="hover:text-blue-900"
                   >

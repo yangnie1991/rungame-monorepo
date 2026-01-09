@@ -84,7 +84,8 @@ export async function saveChatHistory(
 
   // 估算 token 消耗（简单估算：每个字符约 0.25 tokens）
   const totalTokens = messages.reduce((sum, msg) => {
-    return sum + Math.ceil(msg.content.length * 0.25)
+    const contentLen = msg.content?.length || 0
+    return sum + Math.ceil(contentLen * 0.25)
   }, 0)
 
   const data = {
@@ -121,7 +122,7 @@ export async function saveChatHistory(
       create: data,
     })
 
-    return history as ChatHistory
+    return history as unknown as ChatHistory
   } catch (error) {
     console.error("保存对话历史失败:", error)
     throw new Error("保存对话历史失败")
@@ -164,7 +165,7 @@ export async function loadChatHistory(
       data: { lastUsedAt: new Date() },
     })
 
-    return history as ChatHistory
+    return history as unknown as ChatHistory
   } catch (error) {
     console.error("加载对话历史失败:", error)
     return null
@@ -266,7 +267,7 @@ export async function getAdminChatHistories(
       skip: options?.offset || 0,
     })
 
-    return histories as ChatHistory[]
+    return histories as unknown as ChatHistory[]
   } catch (error) {
     console.error("获取管理员对话历史失败:", error)
     return []

@@ -40,7 +40,7 @@ import {
   updateAiConfig,
 } from "@/app/admin/ai-config/actions"
 import { maskSensitiveData } from "@/lib/crypto"
-import type { AiConfig, AiProviderTemplate } from "@/types/ai-config"
+import type { AiConfig, AiModelConfig, AiProviderTemplate } from "@/types/ai-config"
 import { AiConfigForm } from "./AiConfigForm"
 import { ModelEditDialog } from "./ModelEditDialog"
 
@@ -67,8 +67,9 @@ export function AiProviderPanel({ provider, config, onUpdate }: AiProviderPanelP
   const [loadingApiKey, setLoadingApiKey] = useState(false)
   const [savingConfig, setSavingConfig] = useState(false)
 
-  const defaultModel = config?.modelConfig?.models?.find(m => m.isDefault)
-  const enabledModels = config?.modelConfig?.models?.filter(m => m.isEnabled) || []
+  const modelConfig = config?.modelConfig as unknown as AiModelConfig | undefined
+  const defaultModel = modelConfig?.models?.find((m: any) => m.isDefault)
+  const enabledModels = modelConfig?.models?.filter((m: any) => m.isEnabled) || []
 
   // 初始化配置数据
   useEffect(() => {
@@ -198,7 +199,8 @@ export function AiProviderPanel({ provider, config, onUpdate }: AiProviderPanelP
     setTesting(true)
     setTestResult("")
 
-    const defaultModel = config.modelConfig.models.find(m => m.isDefault && m.isEnabled)
+    const currentModelConfig = config.modelConfig as unknown as AiModelConfig
+    const defaultModel = currentModelConfig?.models?.find((m: any) => m.isDefault && m.isEnabled)
     if (!defaultModel) {
       setTestResult("❌ 未找到可用的默认模型")
       setTesting(false)
@@ -241,7 +243,8 @@ export function AiProviderPanel({ provider, config, onUpdate }: AiProviderPanelP
 
     if (!config) return
 
-    if (config.modelConfig.models.length === 1) {
+    const currentModelConfig = config.modelConfig as unknown as AiModelConfig
+    if (currentModelConfig.models.length === 1) {
       alert("至少需要保留一个模型")
       return
     }
@@ -254,10 +257,11 @@ export function AiProviderPanel({ provider, config, onUpdate }: AiProviderPanelP
     if (!config || !deletingModel) return
 
     try {
-      const updatedModels = config.modelConfig.models.filter((_, i) => i !== deletingModel.index)
+      const currentModelConfig = config.modelConfig as unknown as AiModelConfig
+      const updatedModels = currentModelConfig.models.filter((_, i) => i !== deletingModel.index)
 
       // 如果删除的是默认模型，将第一个模型设为默认
-      if (deletingModel.model.isDefault && updatedModels.length > 0) {
+      if (deletingModel.model.isDefault && updatedModels.length > 0 && updatedModels[0]) {
         updatedModels[0].isDefault = true
       }
 
@@ -285,11 +289,10 @@ export function AiProviderPanel({ provider, config, onUpdate }: AiProviderPanelP
         {/* 测试结果 */}
         {testResult && (
           <Card
-            className={`border-2 ${
-              testResult.startsWith("✅")
-                ? "border-green-500 bg-green-50"
-                : "border-red-500 bg-red-50"
-            }`}
+            className={`border-2 ${testResult.startsWith("✅")
+              ? "border-green-500 bg-green-50"
+              : "border-red-500 bg-red-50"
+              }`}
           >
             <CardContent className="py-4">
               <p className="text-sm font-medium">{testResult}</p>
@@ -321,64 +324,64 @@ export function AiProviderPanel({ provider, config, onUpdate }: AiProviderPanelP
 
               {/* 操作按钮组 */}
               <div className="flex gap-2 flex-wrap flex-shrink-0 ml-4">
-                  {!config?.isActive && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleToggleActive}
-                    >
-                      <Power className="h-4 w-4 mr-2" />
-                      激活
-                    </Button>
+                {!config?.isActive && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleToggleActive}
+                  >
+                    <Power className="h-4 w-4 mr-2" />
+                    激活
+                  </Button>
+                )}
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleTest}
+                  disabled={testing}
+                >
+                  {testing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      测试中
+                    </>
+                  ) : (
+                    <>
+                      <TestTube className="h-4 w-4 mr-2" />
+                      测试
+                    </>
                   )}
+                </Button>
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleTest}
-                    disabled={testing}
-                  >
-                    {testing ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        测试中
-                      </>
-                    ) : (
-                      <>
-                        <TestTube className="h-4 w-4 mr-2" />
-                        测试
-                      </>
-                    )}
-                  </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleToggleEnabled}
+                >
+                  {config?.isEnabled ? (
+                    <>
+                      <X className="h-4 w-4 mr-2" />
+                      禁用
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4 mr-2" />
+                      启用
+                    </>
+                  )}
+                </Button>
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleToggleEnabled}
-                  >
-                    {config?.isEnabled ? (
-                      <>
-                        <X className="h-4 w-4 mr-2" />
-                        禁用
-                      </>
-                    ) : (
-                      <>
-                        <Check className="h-4 w-4 mr-2" />
-                        启用
-                      </>
-                    )}
-                  </Button>
-
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => setShowDeleteDialog(true)}
-                    disabled={config?.isActive}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    删除
-                  </Button>
-                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setShowDeleteDialog(true)}
+                  disabled={config?.isActive}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  删除
+                </Button>
+              </div>
             </div>
           </CardHeader>
 
@@ -463,7 +466,7 @@ export function AiProviderPanel({ provider, config, onUpdate }: AiProviderPanelP
               <div className="border-t pt-4">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-gray-700">
-                    已添加的模型 {config ? `(${enabledModels.length}/${config.modelConfig.models.length})` : "(0)"}
+                    已添加的模型 {config ? `(${enabledModels.length}/${(config.modelConfig as unknown as AiModelConfig).models.length})` : "(0)"}
                   </h3>
                   <Button size="sm" onClick={() => setShowAddModelDialog(true)}>
                     <Plus className="h-4 w-4 mr-2" />
@@ -472,7 +475,7 @@ export function AiProviderPanel({ provider, config, onUpdate }: AiProviderPanelP
                 </div>
 
                 <div className="space-y-2">
-                  {config?.modelConfig?.models?.length === 0 ? (
+                  {modelConfig?.models?.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
                       <p className="text-sm">还没有添加任何模型</p>
                       <Button
@@ -486,7 +489,7 @@ export function AiProviderPanel({ provider, config, onUpdate }: AiProviderPanelP
                       </Button>
                     </div>
                   ) : (
-                    config?.modelConfig?.models?.map((model, index) => (
+                    modelConfig?.models?.map((model, index) => (
                       <div
                         key={index}
                         className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
@@ -531,7 +534,7 @@ export function AiProviderPanel({ provider, config, onUpdate }: AiProviderPanelP
                             variant="ghost"
                             size="sm"
                             onClick={(e) => openDeleteModelDialog(e, model, index)}
-                            disabled={config?.modelConfig?.models?.length === 1}
+                            disabled={modelConfig?.models?.length === 1}
                             title="删除"
                           >
                             <Trash2 className="h-4 w-4 text-red-500" />

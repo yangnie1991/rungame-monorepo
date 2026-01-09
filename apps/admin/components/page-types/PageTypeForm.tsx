@@ -22,8 +22,8 @@ import type { PageType, PageTypeTranslation } from "@prisma/client"
 const pageTypeSchema = z.object({
   slug: z.string().min(1, "标识符不能为空").regex(/^[a-z0-9-]+$/, "标识符只能包含小写字母、数字和连字符"),
   type: z.enum(["GAME_LIST", "STATIC_CONTENT", "MIXED"], {
-    required_error: "请选择页面类型"
-  }),
+    message: "请选择页面类型"
+  } as any),
   icon: z.string().optional(),
   isEnabled: z.boolean().default(true),
   sortOrder: z.coerce.number().int().min(0, "排序值不能为负数").default(0),
@@ -62,7 +62,7 @@ export function PageTypeForm({ pageType, mode }: PageTypeFormProps) {
     reset,
     formState: { errors }
   } = useForm<PageTypeFormData>({
-    resolver: zodResolver(pageTypeSchema),
+    resolver: zodResolver(pageTypeSchema) as any,
     defaultValues: {
       slug: "",
       type: "GAME_LIST",
@@ -94,37 +94,36 @@ export function PageTypeForm({ pageType, mode }: PageTypeFormProps) {
           return {
             locale: locale.code,
             title: translation?.title || "",
-            subtitle: translation?.subtitle || "",
+            subtitle: (translation as any)?.subtitle || "",
             description: translation?.description || "",
             metaTitle: translation?.metaTitle || "",
             metaDescription: translation?.metaDescription || "",
-            metaKeywords: translation?.metaKeywords || "",
-            ogTitle: translation?.ogTitle || "",
-            ogDescription: translation?.ogDescription || "",
-            ogImage: translation?.ogImage || "",
+            metaKeywords: (translation as any)?.metaKeywords || "",
+            ogTitle: (translation as any)?.ogTitle || "",
+            ogDescription: (translation as any)?.ogDescription || "",
+            ogImage: (translation as any)?.ogImage || "",
           }
         })
       } : {
         slug: "",
-        type: "GAME_LIST" as const,
+        type: "GAME_LIST" as any,
         icon: "",
         isEnabled: true,
-        sortOrder: 0,
         translations: languages.map(locale => ({
           locale: locale.code,
           title: "",
-          subtitle: "",
+          subtitle: "" as any,
           description: "",
           metaTitle: "",
           metaDescription: "",
-          metaKeywords: "",
-          ogTitle: "",
-          ogDescription: "",
-          ogImage: "",
+          metaKeywords: "" as any,
+          ogTitle: "" as any,
+          ogDescription: "" as any,
+          ogImage: "" as any,
         }))
       }
 
-      reset(formData)
+      reset(formData as any)
     }
   }, [isLoadingLanguages, languages, pageType, reset])
 
@@ -210,7 +209,7 @@ export function PageTypeForm({ pageType, mode }: PageTypeFormProps) {
               </Label>
               <Select
                 value={selectedType}
-                onValueChange={(value) => setValue("type", value as "GAME_LIST" | "STATIC_CONTENT" | "MIXED")}
+                onValueChange={(value) => setValue("type", value as any)}
               >
                 <SelectTrigger className={errors.type ? "border-red-500" : ""}>
                   <SelectValue placeholder="选择页面类型" />
@@ -293,114 +292,114 @@ export function PageTypeForm({ pageType, mode }: PageTypeFormProps) {
               if (!currentLanguage) return null
 
               return (
-              <TabsContent key={field.id} value={currentLanguage.code} className="space-y-4">
-                <input type="hidden" {...register(`translations.${index}.locale`)} />
+                <TabsContent key={field.id} value={currentLanguage.code} className="space-y-4">
+                  <input type="hidden" {...register(`translations.${index}.locale`)} />
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor={`translations.${index}.title`}>
-                      标题 <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id={`translations.${index}.title`}
-                      {...register(`translations.${index}.title`)}
-                      placeholder={`页面标题（${currentLanguage.label}）`}
-                      className={errors.translations?.[index]?.title ? "border-red-500" : ""}
-                    />
-                    {errors.translations?.[index]?.title && (
-                      <p className="text-sm text-red-500">
-                        {errors.translations[index]?.title?.message}
-                      </p>
-                    )}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor={`translations.${index}.title`}>
+                        标题 <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id={`translations.${index}.title`}
+                        {...register(`translations.${index}.title`)}
+                        placeholder={`页面标题（${currentLanguage.label}）`}
+                        className={(errors.translations as any)?.[index]?.title ? "border-red-500" : ""}
+                      />
+                      {(errors.translations as any)?.[index]?.title && (
+                        <p className="text-sm text-red-500">
+                          {(errors.translations as any)[index]?.title?.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor={`translations.${index}.subtitle`}>副标题</Label>
+                      <Input
+                        id={`translations.${index}.subtitle`}
+                        {...register(`translations.${index}.subtitle` as any)}
+                        placeholder={`页面副标题（${currentLanguage.label}）`}
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor={`translations.${index}.subtitle`}>副标题</Label>
-                    <Input
-                      id={`translations.${index}.subtitle`}
-                      {...register(`translations.${index}.subtitle`)}
-                      placeholder={`页面副标题（${currentLanguage.label}）`}
+                    <Label htmlFor={`translations.${index}.description`}>描述</Label>
+                    <Textarea
+                      id={`translations.${index}.description`}
+                      {...register(`translations.${index}.description`)}
+                      placeholder={`页面描述（${currentLanguage.label}）`}
+                      rows={3}
                     />
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor={`translations.${index}.description`}>描述</Label>
-                  <Textarea
-                    id={`translations.${index}.description`}
-                    {...register(`translations.${index}.description`)}
-                    placeholder={`页面描述（${currentLanguage.label}）`}
-                    rows={3}
-                  />
-                </div>
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold mb-3">SEO 设置</h4>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor={`translations.${index}.metaTitle`}>SEO 标题</Label>
+                        <Input
+                          id={`translations.${index}.metaTitle`}
+                          {...register(`translations.${index}.metaTitle`)}
+                          placeholder="用于搜索引擎显示的标题"
+                        />
+                      </div>
 
-                <div className="border-t pt-4">
-                  <h4 className="font-semibold mb-3">SEO 设置</h4>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor={`translations.${index}.metaTitle`}>SEO 标题</Label>
-                      <Input
-                        id={`translations.${index}.metaTitle`}
-                        {...register(`translations.${index}.metaTitle`)}
-                        placeholder="用于搜索引擎显示的标题"
-                      />
-                    </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`translations.${index}.metaDescription`}>SEO 描述</Label>
+                        <Textarea
+                          id={`translations.${index}.metaDescription`}
+                          {...register(`translations.${index}.metaDescription`)}
+                          placeholder="用于搜索引擎显示的描述"
+                          rows={2}
+                        />
+                      </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor={`translations.${index}.metaDescription`}>SEO 描述</Label>
-                      <Textarea
-                        id={`translations.${index}.metaDescription`}
-                        {...register(`translations.${index}.metaDescription`)}
-                        placeholder="用于搜索引擎显示的描述"
-                        rows={2}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor={`translations.${index}.metaKeywords`}>SEO 关键词</Label>
-                      <Input
-                        id={`translations.${index}.metaKeywords`}
-                        {...register(`translations.${index}.metaKeywords`)}
-                        placeholder="关键词1, 关键词2, 关键词3"
-                      />
+                      <div className="space-y-2">
+                        <Label htmlFor={`translations.${index}.metaKeywords`}>SEO 关键词</Label>
+                        <Input
+                          id={`translations.${index}.metaKeywords`}
+                          {...register(`translations.${index}.metaKeywords` as any)}
+                          placeholder="关键词1, 关键词2, 关键词3"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="border-t pt-4">
-                  <h4 className="font-semibold mb-3">Open Graph 设置</h4>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor={`translations.${index}.ogTitle`}>OG 标题</Label>
-                      <Input
-                        id={`translations.${index}.ogTitle`}
-                        {...register(`translations.${index}.ogTitle`)}
-                        placeholder="社交媒体分享标题"
-                      />
-                    </div>
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold mb-3">Open Graph 设置</h4>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor={`translations.${index}.ogTitle`}>OG 标题</Label>
+                        <Input
+                          id={`translations.${index}.ogTitle`}
+                          {...register(`translations.${index}.ogTitle` as any)}
+                          placeholder="社交媒体分享标题"
+                        />
+                      </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor={`translations.${index}.ogDescription`}>OG 描述</Label>
-                      <Textarea
-                        id={`translations.${index}.ogDescription`}
-                        {...register(`translations.${index}.ogDescription`)}
-                        placeholder="社交媒体分享描述"
-                        rows={2}
-                      />
-                    </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`translations.${index}.ogDescription`}>OG 描述</Label>
+                        <Textarea
+                          id={`translations.${index}.ogDescription`}
+                          {...register(`translations.${index}.ogDescription` as any)}
+                          placeholder="社交媒体分享描述"
+                          rows={2}
+                        />
+                      </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor={`translations.${index}.ogImage`}>OG 图片 URL</Label>
-                      <Input
-                        id={`translations.${index}.ogImage`}
-                        {...register(`translations.${index}.ogImage`)}
-                        placeholder="https://example.com/image.jpg"
-                        type="url"
-                      />
+                      <div className="space-y-2">
+                        <Label htmlFor={`translations.${index}.ogImage`}>OG 图片 URL</Label>
+                        <Input
+                          id={`translations.${index}.ogImage`}
+                          {...register(`translations.${index}.ogImage` as any)}
+                          placeholder="https://example.com/image.jpg"
+                          type="url"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </TabsContent>
+                </TabsContent>
               )
             })}
           </Tabs>

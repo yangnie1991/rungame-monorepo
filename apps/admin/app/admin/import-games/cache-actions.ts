@@ -57,8 +57,8 @@ export async function getGamePixGamesFromCache(filters: CacheFilters = {}) {
       orderBy === 'published'
         ? { date_published: 'desc' as const }
         : orderBy === 'priority'
-        ? { priority: 'desc' as const }
-        : { quality_score: 'desc' as const }
+          ? { priority: 'desc' as const }
+          : { quality_score: 'desc' as const }
 
     // 并行查询游戏列表和总数
     const [games, total] = await Promise.all([
@@ -130,7 +130,7 @@ export async function getGamePixApiTotal(config: {
     if (feed.last_page_url) {
       const match = feed.last_page_url.match(/[?&]page=(\d+)/)
       if (match) {
-        totalPages = parseInt(match[1], 10)
+        totalPages = parseInt(match[1] || '1', 10)
       }
     }
 
@@ -602,10 +602,10 @@ export async function getCacheStats() {
         lastSyncAt: lastSync?.syncedAt,
         lastSyncStats: lastSync
           ? {
-              totalGames: lastSync.totalGames,
-              newGames: lastSync.newGames,
-              updatedGames: lastSync.updatedGames,
-            }
+            totalGames: lastSync.totalGames,
+            newGames: lastSync.newGames,
+            updatedGames: lastSync.updatedGames,
+          }
           : null,
       },
     }

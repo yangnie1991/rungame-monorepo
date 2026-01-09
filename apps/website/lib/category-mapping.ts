@@ -6,7 +6,7 @@
  * 🔥 优化：使用缓存层，避免重复查询数据库
  */
 
-import { getAllCategoriesForAdmin } from "@rungame/database"
+import { getAllCategoriesFullData } from "@rungame/database"
 
 /**
  * 根据 GamePix 分类名称查找本地分类（只匹配子分类）
@@ -28,7 +28,7 @@ export async function findLocalCategoryByGamePixCategory(
     const normalizedSlug = normalized.replace(/\s+/g, '-')
 
     // 2. 从缓存获取所有分类数据
-    const allCategories = await getAllCategoriesForAdmin('zh')
+    const allCategories = await getAllCategoriesFullData("zh")
 
     // 3. 在内存中进行模糊匹配（只匹配子分类）
     const subCategories = allCategories.filter(cat => cat.parentId !== null && cat.isEnabled)
@@ -93,7 +93,7 @@ export async function findLocalCategoriesByGamePixCategories(
  */
 export async function getAllLocalCategories() {
   try {
-    const allCategories = await getAllCategoriesForAdmin('zh')
+    const allCategories = await getAllCategoriesFullData("zh")
 
     // 过滤启用的分类并按规则排序
     return allCategories
@@ -130,7 +130,7 @@ export async function getAllLocalCategories() {
  */
 export async function getCategoryStats() {
   try {
-    const allCategories = await getAllCategoriesForAdmin('zh')
+    const allCategories = await getAllCategoriesFullData("zh")
     const enabledCategories = allCategories.filter(cat => cat.isEnabled)
 
     const total = enabledCategories.length

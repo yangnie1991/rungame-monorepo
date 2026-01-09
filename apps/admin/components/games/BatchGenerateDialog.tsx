@@ -242,18 +242,19 @@ export function BatchGenerateDialog({
       setAvailableConfigs(configs)
 
       // 自动选中激活的配置
-      const activeConfig = configs.find(c => c.isActive)
-      const selectedConfig = activeConfig || configs[0]
+      const activeConfig = configs.find((c: any) => c.isActive)
+      const selectedConfig = activeConfig || (configs.length > 0 ? configs[0] : null)
+      if (selectedConfig) {
+        setSelectedConfigId(selectedConfig.id)
+        setAvailableModels(selectedConfig.models)
 
-      setSelectedConfigId(selectedConfig.id)
-      setAvailableModels(selectedConfig.models)
-
-      // 设置默认选中的模型
-      const defaultModel = selectedConfig.models.find((m: any) => m.isDefault)
-      if (defaultModel) {
-        setSelectedModelId(defaultModel.id)
-      } else if (selectedConfig.models.length > 0) {
-        setSelectedModelId(selectedConfig.models[0].id)
+        // 设置默认选中的模型
+        const defaultModel = selectedConfig.models.find((m: any) => m.isDefault)
+        if (defaultModel) {
+          setSelectedModelId(defaultModel.id)
+        } else if (selectedConfig.models.length > 0 && selectedConfig.models[0]) {
+          setSelectedModelId(selectedConfig.models[0].id)
+        }
       }
     } catch (err: any) {
       console.error('加载 AI 配置失败:', err)
@@ -368,7 +369,9 @@ export function BatchGenerateDialog({
             }
 
             // Set first field as active tab
-            setActivePreviewTab(GENERATION_FIELDS[0].id)
+            if (GENERATION_FIELDS.length > 0 && GENERATION_FIELDS[0]) {
+              setActivePreviewTab(GENERATION_FIELDS[0].id)
+            }
 
             setPhase('preview')
             setGenerationProgress(null)
@@ -433,14 +436,13 @@ export function BatchGenerateDialog({
         },
         {
           role: 'user' as const,
-          content: `我需要为这个游戏生成多个字段的内容。以下是已经生成的内容：\n\n${
-            Object.entries(editedResults)
-              .map(([key, value]) => {
-                const f = GENERATION_FIELDS.find(gf => gf.id === key)
-                return `**${f?.label}**:\n${value}\n`
-              })
-              .join('\n')
-          }`
+          content: `我需要为这个游戏生成多个字段的内容。以下是已经生成的内容：\n\n${Object.entries(editedResults)
+            .map(([key, value]) => {
+              const f = GENERATION_FIELDS.find(gf => gf.id === key)
+              return `**${f?.label}**:\n${value}\n`
+            })
+            .join('\n')
+            }`
         },
         {
           role: 'user' as const,
@@ -673,22 +675,20 @@ export function BatchGenerateDialog({
                     <button
                       type="button"
                       onClick={() => setSeoMode('fast')}
-                      className={`px-3 py-2 rounded-md text-sm transition-all ${
-                        seoMode === 'fast'
-                          ? 'bg-purple-600 text-white shadow-sm'
-                          : 'bg-white border border-gray-200 text-gray-700 hover:border-purple-300'
-                      }`}
+                      className={`px-3 py-2 rounded-md text-sm transition-all ${seoMode === 'fast'
+                        ? 'bg-purple-600 text-white shadow-sm'
+                        : 'bg-white border border-gray-200 text-gray-700 hover:border-purple-300'
+                        }`}
                     >
                       快速模式 (~10s)
                     </button>
                     <button
                       type="button"
                       onClick={() => setSeoMode('quality')}
-                      className={`px-3 py-2 rounded-md text-sm transition-all ${
-                        seoMode === 'quality'
-                          ? 'bg-purple-600 text-white shadow-sm'
-                          : 'bg-white border border-gray-200 text-gray-700 hover:border-purple-300'
-                      }`}
+                      className={`px-3 py-2 rounded-md text-sm transition-all ${seoMode === 'quality'
+                        ? 'bg-purple-600 text-white shadow-sm'
+                        : 'bg-white border border-gray-200 text-gray-700 hover:border-purple-300'
+                        }`}
                     >
                       质量模式 (~20s)
                     </button>
@@ -773,11 +773,10 @@ export function BatchGenerateDialog({
                       {/* 进度条 */}
                       <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                         <div
-                          className={`h-full rounded-full transition-all duration-300 ${
-                            generationProgress.phase === 'searching' ? 'bg-blue-600' :
+                          className={`h-full rounded-full transition-all duration-300 ${generationProgress.phase === 'searching' ? 'bg-blue-600' :
                             generationProgress.phase === 'parsing' ? 'bg-orange-600' :
-                            'bg-purple-600'
-                          }`}
+                              'bg-purple-600'
+                            }`}
                           style={{ width: `${generationProgress.progress}%` }}
                         />
                       </div>

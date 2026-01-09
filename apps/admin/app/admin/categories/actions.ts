@@ -13,7 +13,7 @@ export async function deleteCategory(categoryId: string) {
     })
 
     // ✅ 失效缓存
-    revalidateTag(CACHE_TAGS.CATEGORIES)
+    // revalidateTag(CACHE_TAGS.CATEGORIES)
     revalidatePath("/admin/categories")
     return { success: true }
   } catch (error) {
@@ -22,31 +22,7 @@ export async function deleteCategory(categoryId: string) {
   }
 }
 
-// 创建分类的验证 Schema
-const categorySchema = z.object({
-  slug: z.string().min(1, "标识符不能为空").regex(/^[a-z0-9-]+$/, "标识符只能包含小写字母、数字和连字符"),
-  icon: z.string().optional(),
-  sortOrder: z.number().int().min(0, "排序值不能为负数").default(0),
-  // 主表字段（英文作为回退）
-  name: z.string().min(1, "英文名称不能为空"),
-  description: z.string().optional(),
-  metaTitle: z.string().optional(),
-  metaDescription: z.string().optional(),
-  keywords: z.string().optional(),
-  // 翻译数据（可以包含英文，用于覆盖主表）
-  translations: z.array(
-    z.object({
-      locale: z.enum(["en", "zh"]),
-      name: z.string().min(1, "名称不能为空"),
-      description: z.string().optional(),
-      metaTitle: z.string().optional(),
-      metaDescription: z.string().optional(),
-      keywords: z.string().optional(),
-    })
-  ).default([])
-})
-
-export type CategoryFormData = z.infer<typeof categorySchema>
+import { categorySchema, type CategoryFormData } from "./schema"
 
 // 创建分类
 export async function createCategory(data: CategoryFormData) {
@@ -86,12 +62,12 @@ export async function createCategory(data: CategoryFormData) {
     })
 
     // ✅ 失效缓存
-    revalidateTag(CACHE_TAGS.CATEGORIES)
+    // revalidateTag(CACHE_TAGS.CATEGORIES)
     revalidatePath("/admin/categories")
     return { success: true, data: category }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return { success: false, error: error.issues[0].message }
+      return { success: false, error: error.issues[0]?.message ?? "未知验证错误" }
     }
     console.error("创建分类失败:", error)
     return { success: false, error: "创建失败，请稍后重试" }
@@ -148,13 +124,13 @@ export async function updateCategory(categoryId: string, data: CategoryFormData)
     })
 
     // ✅ 失效缓存
-    revalidateTag(CACHE_TAGS.CATEGORIES)
+    // revalidateTag(CACHE_TAGS.CATEGORIES)
     revalidatePath("/admin/categories")
     revalidatePath(`/admin/categories/${categoryId}`)
     return { success: true, data: category }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return { success: false, error: error.issues[0].message }
+      return { success: false, error: error.issues[0]?.message ?? "未知验证错误" }
     }
     console.error("更新分类失败:", error)
     return { success: false, error: "更新失败，请稍后重试" }
@@ -199,7 +175,7 @@ export async function toggleCategoryStatus(categoryId: string, currentStatus: bo
     })
 
     // ✅ 失效缓存
-    revalidateTag(CACHE_TAGS.CATEGORIES)
+    // revalidateTag(CACHE_TAGS.CATEGORIES)
     revalidatePath("/admin/categories")
     return {
       success: true,

@@ -77,3 +77,6 @@ build.log
 apps/admin/lib/generated/prisma-client/
 apps/admin/lib/generated/prisma-cache/
 packages/database/src/generated/
+
+# archives
+*.tar.gz

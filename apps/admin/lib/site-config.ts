@@ -1,6 +1,6 @@
 import { prisma } from "@rungame/database"
 import { unstable_cache, revalidateTag } from 'next/cache'
-import type { SiteConfig, SiteConfigTranslation } from '@prisma/client'
+import { Prisma, type SiteConfig, type SiteConfigTranslation } from '@prisma/client'
 import { REVALIDATE_TIME } from "@rungame/database"
 
 /**
@@ -25,8 +25,8 @@ async function fetchSiteConfigFromDB(locale?: string): Promise<SiteConfigWithTra
       include: {
         translations: locale
           ? {
-              where: { locale },
-            }
+            where: { locale },
+          }
           : true,
       },
     })
@@ -111,7 +111,10 @@ export async function getLocalizedSiteConfig(locale: string = 'en') {
  * 初始化网站配置
  * 如果数据库中没有配置，则创建默认配置
  */
-export async function initializeSiteConfig() {
+
+// ...
+
+export async function initializeSiteConfig(): Promise<SiteConfig> {
   const existing = await prisma.siteConfig.findFirst()
 
   if (existing) {
@@ -179,7 +182,7 @@ export async function initializeSiteConfig() {
 /**
  * 更新网站配置
  */
-export async function updateSiteConfig(data: Partial<SiteConfig>) {
+export async function updateSiteConfig(data: Prisma.SiteConfigUpdateInput): Promise<SiteConfig> {
   const existing = await prisma.siteConfig.findFirst()
 
   if (!existing) {
@@ -195,7 +198,7 @@ export async function updateSiteConfig(data: Partial<SiteConfig>) {
   })
 
   // 失效网站配置缓存
-  revalidateTag('site-config')
+  // revalidateTag('site-config')
 
   return result
 }
@@ -245,7 +248,7 @@ export async function updateSiteConfigTranslation(
   }
 
   // 失效网站配置缓存
-  revalidateTag('site-config')
+  // revalidateTag('site-config')
 
   return result
 }

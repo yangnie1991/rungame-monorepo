@@ -62,9 +62,9 @@ export function decrypt(encryptedText: string): string {
       throw new Error('加密数据格式错误')
     }
 
-    const iv = Buffer.from(parts[0], 'hex')
-    const tag = Buffer.from(parts[1], 'hex')
-    const encrypted = parts[2]
+    const iv = Buffer.from(parts[0] || '', 'hex')
+    const tag = Buffer.from(parts[1] || '', 'hex')
+    const encrypted = parts[2] || ''
 
     const decipher = crypto.createDecipheriv(ALGORITHM, key, iv)
     decipher.setAuthTag(tag)

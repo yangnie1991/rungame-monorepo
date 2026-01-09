@@ -6,7 +6,7 @@ import { initEnv } from "@/lib/env"
 // 在应用启动时验证环境变量（仅运行时，不在构建时）
 initEnv()
 
-export async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // 1. API路由和登录页面跳过认证检查

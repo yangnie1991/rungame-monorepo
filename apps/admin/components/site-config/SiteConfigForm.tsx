@@ -50,7 +50,7 @@ export function SiteConfigForm({ config }: SiteConfigFormProps) {
 
   // 基础配置表单
   const basicForm = useForm<SiteConfigFormData>({
-    resolver: zodResolver(siteConfigSchema),
+    resolver: zodResolver(siteConfigSchema) as any,
     defaultValues: {
       siteName: config.siteName,
       siteDescription: config.siteDescription || '',
@@ -70,7 +70,7 @@ export function SiteConfigForm({ config }: SiteConfigFormProps) {
   // 翻译表单
   const zhTranslation = config.translations.find(t => t.locale === 'zh')
   const translationForm = useForm<TranslationFormData>({
-    resolver: zodResolver(translationSchema),
+    resolver: zodResolver(translationSchema) as any,
     defaultValues: {
       siteName: zhTranslation?.siteName || '',
       siteDescription: zhTranslation?.siteDescription || '',

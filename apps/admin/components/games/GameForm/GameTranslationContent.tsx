@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback, useEffect } from "react"
-import { UseFormRegister, UseFormWatch, UseFormSetValue, FieldErrors } from "react-hook-form"
+import type { UseFormRegister, UseFormWatch, UseFormSetValue, FieldErrors } from "react-hook-form"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -43,10 +43,10 @@ interface GameFormValues {
 }
 
 interface GameTranslationContentProps {
-  register: UseFormRegister<GameFormValues>
-  watch: UseFormWatch<GameFormValues>
-  setValue: UseFormSetValue<GameFormValues>
-  errors: FieldErrors<GameFormValues>
+  register: UseFormRegister<any>
+  watch: UseFormWatch<any>
+  setValue: UseFormSetValue<any>
+  errors: FieldErrors<any>
   languages: Language[]
   translationFields: any[]
   gameId?: string  // 游戏 ID（用于 AI 对话历史和懒加载翻译）
@@ -183,114 +183,114 @@ export function GameTranslationContent({
                 {/* 表单内容 */}
                 <div className={isLoading ? 'opacity-50 pointer-events-none' : ''}>
 
-                {/* AI 生成游戏信息按钮 */}
-                <div className="flex justify-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setCurrentLocaleIndex(index)
-                      setBatchDialogOpen(true)
-                    }}
-                    className="text-purple-600 border-purple-200 hover:bg-purple-50"
-                  >
-                    <Sparkles className="w-4 h-4 mr-1" />
-                    AI 生成游戏信息
-                  </Button>
-                </div>
+                  {/* AI 生成游戏信息按钮 */}
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setCurrentLocaleIndex(index)
+                        setBatchDialogOpen(true)
+                      }}
+                      className="text-purple-600 border-purple-200 hover:bg-purple-50"
+                    >
+                      <Sparkles className="w-4 h-4 mr-1" />
+                      AI 生成游戏信息
+                    </Button>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor={`translations.${index}.title`}>
-                    游戏标题 <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id={`translations.${index}.title`}
-                    {...register(`translations.${index}.title`)}
-                    placeholder={`游戏标题（${currentLanguage.label}）`}
-                    className={errors.translations?.[index]?.title ? "border-red-500" : ""}
-                  />
-                  {errors.translations?.[index]?.title && (
-                    <p className="text-sm text-red-500">
-                      {errors.translations[index]?.title?.message as string}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor={`translations.${index}.description`}>简短描述</Label>
-                  <Textarea
-                    id={`translations.${index}.description`}
-                    {...register(`translations.${index}.description`)}
-                    placeholder={`简短描述（${currentLanguage.label}）`}
-                    rows={2}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor={`translations.${index}.longDescription`}>详细描述</Label>
-                  <Textarea
-                    id={`translations.${index}.longDescription`}
-                    {...register(`translations.${index}.longDescription`)}
-                    placeholder={`详细描述（${currentLanguage.label}）`}
-                    rows={4}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor={`translations.${index}.metaTitle`}>SEO 标题</Label>
-                  <SeoTextInput
-                    value={watch(`translations.${index}.metaTitle`) || ''}
-                    onChange={(value) => setValue(`translations.${index}.metaTitle` as any, value)}
-                    placeholder="用于搜索引擎显示的标题"
-                    limit={60}
-                    locale={currentLanguage.code}
-                    type="metaTitle"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor={`translations.${index}.metaDescription`}>SEO 描述</Label>
-                  <SeoTextInput
-                    value={watch(`translations.${index}.metaDescription`) || ''}
-                    onChange={(value) => setValue(`translations.${index}.metaDescription` as any, value)}
-                    placeholder="用于搜索引擎显示的描述"
-                    limit={160}
-                    locale={currentLanguage.code}
-                    type="metaDescription"
-                    className="whitespace-normal"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor={`translations.${index}.keywords`}>关键词</Label>
-                  <KeywordsTagInput
-                    value={watch(`translations.${index}.keywords`) || ''}
-                    onChange={(value) => setValue(`translations.${index}.keywords` as any, value)}
-                    placeholder="输入关键词后按 Enter"
-                    limit={10}
-                  />
-                  <p className="text-xs text-gray-500">
-                    关键词将用于 AI 生成内容时的参考依据
-                  </p>
-                </div>
-
-                {/* ContentSections - 5个预定义内容区块 */}
-                {Object.entries(CONTENT_SECTION_KEYS).map(([key, sectionKey]) => (
-                  <div key={sectionKey} className="space-y-2">
-                    <Label>
-                      {CONTENT_SECTION_LABELS[sectionKey as ContentSectionKey]}
+                  <div className="space-y-2">
+                    <Label htmlFor={`translations.${index}.title`}>
+                      游戏标题 <span className="text-red-500">*</span>
                     </Label>
-                    <RichTextEditor
-                      content={watch(`translations.${index}.contentSections.${sectionKey}.content`) || ""}
-                      onChange={createContentSectionHandler(index, sectionKey)}
-                      placeholder={CONTENT_SECTION_PLACEHOLDERS[sectionKey as ContentSectionKey]}
-                      gameId={gameId}
-                      keywords={watch(`translations.${index}.keywords`) || ""}
-                      locale={currentLanguage.code}
+                    <Input
+                      id={`translations.${index}.title`}
+                      {...register(`translations.${index}.title`)}
+                      placeholder={`游戏标题（${currentLanguage.label}）`}
+                      className={(errors.translations as any)?.[index]?.title ? "border-red-500" : ""}
+                    />
+                    {(errors.translations as any)?.[index]?.title && (
+                      <p className="text-sm text-red-500">
+                        {(errors.translations as any)[index]?.title?.message as string}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor={`translations.${index}.description`}>简短描述</Label>
+                    <Textarea
+                      id={`translations.${index}.description`}
+                      {...register(`translations.${index}.description`)}
+                      placeholder={`简短描述（${currentLanguage.label}）`}
+                      rows={2}
                     />
                   </div>
-                ))}
+
+                  <div className="space-y-2">
+                    <Label htmlFor={`translations.${index}.longDescription`}>详细描述</Label>
+                    <Textarea
+                      id={`translations.${index}.longDescription`}
+                      {...register(`translations.${index}.longDescription`)}
+                      placeholder={`详细描述（${currentLanguage.label}）`}
+                      rows={4}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor={`translations.${index}.metaTitle`}>SEO 标题</Label>
+                    <SeoTextInput
+                      value={watch(`translations.${index}.metaTitle`) || ''}
+                      onChange={(value) => setValue(`translations.${index}.metaTitle` as any, value)}
+                      placeholder="用于搜索引擎显示的标题"
+                      limit={60}
+                      locale={currentLanguage.code}
+                      type="metaTitle"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor={`translations.${index}.metaDescription`}>SEO 描述</Label>
+                    <SeoTextInput
+                      value={watch(`translations.${index}.metaDescription`) || ''}
+                      onChange={(value) => setValue(`translations.${index}.metaDescription` as any, value)}
+                      placeholder="用于搜索引擎显示的描述"
+                      limit={160}
+                      locale={currentLanguage.code}
+                      type="metaDescription"
+                      className="whitespace-normal"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor={`translations.${index}.keywords`}>关键词</Label>
+                    <KeywordsTagInput
+                      value={watch(`translations.${index}.keywords`) || ''}
+                      onChange={(value) => setValue(`translations.${index}.keywords` as any, value)}
+                      placeholder="输入关键词后按 Enter"
+                      limit={10}
+                    />
+                    <p className="text-xs text-gray-500">
+                      关键词将用于 AI 生成内容时的参考依据
+                    </p>
+                  </div>
+
+                  {/* ContentSections - 5个预定义内容区块 */}
+                  {Object.entries(CONTENT_SECTION_KEYS).map(([key, sectionKey]) => (
+                    <div key={sectionKey} className="space-y-2">
+                      <Label>
+                        {CONTENT_SECTION_LABELS[sectionKey as ContentSectionKey]}
+                      </Label>
+                      <RichTextEditor
+                        content={(watch(`translations.${index}.contentSections.${sectionKey}.content`) as any) || ""}
+                        onChange={createContentSectionHandler(index, sectionKey)}
+                        placeholder={CONTENT_SECTION_PLACEHOLDERS[sectionKey as ContentSectionKey]}
+                        gameId={gameId}
+                        keywords={watch(`translations.${index}.keywords`) || ""}
+                        locale={currentLanguage.code}
+                      />
+                    </div>
+                  ))}
 
                 </div>
               </TabsContent>

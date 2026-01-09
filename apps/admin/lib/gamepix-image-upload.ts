@@ -10,6 +10,7 @@
  */
 
 import { uploadToR2, fileExistsInR2, type UploadResult } from './r2-upload'
+import { getR2Config } from './external-api-config'
 import crypto from 'crypto'
 
 /**
@@ -90,7 +91,7 @@ function getFileExtension(url: string): string {
     const urlObj = new URL(url)
     const pathname = urlObj.pathname
     const match = pathname.match(/\.([a-z0-9]+)$/i)
-    return match ? match[1].toLowerCase() : 'jpg' // 默认 jpg
+    return (match && match[1]) ? match[1].toLowerCase() : 'jpg' // 默认 jpg
   } catch {
     return 'jpg'
   }
@@ -174,12 +175,37 @@ export async function uploadGamePixImageToR2(
   if (exists) {
     console.log('[uploadGamePixImageToR2] ✓ 图片已存在于 R2，跳过上传')
 
-    // 构造 R2 公共 URL
-    const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL
-    const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID
-    const publicUrl = R2_PUBLIC_URL
-      ? `https://${R2_PUBLIC_URL}/${hashBasedKey}`
-      : `https://pub-${R2_ACCOUNT_ID}.r2.dev/${hashBasedKey}`
+    // 从数据库获取 R2 配置并构造公共 URL
+    const r2Config = await getR2Config()
+    if (!r2Config) {
+      throw new Error('R2 配置未找到，无法构造公共 URL')
+    }
+
+    console.log('[uploadGamePixImageToR2] R2 配置:', {
+      publicUrl: r2Config.publicUrl || '未配置',
+      accountId: r2Config.accountId ? '已配置' : '未配置',
+      bucketName: r2Config.bucketName
+    })
+
+    // 构造公共 URL
+    let publicUrl: string
+    if (r2Config.publicUrl) {
+      // 使用自定义 CDN 域名
+      publicUrl = `https://${r2Config.publicUrl}/${hashBasedKey}`
+    } else if (r2Config.accountId) {
+      // 使用 R2 默认域名
+      publicUrl = `https://pub-${r2Config.accountId}.r2.dev/${hashBasedKey}`
+    } else {
+      // 配置不完整，抛出错误
+      throw new Error('R2 配置不完整：缺少 publicUrl 或 accountId')
+    }
+
+    // 验证 URL 格式
+    if (publicUrl.includes('undefined') || publicUrl.includes('null')) {
+      throw new Error(`构造的 URL 无效: ${publicUrl}`)
+    }
+
+    console.log('[uploadGamePixImageToR2] 构造的公共 URL:', publicUrl)
 
     return {
       url: publicUrl,

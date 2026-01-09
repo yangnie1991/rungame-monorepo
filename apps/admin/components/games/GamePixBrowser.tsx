@@ -64,7 +64,7 @@ export function GamePixBrowser({
     parentName: string
     parentNameEn: string
   }>>([])
-  const [tags, setTags] = useState<Array<{ id: string; name: string }>>([])
+  const [tags, setTags] = useState<Array<{ id: string; name: string; slug: string }>>([])
   const [isLoadingCategoriesAndTags, setIsLoadingCategoriesAndTags] = useState(false)
 
   // ✅ 移除 API 数据源选项，统一使用缓存数据库
@@ -301,7 +301,7 @@ export function GamePixBrowser({
         promises.push(deleteGameByGamePixId(gameId))
       }
 
-      const [unmarkResult, deleteResult] = await Promise.all(promises)
+      const [unmarkResult, deleteResult] = await Promise.all(promises) as [any, any?]
 
       if (!unmarkResult.success) {
         alert(unmarkResult.error || '取消导入失败')

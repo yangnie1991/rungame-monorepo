@@ -67,7 +67,7 @@ export async function batchCreateTags(tagNames: string[]) {
     }
 
     // 失效标签缓存，确保新标签立即可见
-    revalidateTag(CACHE_TAGS.TAGS)
+    // revalidateTag(CACHE_TAGS.TAGS)
     revalidatePath('/admin/games')
     revalidatePath('/admin/tags')
 
@@ -223,7 +223,7 @@ export async function importSingleGamePixGame(
     keywords?: string
     metaTitle?: string
     metaDescription?: string
-    contentSections?: Record<string, {content: string | object, order: number}>
+    contentSections?: Record<string, { content: string | object, order: number }>
     // 多语言翻译数组
     translations?: Array<{
       locale: string
@@ -232,7 +232,7 @@ export async function importSingleGamePixGame(
       keywords?: string
       metaTitle?: string
       metaDescription?: string
-      contentSections?: Record<string, {content: string | object, order: number}>
+      contentSections?: Record<string, { content: string | object, order: number }>
     }>
   }
 ) {
@@ -369,11 +369,11 @@ export async function importSingleGamePixGame(
     })
 
     // 失效相关缓存（游戏创建/删除会影响分类和标签的计数）
-    revalidateTag(CACHE_TAGS.CATEGORIES)
-    revalidateTag(CACHE_TAGS.TAGS)
-    revalidateTag(CACHE_TAGS.GAMES)
-    revalidateTag(CACHE_TAGS.FEATURED_GAMES)
-    revalidateTag(CACHE_TAGS.DASHBOARD_STATS)
+    // revalidateTag(CACHE_TAGS.CATEGORIES)
+    // revalidateTag(CACHE_TAGS.TAGS)
+    // revalidateTag(CACHE_TAGS.GAMES)
+    // revalidateTag(CACHE_TAGS.FEATURED_GAMES)
+    // revalidateTag(CACHE_TAGS.DASHBOARD_STATS)
     revalidatePath('/admin/games')
     revalidatePath('/[locale]', 'layout')
 
@@ -419,11 +419,11 @@ export async function deleteGameByGamePixId(gamePixId: string) {
     })
 
     // 失效相关缓存（游戏创建/删除会影响分类和标签的计数）
-    revalidateTag(CACHE_TAGS.CATEGORIES)
-    revalidateTag(CACHE_TAGS.TAGS)
-    revalidateTag(CACHE_TAGS.GAMES)
-    revalidateTag(CACHE_TAGS.FEATURED_GAMES)
-    revalidateTag(CACHE_TAGS.DASHBOARD_STATS)
+    // revalidateTag(CACHE_TAGS.CATEGORIES)
+    // revalidateTag(CACHE_TAGS.TAGS)
+    // revalidateTag(CACHE_TAGS.GAMES)
+    // revalidateTag(CACHE_TAGS.FEATURED_GAMES)
+    // revalidateTag(CACHE_TAGS.DASHBOARD_STATS)
     revalidatePath('/admin/games')
     revalidatePath('/[locale]', 'layout')
 
@@ -465,11 +465,11 @@ export async function deleteGamesByGamePixIds(gamePixIds: string[]) {
     }
 
     // 失效相关缓存（游戏创建/删除会影响分类和标签的计数）
-    revalidateTag(CACHE_TAGS.CATEGORIES)
-    revalidateTag(CACHE_TAGS.TAGS)
-    revalidateTag(CACHE_TAGS.GAMES)
-    revalidateTag(CACHE_TAGS.FEATURED_GAMES)
-    revalidateTag(CACHE_TAGS.DASHBOARD_STATS)
+    // revalidateTag(CACHE_TAGS.CATEGORIES)
+    // revalidateTag(CACHE_TAGS.TAGS)
+    // revalidateTag(CACHE_TAGS.GAMES)
+    // revalidateTag(CACHE_TAGS.FEATURED_GAMES)
+    // revalidateTag(CACHE_TAGS.DASHBOARD_STATS)
     revalidatePath('/admin/games')
     revalidatePath('/[locale]', 'layout')
 

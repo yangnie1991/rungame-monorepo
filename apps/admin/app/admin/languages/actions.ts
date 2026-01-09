@@ -7,7 +7,7 @@ import { getEnabledLanguages as getEnabledLanguagesFromDB, CACHE_TAGS } from "@r
 
 // 获取所有已启用的语言（用于表单的多语言Tab）
 // 🔥 优化：使用缓存层，避免重复查询数据库
-export async function getEnabledLanguages() {
+export async function getEnabledLanguages(): Promise<{ success: boolean; error?: string; data?: any[] }> {
   try {
     const languages = await getEnabledLanguagesFromDB()
 
@@ -29,14 +29,14 @@ export async function getEnabledLanguages() {
   }
 }
 
-export async function deleteLanguage(languageId: string) {
+export async function deleteLanguage(languageId: string): Promise<{ success: boolean; error?: string }> {
   try {
     await prisma.language.delete({
       where: { id: languageId }
     })
 
     // 失效语言缓存
-    revalidateTag(CACHE_TAGS.LANGUAGES)
+    // revalidateTag(CACHE_TAGS.LANGUAGES)
     revalidatePath("/admin/languages")
 
     return { success: true }
@@ -60,7 +60,7 @@ const languageSchema = z.object({
 
 export type LanguageFormData = z.infer<typeof languageSchema>
 
-export async function createLanguage(data: LanguageFormData) {
+export async function createLanguage(data: LanguageFormData): Promise<{ success: boolean; error?: string; data?: any }> {
   try {
     const validated = languageSchema.parse(data)
 
@@ -87,20 +87,20 @@ export async function createLanguage(data: LanguageFormData) {
     })
 
     // 失效语言缓存
-    revalidateTag(CACHE_TAGS.LANGUAGES)
+    // revalidateTag(CACHE_TAGS.LANGUAGES)
     revalidatePath("/admin/languages")
 
     return { success: true, data: language }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return { success: false, error: error.issues[0].message }
+      return { success: false, error: error.issues[0]?.message ?? "验证错误" }
     }
     console.error("创建语言失败:", error)
     return { success: false, error: "创建失败，请稍后重试" }
   }
 }
 
-export async function updateLanguage(languageId: string, data: LanguageFormData) {
+export async function updateLanguage(languageId: string, data: LanguageFormData): Promise<{ success: boolean; error?: string; data?: any }> {
   try {
     const validated = languageSchema.parse(data)
 
@@ -137,21 +137,21 @@ export async function updateLanguage(languageId: string, data: LanguageFormData)
     })
 
     // 失效语言缓存
-    revalidateTag(CACHE_TAGS.LANGUAGES)
+    // revalidateTag(CACHE_TAGS.LANGUAGES)
     revalidatePath("/admin/languages")
     revalidatePath(`/admin/languages/${languageId}`)
 
     return { success: true, data: language }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return { success: false, error: error.issues[0].message }
+      return { success: false, error: error.issues[0]?.message ?? "验证错误" }
     }
     console.error("更新语言失败:", error)
     return { success: false, error: "更新失败，请稍后重试" }
   }
 }
 
-export async function getLanguage(languageId: string) {
+export async function getLanguage(languageId: string): Promise<{ success: boolean; error?: string; data?: any }> {
   try {
     const language = await prisma.language.findUnique({
       where: { id: languageId }
@@ -168,7 +168,7 @@ export async function getLanguage(languageId: string) {
   }
 }
 
-export async function toggleLanguageStatus(languageId: string, currentStatus: boolean) {
+export async function toggleLanguageStatus(languageId: string, currentStatus: boolean): Promise<{ success: boolean; error?: string; data?: any; message?: string }> {
   try {
     const language = await prisma.language.findUnique({
       where: { id: languageId }
@@ -189,7 +189,7 @@ export async function toggleLanguageStatus(languageId: string, currentStatus: bo
     })
 
     // 失效语言缓存
-    revalidateTag(CACHE_TAGS.LANGUAGES)
+    // revalidateTag(CACHE_TAGS.LANGUAGES)
     revalidatePath("/admin/languages")
 
     return {

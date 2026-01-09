@@ -19,7 +19,7 @@ export function useEnabledLanguages() {
         const result = await getEnabledLanguages()
 
         if (result.success) {
-          setLanguages(result.data)
+          setLanguages(result.data || [])
           setError(null)
         } else {
           setError(result.error || '加载语言列表失败')

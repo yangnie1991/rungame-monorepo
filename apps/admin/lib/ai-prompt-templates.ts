@@ -893,7 +893,7 @@ Example structure:
  * 获取指定语言的内容策略
  */
 export function getContentStrategy(locale: string): ContentStrategy {
-  return CONTENT_STRATEGY_TEMPLATES[locale] || CONTENT_STRATEGY_TEMPLATES['en']
+  return (CONTENT_STRATEGY_TEMPLATES[locale] || CONTENT_STRATEGY_TEMPLATES['en']) as ContentStrategy
 }
 
 /**

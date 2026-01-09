@@ -35,7 +35,7 @@ export function LanguageForm({ language, mode }: LanguageFormProps) {
   const router = useRouter()
 
   const { register, handleSubmit, formState: { errors } } = useForm<LanguageFormData>({
-    resolver: zodResolver(languageSchema),
+    resolver: zodResolver(languageSchema) as any,
     defaultValues: language ? {
       code: language.code,
       name: language.name,

@@ -17,7 +17,7 @@ if (process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_SECRET) {
   )
 }
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+const nextAuth = NextAuth({
   // 🔐 信任主机（生产环境/反向代理必需）
   // 注意：启用此选项会降低 CSRF 保护，但对于反向代理是必需的
   trustHost: true,
@@ -138,16 +138,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
-        token.role = user.role
+        token.role = (user as any).role
       }
       return token
     },
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string
-        session.user.role = token.role as string
+        (session.user as any).role = token.role as string
       }
       return session
     },
   },
 })
+
+export const { handlers, signIn, signOut, auth } = nextAuth as any

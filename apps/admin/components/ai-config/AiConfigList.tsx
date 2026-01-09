@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import {  Badge } from "@/components/ui/badge"
+import { Badge } from "@/components/ui/badge"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,7 +46,7 @@ import {
 } from "@/app/admin/ai-config/actions"
 import { maskSensitiveData } from "@/lib/crypto"
 import { getProviderDisplayInfo } from "@/lib/ai-providers"
-import type { AiConfig } from "@/types/ai-config"
+import type { AiConfig, AiModelConfig } from "@/types/ai-config"
 
 interface AiConfigListProps {
   configs: AiConfig[]
@@ -106,7 +106,8 @@ export function AiConfigList({ configs }: AiConfigListProps) {
       return
     }
 
-    const defaultModel = config.modelConfig.models.find(m => m.isDefault && m.isEnabled)
+    const modelConfig = config.modelConfig as unknown as AiModelConfig
+    const defaultModel = modelConfig?.models?.find(m => m.isDefault && m.isEnabled)
     if (!defaultModel) {
       setTestResult("❌ 未找到可用的默认模型")
       setTesting(null)
@@ -166,8 +167,9 @@ export function AiConfigList({ configs }: AiConfigListProps) {
       )}
 
       {configs.map(config => {
-        const defaultModel = config.modelConfig.models.find(m => m.isDefault)
-        const enabledModels = config.modelConfig.models.filter(m => m.isEnabled)
+        const modelConfig = config.modelConfig as unknown as AiModelConfig
+        const defaultModel = modelConfig?.models?.find(m => m.isDefault)
+        const enabledModels = modelConfig?.models?.filter(m => m.isEnabled) || []
         const providerDisplay = getProviderDisplayInfo(config.provider)
 
         return (
@@ -283,7 +285,7 @@ export function AiConfigList({ configs }: AiConfigListProps) {
                 <div>
                   <p className="text-sm text-gray-500 mb-2">可用模型:</p>
                   <div className="flex flex-wrap gap-2">
-                    {config.modelConfig.models.map((model, index) => (
+                    {(modelConfig?.models || []).map((model, index) => (
                       <Badge
                         key={index}
                         variant={model.isEnabled ? "default" : "secondary"}

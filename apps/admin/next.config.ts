@@ -1,13 +1,14 @@
 import type { NextConfig } from "next"
 import path from "path"
 
+const isDocker = process.env.DOCKER_BUILD === 'true'
+
 const nextConfig: NextConfig = {
-  output: 'standalone',
-  // Monorepo: 设置文件追踪根目录（Standalone 模式必需）
-  outputFileTracingRoot: path.join(__dirname, '../../'),
+  output: isDocker ? 'standalone' : undefined,
+  outputFileTracingRoot: isDocker ? path.join(__dirname, '../../') : undefined,
   // 设置 Turbopack 根目录为 Monorepo 根目录
   turbopack: {
-    root: '../..',
+    root: path.resolve(__dirname, '../../'),
   },
   // 转译内部 monorepo 包（JIT 模式下的 TypeScript 源文件）
   transpilePackages: ['@rungame/database'],
@@ -23,16 +24,10 @@ const nextConfig: NextConfig = {
     return config
   },
   typescript: {
-    ignoreBuildErrors: true,
+    // 强制检查 TS 错误
+    ignoreBuildErrors: false,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  // 强制清除缓存
-  generateBuildId: async () => {
-    // 使用时间戳作为 build ID，确保每次构建都是新的
-    return `build-${Date.now()}`
-  },
+
   async redirects() {
     return []
   },

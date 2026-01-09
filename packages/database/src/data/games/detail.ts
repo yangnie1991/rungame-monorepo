@@ -7,7 +7,7 @@ import { getAllCategoryTranslationsMap } from "../categories"
 import { getAllTagsDataMap } from "../tags"
 import { CACHE_TAGS, REVALIDATE_TIME } from "../../cache-config"
 import { getGameTranslatedContent } from "../../lib/helpers/game-content"
-import { GameInfo } from "../../lib/types/game-info"
+import type { GameInfo } from "../../lib/types/game-info"
 
 /**
  * ============================================
@@ -75,7 +75,7 @@ export async function getGameBySlug(slug: string, locale: string) {
           keywords: game.keywords,
           metaTitle: game.metaTitle,
           metaDescription: game.metaDescription,
-      gameInfo: game.gameInfo as unknown as GameInfo // 临时类型转换
+          gameInfo: game.gameInfo as unknown as GameInfo // 临时类型转换
         },
         (game.translations || []).map(t => ({
           ...t,
@@ -354,9 +354,9 @@ async function fetchMixedRecommendedGames(
     }),
     subCategorySlug
       ? prisma.category.findUnique({
-          where: { slug: subCategorySlug },
-          select: { id: true },
-        })
+        where: { slug: subCategorySlug },
+        select: { id: true },
+      })
       : Promise.resolve(null),
   ])
 
@@ -388,9 +388,9 @@ async function fetchMixedRecommendedGames(
       locale === "en"
         ? false
         : {
-            where: buildLocaleCondition(locale),
-            select: { title: true, description: true, locale: true },
-          },
+          where: buildLocaleCondition(locale),
+          select: { title: true, description: true, locale: true },
+        },
   }
 
   // 优化策略：一次性查询足够多的游戏，然后在内存中分类和混合
@@ -434,27 +434,30 @@ async function fetchMixedRecommendedGames(
   // 从每个列表中取游戏
   for (let i = 0; i < perType && selectedGames.length < limit; i++) {
     // 取最多游玩的
-    if (byPlayCount[i] && !selected.has(byPlayCount[i].slug)) {
-      selected.add(byPlayCount[i].slug)
-      selectedGames.push(byPlayCount[i])
+    const gameByPlay = byPlayCount[i]
+    if (gameByPlay && !selected.has(gameByPlay.slug)) {
+      selected.add(gameByPlay.slug)
+      selectedGames.push(gameByPlay)
     }
     // 取最新的
+    const gameByTime = byCreatedAt[i]
     if (
-      byCreatedAt[i] &&
-      !selected.has(byCreatedAt[i].slug) &&
+      gameByTime &&
+      !selected.has(gameByTime.slug) &&
       selectedGames.length < limit
     ) {
-      selected.add(byCreatedAt[i].slug)
-      selectedGames.push(byCreatedAt[i])
+      selected.add(gameByTime.slug)
+      selectedGames.push(gameByTime)
     }
     // 取高评分的
+    const gameByRating = byRating[i]
     if (
-      byRating[i] &&
-      !selected.has(byRating[i].slug) &&
+      gameByRating &&
+      !selected.has(gameByRating.slug) &&
       selectedGames.length < limit
     ) {
-      selected.add(byRating[i].slug)
-      selectedGames.push(byRating[i])
+      selected.add(gameByRating.slug)
+      selectedGames.push(gameByRating)
     }
   }
 
@@ -485,25 +488,30 @@ async function fetchMixedRecommendedGames(
 
     let idx = 0
     while (selectedGames.length < limit && idx < mainCategoryGames.length) {
-      if (mainByPlayCount[idx] && !selected.has(mainByPlayCount[idx].slug)) {
-        selected.add(mainByPlayCount[idx].slug)
-        selectedGames.push(mainByPlayCount[idx])
+      const gameByPlay = mainByPlayCount[idx]
+      if (gameByPlay && !selected.has(gameByPlay.slug)) {
+        selected.add(gameByPlay.slug)
+        selectedGames.push(gameByPlay)
       }
+
+      const gameByTime = mainByCreatedAt[idx]
       if (
-        mainByCreatedAt[idx] &&
-        !selected.has(mainByCreatedAt[idx].slug) &&
+        gameByTime &&
+        !selected.has(gameByTime.slug) &&
         selectedGames.length < limit
       ) {
-        selected.add(mainByCreatedAt[idx].slug)
-        selectedGames.push(mainByCreatedAt[idx])
+        selected.add(gameByTime.slug)
+        selectedGames.push(gameByTime)
       }
+
+      const gameByRating = mainByRating[idx]
       if (
-        mainByRating[idx] &&
-        !selected.has(mainByRating[idx].slug) &&
+        gameByRating &&
+        !selected.has(gameByRating.slug) &&
         selectedGames.length < limit
       ) {
-        selected.add(mainByRating[idx].slug)
-        selectedGames.push(mainByRating[idx])
+        selected.add(gameByRating.slug)
+        selectedGames.push(gameByRating)
       }
       idx++
     }
@@ -516,12 +524,12 @@ async function fetchMixedRecommendedGames(
       locale === "en"
         ? game.title
         : translations.find((t: any) => t.locale === locale)?.title ||
-          game.title
+        game.title
     const description =
       locale === "en"
         ? game.description
         : translations.find((t: any) => t.locale === locale)?.description ||
-          game.description
+        game.description
 
     return {
       slug: game.slug,

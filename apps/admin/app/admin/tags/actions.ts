@@ -9,7 +9,7 @@ export async function deleteTag(tagId: string) {
   try {
     await prisma.tag.delete({ where: { id: tagId } })
     // ✅ 失效缓存
-    revalidateTag(CACHE_TAGS.TAGS)
+    // revalidateTag(CACHE_TAGS.TAGS)
     revalidatePath("/admin/tags")
     return { success: true }
   } catch (error) {
@@ -42,7 +42,7 @@ const tagSchema = z.object({
 
 export type TagFormData = z.infer<typeof tagSchema>
 
-export async function createTag(data: TagFormData) {
+export async function createTag(data: TagFormData): Promise<{ success: boolean; error?: string; data?: any }> {
   try {
     const validated = tagSchema.parse(data)
     const existing = await prisma.tag.findUnique({ where: { slug: validated.slug } })
@@ -65,17 +65,17 @@ export async function createTag(data: TagFormData) {
     })
 
     // ✅ 失效缓存
-    revalidateTag(CACHE_TAGS.TAGS)
+    // revalidateTag(CACHE_TAGS.TAGS)
     revalidatePath("/admin/tags")
     return { success: true, data: tag }
   } catch (error) {
-    if (error instanceof z.ZodError) return { success: false, error: error.issues[0].message }
+    if (error instanceof z.ZodError) return { success: false, error: error.issues[0]?.message ?? "验证错误" }
     console.error("创建标签失败:", error)
     return { success: false, error: "创建失败，请稍后重试" }
   }
 }
 
-export async function updateTag(tagId: string, data: TagFormData) {
+export async function updateTag(tagId: string, data: TagFormData): Promise<{ success: boolean; error?: string; data?: any }> {
   try {
     const validated = tagSchema.parse(data)
     const existing = await prisma.tag.findUnique({ where: { id: tagId } })
@@ -104,12 +104,12 @@ export async function updateTag(tagId: string, data: TagFormData) {
     })
 
     // ✅ 失效缓存
-    revalidateTag(CACHE_TAGS.TAGS)
+    // revalidateTag(CACHE_TAGS.TAGS)
     revalidatePath("/admin/tags")
     revalidatePath(`/admin/tags/${tagId}`)
     return { success: true, data: tag }
   } catch (error) {
-    if (error instanceof z.ZodError) return { success: false, error: error.issues[0].message }
+    if (error instanceof z.ZodError) return { success: false, error: error.issues[0]?.message ?? "验证错误" }
     console.error("更新标签失败:", error)
     return { success: false, error: "更新失败，请稍后重试" }
   }
@@ -141,7 +141,7 @@ export async function toggleTagStatus(tagId: string, currentStatus: boolean) {
     })
 
     // ✅ 失效缓存
-    revalidateTag(CACHE_TAGS.TAGS)
+    // revalidateTag(CACHE_TAGS.TAGS)
     revalidatePath("/admin/tags")
     return {
       success: true,

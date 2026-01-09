@@ -3,7 +3,7 @@
  * 处理英文主表和翻译表的统一查询逻辑
  */
 
-import { GameInfo } from '../types/game-info'
+import type { GameInfo } from '../types/game-info'
 
 /**
  * 获取游戏标题

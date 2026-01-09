@@ -104,42 +104,42 @@ export async function readWebPage(url: string, truncate: boolean = true, skipApi
     // 构建 Jina Reader URL
     const jinaUrl = `${endpoint}/${url}`
 
-    // 构建请求头
+    // 构建请求头（免费和付费都支持的功能）
     const headers: Record<string, string> = {
       'Accept': 'text/markdown',
       'X-Return-Format': 'markdown',
       'X-Timeout': String(timeout),
-      'X-With-Generated-Alt': String(options.withGeneratedAlt),
-      'X-With-Images-Summary': String(options.withImagesSummary),
+      'X-With-Images-Summary': String(options.withImagesSummary),  // 免费支持
       'X-With-Links-Summary': String(options.withLinksSummary)
     }
 
-    // 如果有 API Key，添加认证（可选，提高速率限制）
+    // 如果有 API Key，添加认证和付费专属功能
     if (apiKey) {
       headers['Authorization'] = `Bearer ${apiKey}`
-      console.log('[Jina Reader] 请求包含 Authorization 头')
+      headers['X-With-Generated-Alt'] = String(options.withGeneratedAlt)  // 付费专属
+      console.log('[Jina Reader] 付费模式：包含 Authorization 和 Alt text generation')
     } else {
-      console.log('[Jina Reader] 请求不包含 Authorization 头（免费模式）')
+      // 免费模式：不发送需要认证的 header
+      console.log('[Jina Reader] 免费模式：不发送 Alt text generation header')
     }
 
     // 调用 Jina Reader API
     const response = await fetch(jinaUrl, {
-      headers,
-      signal: AbortSignal.timeout(21000)  // 21秒超时（客户端稍长于服务端）
+      headers
     })
 
     // 处理错误响应
     if (!response.ok) {
       // 记录失败
-      await recordApiCall('jina_reader', false).catch(() => {})
+      await recordApiCall('jina_reader', false).catch(() => { })
 
       // 401 认证失败
       if (response.status === 401) {
+        const errorText = await response.text()
         if (apiKey) {
           throw new Error('Jina API Key 无效或已过期。请在管理后台（外部 API 配置）更新或移除 API Key 使用免费模式')
         } else {
-          // 免费模式下的 401 可能是速率限制或其他原因
-          throw new Error('Jina 免费 API 访问被拒绝。可能是速率限制，请稍后重试')
+          throw new Error(`Jina 免费 API 访问被拒绝。错误: ${errorText}`)
         }
       }
 
@@ -211,7 +211,7 @@ export async function readWebPage(url: string, truncate: boolean = true, skipApi
 
     // 提取标题（第一行通常是 # 标题）
     const titleMatch = markdown.match(/^#\s+(.+)$/m)
-    const title = titleMatch ? titleMatch[1].trim() : extractDomainFromUrl(url)
+    const title = (titleMatch && titleMatch[1]) ? titleMatch[1].trim() : extractDomainFromUrl(url)
 
     // 统计字数（移除 Markdown 标记）
     const plainText = markdown
@@ -249,7 +249,7 @@ export async function readWebPage(url: string, truncate: boolean = true, skipApi
     console.log(`[Jina Reader] ✓ ${url} - ${wordCount} 词`)
 
     // 记录成功
-    await recordApiCall('jina_reader', true).catch(() => {})
+    await recordApiCall('jina_reader', true).catch(() => { })
 
     return {
       url,
@@ -262,7 +262,7 @@ export async function readWebPage(url: string, truncate: boolean = true, skipApi
     console.error(`[Jina Reader] ✗ ${url}:`, error.message)
 
     // 记录失败（如果错误不是在 recordApiCall 之后发生的）
-    await recordApiCall('jina_reader', false).catch(() => {})
+    await recordApiCall('jina_reader', false).catch(() => { })
 
     // 返回失败结果（不抛出错误，允许部分失败）
     return {

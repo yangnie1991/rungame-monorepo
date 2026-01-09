@@ -26,9 +26,9 @@ export interface ContentSelection {
 
 export interface GeneratedUrl {
   url: string
-  type: 'game' | 'category' | 'tag' | 'pagetype'
-  entityId: string
-  locale: string
+  type: 'game' | 'category' | 'tag' | 'pagetype' | 'sitemap' | 'other'
+  entityId?: string
+  locale?: string
   entityName: string // 用于显示
 }
 
@@ -290,7 +290,7 @@ export async function submitBingUrlsDirect(
         urlList,
         {
           apiKey: bingConfig.apiKey,
-          keyLocation: bingConfig.extraConfig?.keyLocation || '',
+          keyLocation: (bingConfig.extraConfig as any)?.keyLocation || '',
           host: new URL(bingConfig.siteUrl!).hostname,
           apiEndpoint: bingConfig.apiEndpoint,
         },
@@ -309,15 +309,15 @@ export async function submitBingUrlsDirect(
           await prismaAdmin.urlSubmission.update({
             where: { id: submission.id },
             data: {
-              bingSubmitStatus: result.success ? 'SUCCESS' : 'FAILED',
-              bingSubmitStatusMessage: result.message,
-              bingSubmitHttpStatus: result.statusCode,
-              bingSubmitResponseTime: result.responseTime,
+              bingSubmitStatus: result?.success ? 'SUCCESS' : 'FAILED',
+              bingSubmitStatusMessage: result?.message,
+              bingSubmitHttpStatus: result?.statusCode,
+              bingSubmitResponseTime: result?.responseTime,
               bingSubmittedAt: new Date(),
             },
           })
 
-          if (result.success) {
+          if (result?.success) {
             successCount++
           } else {
             failedCount++
@@ -392,9 +392,9 @@ export async function submitBingUrls(
     // 1. 生成所有 URLs
     const allUrls: Array<{
       url: string
-      type: 'game' | 'category' | 'tag' | 'pagetype'
-      entityId: string
-      locale: string
+      type: 'game' | 'category' | 'tag' | 'pagetype' | 'sitemap' | 'other'
+      entityId?: string
+      locale?: string
     }> = []
 
     // 游戏 URLs
@@ -491,7 +491,7 @@ export async function submitBingUrls(
         urlList,
         {
           apiKey: bingConfig.apiKey,
-          keyLocation: bingConfig.extraConfig?.keyLocation || '',
+          keyLocation: (bingConfig.extraConfig as any)?.keyLocation || '',
           host: new URL(bingConfig.siteUrl!).hostname,
           apiEndpoint: bingConfig.apiEndpoint,
         },
@@ -510,16 +510,16 @@ export async function submitBingUrls(
           await prismaAdmin.urlSubmission.update({
             where: { id: submission.id },
             data: {
-              bingSubmitStatus: result.success ? 'SUCCESS' : 'FAILED',
-              bingSubmitStatusMessage: result.message,
-              bingSubmitHttpStatus: result.statusCode,
-              bingSubmitResponseTime: result.responseTime,
-              bingSubmitResponseBody: result.responseBody,
+              bingSubmitStatus: result?.success ? 'SUCCESS' : 'FAILED',
+              bingSubmitStatusMessage: result?.message,
+              bingSubmitHttpStatus: result?.statusCode,
+              bingSubmitResponseTime: result?.responseTime,
+              bingSubmitResponseBody: (result as any)?.responseBody,
               bingSubmittedAt: new Date(),
             },
           })
 
-          if (result.success) {
+          if (result?.success) {
             successCount++
           } else {
             failedCount++

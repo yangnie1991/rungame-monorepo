@@ -5,7 +5,7 @@ import { prisma } from "@rungame/database"
 import { z } from "zod"
 
 // 删除页面类型
-export async function deletePageType(pageTypeId: string) {
+export async function deletePageType(pageTypeId: string): Promise<{ success: boolean; error?: string }> {
   try {
     await prisma.pageType.delete({
       where: { id: pageTypeId }
@@ -50,7 +50,7 @@ const pageTypeSchema = z.object({
 export type PageTypeFormData = z.infer<typeof pageTypeSchema>
 
 // 创建页面类型
-export async function createPageType(data: PageTypeFormData) {
+export async function createPageType(data: PageTypeFormData): Promise<{ success: boolean; error?: string; data?: any }> {
   try {
     // 验证数据
     const validated = pageTypeSchema.parse(data)
@@ -78,7 +78,7 @@ export async function createPageType(data: PageTypeFormData) {
         metaTitle: validated.metaTitle || null,
         metaDescription: validated.metaDescription || null,
         keywords: validated.keywords || null,
-        pageInfo: validated.pageInfo || null,
+        pageInfo: (validated.pageInfo || null) as any,
         // 翻译数据
         translations: {
           create: validated.translations
@@ -93,7 +93,7 @@ export async function createPageType(data: PageTypeFormData) {
     return { success: true, data: pageType }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return { success: false, error: error.issues[0].message }
+      return { success: false, error: error.issues[0]?.message ?? "未知验证错误" }
     }
     console.error("创建页面类型失败:", error)
     return { success: false, error: "创建失败，请稍后重试" }
@@ -101,7 +101,7 @@ export async function createPageType(data: PageTypeFormData) {
 }
 
 // 更新页面类型
-export async function updatePageType(pageTypeId: string, data: PageTypeFormData) {
+export async function updatePageType(pageTypeId: string, data: PageTypeFormData): Promise<{ success: boolean; error?: string; data?: any }> {
   try {
     // 验证数据
     const validated = pageTypeSchema.parse(data)
@@ -140,7 +140,7 @@ export async function updatePageType(pageTypeId: string, data: PageTypeFormData)
         metaTitle: validated.metaTitle || null,
         metaDescription: validated.metaDescription || null,
         keywords: validated.keywords || null,
-        pageInfo: validated.pageInfo || null,
+        pageInfo: (validated.pageInfo || null) as any,
         // 翻译数据
         translations: {
           deleteMany: {},
@@ -157,7 +157,7 @@ export async function updatePageType(pageTypeId: string, data: PageTypeFormData)
     return { success: true, data: pageType }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return { success: false, error: error.issues[0].message }
+      return { success: false, error: error.issues[0]?.message ?? "未知验证错误" }
     }
     console.error("更新页面类型失败:", error)
     return { success: false, error: "更新失败，请稍后重试" }
@@ -165,7 +165,7 @@ export async function updatePageType(pageTypeId: string, data: PageTypeFormData)
 }
 
 // 获取单个页面类型（用于编辑页面）
-export async function getPageType(pageTypeId: string) {
+export async function getPageType(pageTypeId: string): Promise<{ success: boolean; error?: string; data?: any }> {
   try {
     const pageType = await prisma.pageType.findUnique({
       where: { id: pageTypeId },

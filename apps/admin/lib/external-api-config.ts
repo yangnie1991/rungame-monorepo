@@ -145,7 +145,7 @@ export async function getJinaReaderConfig(): Promise<JinaReaderConfig> {
       // 返回默认配置（免费模式）
       return {
         endpoint: 'https://r.jina.ai',
-        timeout: 20,
+        timeout: 60,
         useMode: 'auto',
         options: {
           withGeneratedAlt: true,
@@ -183,7 +183,7 @@ export async function getJinaReaderConfig(): Promise<JinaReaderConfig> {
     // 返回默认配置
     return {
       endpoint: 'https://r.jina.ai',
-      timeout: 20,
+      timeout: 60,
       useMode: 'auto',
       options: {
         withGeneratedAlt: true,
@@ -362,7 +362,7 @@ export async function clearConfigCache(_name?: string): Promise<void> {
   const { revalidateTag } = await import('next/cache')
 
   // 清除整个表的缓存（因为缓存的是整个表，所以无论是否传入 name 都清除整表）
-  revalidateTag('external-api-configs')
+  // revalidateTag('external-api-configs')
   console.log('[External API Cache] 已清除配置缓存')
 }
 

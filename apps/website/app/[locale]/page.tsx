@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: HomePageProps): Promise<Metad
     ],
   }
 
-  const keywords = (keywordsTemplates[locale] || keywordsTemplates.en).join(', ')
+  const keywords = (keywordsTemplates[locale] || keywordsTemplates.en || []).join(', ')
 
   // Open Graph locale 映射
   const ogLocaleMap: Record<string, string> = {
@@ -127,14 +127,14 @@ export default async function HomePage({ params }: HomePageProps) {
       description: game.description,
       category: game.categoryName && game.categorySlug
         ? {
-            name: game.categoryName,
-            slug: game.categorySlug,
-          }
+          name: game.categoryName,
+          slug: game.categorySlug,
+        }
         : undefined,
       mainCategory: game.mainCategorySlug
         ? {
-            slug: game.mainCategorySlug,
-          }
+          slug: game.mainCategorySlug,
+        }
         : undefined,
       tags: game.tags?.map((tag) => ({ name: tag.name })),
     }))

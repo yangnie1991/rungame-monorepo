@@ -1,0 +1,51 @@
+version: "3"
+
+services:
+  website:
+    image: rungame-website:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.website
+      args:
+        NODE_ENV: production
+        DATABASE_URL: ${DATABASE_URL}
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - NEXT_TELEMETRY_DISABLED=1
+      # website 特定环境变量
+    networks:
+      - rungame-network
+
+  admin:
+    image: rungame-admin:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.admin
+      args:
+        NODE_ENV: production
+        DATABASE_URL: ${DATABASE_URL}
+        NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+        NEXTAUTH_URL: ${NEXTAUTH_URL}
+        ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+    restart: always
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - NEXT_TELEMETRY_DISABLED=1
+      - PORT=4000
+      # admin 特定环境变量
+    networks:
+      - rungame-network
+
+networks:
+  rungame-network:
+    driver: bridge
