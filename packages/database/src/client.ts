@@ -1,14 +1,11 @@
+import { Pool } from 'pg'
+import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from './generated/client'
 
 /**
  * ============================================
- * Prisma Client 单例实例
+ * Prisma Client 单例实例 (Prisma 7 + Driver Adapter)
  * ============================================
- *
- * 功能：
- * - 全局单例模式，避免开发环境热重载时创建多个连接
- * - Prisma Client Extensions：自动维护 GameCategory.mainCategoryId
- * - 开发环境启用查询日志，生产环境仅记录错误
  */
 
 const globalForPrisma = globalThis as unknown as {
@@ -16,12 +13,21 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 const prismaClientSingleton = () => {
+  // 建立物理连接池
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    // 适配小内存环境的连接池配置
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
+  })
+
+  // 创建 Prisma 适配器
+  const adapter = new PrismaPg(pool)
+
+  // 实例化 Client (注入适配器)
   const baseClient = new PrismaClient({
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL,
-      },
-    },
+    adapter,
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   })
 

@@ -1,15 +1,11 @@
+import { Pool } from 'pg'
+import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from './generated/prisma-client'
 
 /**
  * ============================================
- * Admin 管理数据库 Prisma Client 单例实例
+ * Admin 管理数据库 Prisma Client (Prisma 7 + Driver Adapter)
  * ============================================
- *
- * 功能：
- * - 全局单例模式，避免开发环境热重载时创建多个连接
- * - 连接到管理数据库（CACHE_DATABASE_URL）
- * - 包含：管理配置表 + 缓存数据表
- * - 开发环境启用查询日志，生产环境仅记录错误
  */
 
 const globalForPrismaAdmin = globalThis as unknown as {
@@ -17,7 +13,19 @@ const globalForPrismaAdmin = globalThis as unknown as {
 }
 
 const prismaAdminClientSingleton = () => {
+  // 建立物理连接池
+  const pool = new Pool({
+    connectionString: process.env.CACHE_DATABASE_URL,
+    // 配置库并发较低，连接池可以设小一点
+    max: 5,
+    idleTimeoutMillis: 30000,
+  })
+
+  // 创建 Prisma 适配器
+  const adapter = new PrismaPg(pool)
+
   return new PrismaClient({
+    adapter,
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   })
 }

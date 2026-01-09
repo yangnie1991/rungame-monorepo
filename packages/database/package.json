@@ -18,7 +18,9 @@
     "db:studio": "prisma studio --schema=./prisma/schema.prisma"
   },
   "dependencies": {
-    "@prisma/client": "7.2.0"
+    "@prisma/adapter-pg": "7.2.0",
+    "@prisma/client": "7.2.0",
+    "pg": "^8.13.1"
   },
   "devDependencies": {
     "@types/node": "^22",

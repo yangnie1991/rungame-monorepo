@@ -3,7 +3,7 @@
 // 包含：管理表（6个）+ 缓存表（3个）= 共 9 个表
 
 generator client {
-  provider      = "prisma-client-js"
+  provider      = "prisma-client"
   output        = "../lib/generated/prisma-client"
   binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x", "rhel-openssl-1.1.x", "rhel-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
 }
