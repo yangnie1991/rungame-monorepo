@@ -11,10 +11,64 @@
 tar -xzf admin-source.tar.gz
 
 # 进入目录
+# 进入目录
+# 进入目录
 cd rungame-admin-source
 ```
 
-*此版本已包含修复后的 Dockerfile，且只包含必要文件。*
+## 🚨 低配置服务器特别说明 (2GB 内存)
+
+您的服务器只有 2GB 内存，这对于 **运行** 应用是足够的，但对于 **构建** (Build) 应用往往是不够的（Node.js 编译非常耗内存）。
+
+如果遇到构建卡死，请务必选择以下 **两种方案之一**：
+
+### 方案 1: 开启 Swap (推荐 - 最简单)
+
+通过使用硬盘作为虚拟内存，让 2GB 内存也能完成构建。
+
+```bash
+# 1. 创建 2GB Swap 分区
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+
+# 2. 验证 (确保 Swap 行显示 2.0G)
+free -h
+
+# 3. 然后正常执行部署命令
+docker-compose -f docker-compose.admin.yml up -d --build
+```
+
+### 方案 2: 本地构建 + 上传镜像 (彻底解决)
+
+利用您本地电脑的强大性能进行构建，只把结果上传到服务器。
+
+**第一步：本地构建 (在您的 Mac/PC 上)**
+```bash
+# 1. 确保安装了 Docker Desktop
+# 2. 构建 Linux 镜像 (注意 --platform linux/amd64)
+docker buildx build --platform linux/amd64 -f Dockerfile.admin -t rungame-admin:latest .
+
+# 3. 导出为压缩文件
+docker save rungame-admin:latest | gzip > admin-image.tar.gz
+```
+
+**第二步：上传 & 加载 (在服务器上)**
+```bash
+# 1. 上传 admin-image.tar.gz 到服务器
+
+# 2. 加载镜像
+docker load < admin-image.tar.gz
+
+# 3. 启动 (修改 docker-compose.admin.yml 注释掉 build 部分)
+# 或者直接运行:
+docker-compose -f docker-compose.admin.yml up -d
+```
+
+---
+
+## 2. 准备环境变量
 
 ## 2. 准备环境变量
 
@@ -38,22 +92,42 @@ ENCRYPTION_KEY="your-encryption-key"
 
 项目已内置 `docker-compose.admin.yml`，可一键构建并启动。
 
+### 方式 A: 新版 Docker (推荐)
+
 ```bash
 # 构建并启动 (后台运行)
 docker compose -f docker-compose.admin.yml up -d --build
 ```
 
-常用管理命令：
+### 方式 B: 旧版 Docker (如果不识别 `docker compose`)
+
+旧版 `docker-compose` 命令不支持 `up` 时直接带 `--no-cache` 参数，需要分两步走：
+
+```bash
+# 1. 强制无缓存构建 (确保获取最新代码和配置)
+docker-compose -f docker-compose.admin.yml build --no-cache
+
+# 2. 启动服务
+docker-compose -f docker-compose.admin.yml up -d
+```
+
+### 常用管理命令
 
 ```bash
 # 查看日志
 docker compose -f docker-compose.admin.yml logs -f
+# 或
+docker-compose -f docker-compose.admin.yml logs -f
 
 # 重启服务
 docker compose -f docker-compose.admin.yml restart
+# 或
+docker-compose -f docker-compose.admin.yml restart
 
 # 停止服务
 docker compose -f docker-compose.admin.yml down
+# 或
+docker-compose -f docker-compose.admin.yml down
 ```
 
 ## 4. 验证
