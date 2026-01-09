@@ -185,7 +185,7 @@ export async function createGame(data: GameFormData): Promise<{ success: boolean
         embedUrl: validated.embedUrl,
         gameUrl: validated.gameUrl,
         // 新架构: dimensions JSON
-        dimensions: validated.dimensions as Prisma.InputJsonValue,
+        dimensions: validated.dimensions as any,
         // 新架构: 英文基础字段
         title: validated.title,
         description: validated.description || null,
@@ -203,7 +203,7 @@ export async function createGame(data: GameFormData): Promise<{ success: boolean
         // 新架构: status
         status: validated.status,
         // 新架构: gameInfo (ContentSections)
-        ...(validated.gameInfo && { gameInfo: validated.gameInfo as Prisma.InputJsonValue }),
+        ...(validated.gameInfo && { gameInfo: validated.gameInfo as any }),
         // 翻译数据
         translations: {
           create: validated.translations.map(t => ({
@@ -214,7 +214,7 @@ export async function createGame(data: GameFormData): Promise<{ success: boolean
             metaTitle: t.metaTitle || null,
             metaDescription: t.metaDescription || null,
             // translationInfo (ContentSections)
-            ...(t.translationInfo && { translationInfo: t.translationInfo as Prisma.InputJsonValue }),
+            ...(t.translationInfo && { translationInfo: t.translationInfo as any }),
           })),
         },
         // 分类关联（使用 GameCategory 关联表）
@@ -374,7 +374,7 @@ export async function updateGame(id: string, data: GameFormData): Promise<{ succ
           embedUrl: validated.embedUrl,
           gameUrl: validated.gameUrl,
           // 新架构: dimensions JSON
-          dimensions: validated.dimensions as Prisma.InputJsonValue,
+          dimensions: validated.dimensions as any,
           // 新架构: 英文基础字段
           title: validated.title,
           description: validated.description || null,
@@ -392,7 +392,7 @@ export async function updateGame(id: string, data: GameFormData): Promise<{ succ
           // 新架构: status
           status: validated.status,
           // 新架构: gameInfo (ContentSections)
-          ...(validated.gameInfo && { gameInfo: validated.gameInfo as Prisma.InputJsonValue }),
+          ...(validated.gameInfo && { gameInfo: validated.gameInfo as any }),
           // 翻译数据
           translations: {
             create: validated.translations.map(t => ({
@@ -403,7 +403,7 @@ export async function updateGame(id: string, data: GameFormData): Promise<{ succ
               metaTitle: t.metaTitle || null,
               metaDescription: t.metaDescription || null,
               // translationInfo (ContentSections)
-              ...(t.translationInfo && { translationInfo: t.translationInfo as Prisma.InputJsonValue }),
+              ...(t.translationInfo && { translationInfo: t.translationInfo as any }),
             })),
           },
           // 分类关联（使用 GameCategory 关联表）
