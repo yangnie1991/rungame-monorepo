@@ -69,9 +69,9 @@ RUN pnpm db:generate
 # 使用 turbo 构建（自动处理依赖顺序）
 # 注意：turbo prune 已经修剪了 monorepo，无需使用 --filter
 # turbo 会自动先构建 @rungame/database，再构建 @rungame/admin
-# 降低内存限制以适应小内存 VPS (2048 -> 1024)
+# 降低内存限制以适应小内存 VPS (2048 -> 768)
 # 明确指定只编译 admin 及其依赖，防止扫描其他未关联包
-RUN NODE_OPTIONS="--max-old-space-size=1024" \
+RUN NODE_OPTIONS="--max-old-space-size=768" \
     SKIP_ENV_VALIDATION=true \
     pnpm turbo build --filter=@rungame/admin
 

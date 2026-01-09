@@ -22,14 +22,7 @@ const nextConfig: NextConfig = {
     }
     return config
   },
-  eslint: {
-    // 生产构建时忽略 eslint 错误（节省内存）
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    // 生产构建时忽略 TS 错误（节省内存）
-    ignoreBuildErrors: true,
-  },
+
 
   async redirects() {
     return []
