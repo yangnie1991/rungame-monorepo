@@ -34,29 +34,49 @@ NEXTAUTH_URL="http://your-server-ip:4000"
 ENCRYPTION_KEY="your-encryption-key"
 ```
 
-## 3. 构建 Docker 镜像
+## 3. 启动服务 (推荐使用 Docker Compose)
 
-使用根目录下的 `Dockerfile.admin` 进行构建：
+项目已内置 `docker-compose.admin.yml`，可一键构建并启动。
 
 ```bash
-# 构建镜像，命名为 rungame-admin
-docker build -f Dockerfile.admin -t rungame-admin .
+# 构建并启动 (后台运行)
+docker compose -f docker-compose.admin.yml up -d --build
 ```
 
-*注意：构建过程会自动处理依赖修剪和安装，可能需要几分钟时间。*
-
-## 4. 运行容器
+常用管理命令：
 
 ```bash
-# 启动容器，映射端口 4000
+# 查看日志
+docker compose -f docker-compose.admin.yml logs -f
+
+# 重启服务
+docker compose -f docker-compose.admin.yml restart
+
+# 停止服务
+docker compose -f docker-compose.admin.yml down
+```
+
+## 4. 验证
+
+访问 `http://your-server-ip:4000/admin` 查看是否成功启动。
+*默认账号/密码请查看数据库 seed 数据或自行注册。*
+
+---
+
+### (可选) 传统 Docker 方式
+
+如果你不使用 docker-compose，可以使用以下命令手动构建和运行：
+
+```bash
+# 1. 构建镜像
+docker build -f Dockerfile.admin -t rungame-admin .
+
+# 2. 运行容器
 docker run -d \
   --name rungame-admin \
+  --restart always \
   -p 4000:4000 \
   --env-file .env \
   rungame-admin
 ```
 
-## 5. 验证
-
-访问 `http://your-server-ip:4000` 查看是否成功启动。
-可以使用 `docker logs -f rungame-admin` 查看运行日志。

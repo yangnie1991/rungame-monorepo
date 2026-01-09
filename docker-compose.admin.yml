@@ -1,39 +1,33 @@
+version: "3"
+
 services:
-  # 管理端应用（使用外部数据库，不包含本地数据库容器）
   admin:
-    # 使用从 GitHub Actions 传输并加载的镜像（在 GitHub Actions 上构建，避免 VPS 内存不足）
-    image: rungame-admin:latest
     container_name: rungame-admin
-    restart: unless-stopped
+    # 如果已构建镜像，可以直接使用 image: rungame-admin
+    # 这里默认支持从源码构建
+    build:
+      context: .
+      dockerfile: Dockerfile.admin
+      args:
+        NODE_ENV: production
+        DATABASE_URL: ${DATABASE_URL}
+        NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+        NEXTAUTH_URL: ${NEXTAUTH_URL}
+        ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+    restart: always
     ports:
       - "4000:4000"
     environment:
       - NODE_ENV=production
-      # 业务数据库（外部托管，从 GitHub Secrets 读取）
       - DATABASE_URL=${DATABASE_URL}
-      # 管理数据库（外部托管，从 GitHub Secrets 读取）
-      - CACHE_DATABASE_URL=${CACHE_DATABASE_URL}
-      # NextAuth 配置
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - NEXTAUTH_URL=${NEXTAUTH_URL}
-      - NEXTAUTH_TRUST_HOST=true
-      # R2 存储配置（如果使用）
-      - R2_ACCOUNT_ID=${R2_ACCOUNT_ID}
-      - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID}
-      - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY}
-      - R2_BUCKET_NAME=${R2_BUCKET_NAME}
-      - R2_PUBLIC_URL=${R2_PUBLIC_URL}
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    labels:
-      - "com.docker.compose.project=rungame"
-      - "com.docker.compose.service=admin"
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - NEXT_TELEMETRY_DISABLED=1
+      - PORT=4000
+    networks:
+      - rungame-network
+
+networks:
+  rungame-network:
+    driver: bridge
