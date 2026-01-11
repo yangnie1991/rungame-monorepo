@@ -11,6 +11,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
+
+export const dynamic = 'force-dynamic'
 import { uploadGamePixImageToR2, type ImageUploadResult } from '@/lib/gamepix-image-upload'
 import { z } from 'zod'
 
