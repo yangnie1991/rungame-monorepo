@@ -71,8 +71,10 @@ RUN pnpm db:generate
 # turbo 会自动先构建 @rungame/database，再构建 @rungame/admin
 # 本地构建镜像建议给予充足内存 (4096)
 # 明确指定只编译 admin 及其依赖
-RUN SKIP_ENV_VALIDATION=true \
-    pnpm turbo build --filter=@rungame/admin
+# 明确指定只编译 admin 及其依赖
+# 确保 SKIP_ENV_VALIDATION 对 turbo 和子进程生效
+ENV SKIP_ENV_VALIDATION=true
+RUN pnpm turbo build --filter=@rungame/admin
 
 # ============================================
 # 第四阶段: 生产运行时（Standalone 优化）

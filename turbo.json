@@ -5,14 +5,27 @@
     "turbo.json"
   ],
   "globalEnv": [
-    "NODE_ENV"
+    "NODE_ENV",
+    "SKIP_ENV_VALIDATION"
   ],
   "ui": "tui",
   "tasks": {
     "build": {
-      "dependsOn": ["^build", "^db:generate"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
-      "inputs": ["$TURBO_DEFAULT$", "!README.md", "!**/*.md", "!docs/**"],
+      "dependsOn": [
+        "^build",
+        "^db:generate"
+      ],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!README.md",
+        "!**/*.md",
+        "!docs/**"
+      ],
       "env": [
         "DATABASE_URL",
         "CACHE_DATABASE_URL",
@@ -30,12 +43,16 @@
       ]
     },
     "dev": {
-      "dependsOn": ["^db:generate"],
+      "dependsOn": [
+        "^db:generate"
+      ],
       "cache": false,
       "persistent": true
     },
     "lint": {
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "outputs": []
     },
     "generate": {
@@ -58,7 +75,9 @@
       "cache": false
     },
     "type-check": {
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "outputs": [],
       "cache": true
     }
