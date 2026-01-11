@@ -74,7 +74,7 @@ RUN pnpm db:generate
 # 明确指定只编译 admin 及其依赖
 # 确保 SKIP_ENV_VALIDATION 对 turbo 和子进程生效
 ENV SKIP_ENV_VALIDATION=true
-RUN pnpm turbo build --filter=@rungame/admin
+RUN pnpm turbo build --filter=@rungame/admin --verbosity=2
 
 # ============================================
 # 第四阶段: 生产运行时（Standalone 优化）
