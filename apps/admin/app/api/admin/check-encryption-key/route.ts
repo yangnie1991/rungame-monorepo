@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * 检查 ENCRYPTION_KEY 是否配置
  *
