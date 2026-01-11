@@ -381,7 +381,8 @@ export function AiGenerateDialog({
   }
 
   const handleClose = () => {
-    if (phase !== 'generating') {
+    // 允许在非生成状态 OR 生成出错时关闭
+    if (phase !== 'generating' || error) {
       onOpenChange(false)
       setTimeout(resetToConfig, 300)
     }
@@ -818,6 +819,15 @@ export function AiGenerateDialog({
             <Button variant="outline" onClick={handleClose}>
               {phase === 'preview' ? '取消' : '关闭'}
             </Button>
+
+            {/* 错误状态下显示重试按钮 */}
+            {error && (
+              <Button onClick={resetToConfig} variant="secondary">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                重置并重试
+              </Button>
+            )}
+
             {phase === 'config' && (
               <Button onClick={handleGenerate} disabled={loadingConfigs || !!configError}>
                 <Sparkles className="w-4 h-4 mr-2" />

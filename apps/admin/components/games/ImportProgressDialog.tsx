@@ -125,8 +125,8 @@ export function ImportProgressDialog({
 
   // 处理关闭
   const handleClose = () => {
-    if (!allowClose && (isRunning || !isCompleted)) {
-      return // 进行中或未完成时阻止关闭
+    if (!allowClose && isRunning) {
+      return // 只有进行中才阻止关闭，失败或完成都可以关闭
     }
     onOpenChange(false)
   }
@@ -134,7 +134,7 @@ export function ImportProgressDialog({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-5xl gap-0 p-0 bg-white" onPointerDownOutside={(e) => {
-        if (!allowClose && (isRunning || !isCompleted)) e.preventDefault()
+        if (!allowClose && isRunning) e.preventDefault()
       }}>
         <DialogHeader className="px-8 pt-8 pb-4">
           <DialogTitle className="flex items-center gap-2 text-xl">
@@ -260,15 +260,14 @@ export function ImportProgressDialog({
                 <Button onClick={handleClose} className="w-full bg-green-600 hover:bg-green-700">
                   <CheckCheck className="mr-2 h-4 w-4" /> 完成
                 </Button>
-              ) : (
-                <Button
-                  onClick={handleClose}
-                  variant="outline"
-                  disabled={!allowClose && (isRunning || !isCompleted)}
-                  className="w-full"
-                >
-                  {isRunning ? '导入中...' : '关闭'}
-                </Button>
+              ) : <Button
+                onClick={handleClose}
+                variant="outline"
+                disabled={!allowClose && isRunning}
+                className="w-full"
+              >
+                {isRunning ? '导入中...' : '关闭'}
+              </Button>
               )}
             </div>
           </div>
@@ -301,7 +300,7 @@ export function ImportProgressDialog({
           </div>
         </div>
       </DialogContent>
-    </Dialog>
+    </Dialog >
   )
 }
 
