@@ -26,7 +26,13 @@ export const authConfig: NextAuthConfig = {
         // 自定义重定向逻辑
         async redirect({ url, baseUrl }) {
             if (url.startsWith("/")) return url
-            else if (new URL(url).origin === baseUrl) return url
+            else {
+                try {
+                    if (new URL(url).origin === baseUrl) return url
+                } catch {
+                    // 忽略无效 URL
+                }
+            }
             return baseUrl
         },
         async jwt({ token, user }) {
