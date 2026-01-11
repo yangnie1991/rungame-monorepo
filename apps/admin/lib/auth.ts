@@ -18,6 +18,11 @@ if (process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_SECRET) {
   )
 }
 
+console.log('[DEBUG-AUTH] Initializing NextAuth...')
+console.log('[DEBUG-AUTH] NEXTAUTH_URL:', process.env.NEXTAUTH_URL)
+console.log('[DEBUG-AUTH] AUTH_URL:', process.env.AUTH_URL)
+console.log('[DEBUG-AUTH] NODE_ENV:', process.env.NODE_ENV)
+
 const nextAuth = NextAuth({
   ...authConfig,
   providers: [
