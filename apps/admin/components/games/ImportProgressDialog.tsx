@@ -268,7 +268,7 @@ export function ImportProgressDialog({
               >
                 {isRunning ? '导入中...' : '关闭'}
               </Button>
-              )}
+              }
             </div>
           </div>
 
