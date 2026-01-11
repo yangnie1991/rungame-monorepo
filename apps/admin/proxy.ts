@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { auth } from "@/lib/auth"
+import NextAuth from "next-auth"
+import { authConfig } from "@/lib/auth.config"
 import { initEnv } from "@/lib/env"
 
 // 在应用启动时验证环境变量（仅运行时，不在构建时）
 initEnv()
+
+// 创建 Edge 兼容的 auth 函数
+const { auth } = NextAuth(authConfig)
 
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -31,7 +35,8 @@ export default async function proxy(request: NextRequest) {
     }
 
     // 检查角色权限
-    if (session.user.role !== "ADMIN" && session.user.role !== "SUPER_ADMIN") {
+    const userRole = (session.user as any)?.role
+    if (userRole !== "ADMIN" && userRole !== "SUPER_ADMIN") {
       return NextResponse.json(
         { error: "Forbidden: Insufficient permissions" },
         { status: 403 }
@@ -41,6 +46,7 @@ export default async function proxy(request: NextRequest) {
 
   return NextResponse.next()
 }
+
 
 export const config = {
   matcher: [

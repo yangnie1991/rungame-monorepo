@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import { prismaAdmin } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
+import { authConfig } from "./auth.config"
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -18,63 +19,7 @@ if (process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_SECRET) {
 }
 
 const nextAuth = NextAuth({
-  // 🔐 信任主机（生产环境/反向代理必需）
-  // 注意：启用此选项会降低 CSRF 保护，但对于反向代理是必需的
-  trustHost: true,
-
-  // 🔑 Session 配置
-  session: {
-    strategy: "jwt",
-    maxAge: 7 * 24 * 60 * 60, // 7 天
-    updateAge: 24 * 60 * 60,  // 每 24 小时更新一次 session
-  },
-
-  // 📄 自定义页面
-  pages: {
-    signIn: "/login",
-    error: "/login",
-  },
-
-  // 🔧 调试模式：仅在开发环境启用
-  debug: process.env.NODE_ENV === 'development',
-
-  // 🍪 Cookie 安全配置（增强 CSRF 保护）
-  cookies: {
-    sessionToken: {
-      name: process.env.NODE_ENV === 'production'
-        ? '__Secure-next-auth.session-token'
-        : 'next-auth.session-token',
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',  // 防止 CSRF 攻击
-        path: '/',
-        secure: process.env.NODE_ENV === 'production', // 生产环境强制 HTTPS
-      },
-    },
-    callbackUrl: {
-      name: process.env.NODE_ENV === 'production'
-        ? '__Secure-next-auth.callback-url'
-        : 'next-auth.callback-url',
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-      },
-    },
-    csrfToken: {
-      name: process.env.NODE_ENV === 'production'
-        ? '__Host-next-auth.csrf-token'
-        : 'next-auth.csrf-token',
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',  // 关键：防止跨站请求携带 CSRF token
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-      },
-    },
-  },
-
+  ...authConfig,
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -107,6 +52,7 @@ const nextAuth = NextAuth({
             return null
           }
 
+          // 记录登录时间
           await prismaAdmin.admin.update({
             where: { id: admin.id },
             data: { lastLoginAt: new Date() },
@@ -125,31 +71,7 @@ const nextAuth = NextAuth({
       },
     }),
   ],
-  callbacks: {
-    // 自定义重定向逻辑（支持多域名访问）
-    async redirect({ url, baseUrl }) {
-      // 允许相对路径重定向
-      if (url.startsWith("/")) return url
-      // 允许同域重定向
-      else if (new URL(url).origin === baseUrl) return url
-      // 默认重定向到 baseUrl
-      return baseUrl
-    },
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id
-        token.role = (user as any).role
-      }
-      return token
-    },
-    async session({ session, token }) {
-      if (token && session.user) {
-        session.user.id = token.id as string
-        (session.user as any).role = token.role as string
-      }
-      return session
-    },
-  },
 })
 
 export const { handlers, signIn, signOut, auth } = nextAuth as any
+

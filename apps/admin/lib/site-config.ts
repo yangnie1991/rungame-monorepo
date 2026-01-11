@@ -1,6 +1,6 @@
 import { prisma } from "@rungame/database"
 import { unstable_cache, revalidateTag } from 'next/cache'
-import { Prisma, type SiteConfig, type SiteConfigTranslation } from '@prisma/client'
+import { Prisma, type SiteConfig, type SiteConfigTranslation } from '@rungame/database'
 import { REVALIDATE_TIME } from "@rungame/database"
 
 /**

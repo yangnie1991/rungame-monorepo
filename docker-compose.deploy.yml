@@ -1,25 +1,6 @@
 version: "3"
 
 services:
-  website:
-    image: rungame-website:latest
-    build:
-      context: .
-      dockerfile: Dockerfile.website
-      args:
-        NODE_ENV: production
-        DATABASE_URL: ${DATABASE_URL}
-    restart: always
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=${DATABASE_URL}
-      - NEXT_TELEMETRY_DISABLED=1
-      # website 特定环境变量
-    networks:
-      - rungame-network
-
   admin:
     image: rungame-admin:latest
     build:

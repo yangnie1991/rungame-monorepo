@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react'
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -13,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { CheckCircle2, XCircle, Loader2, AlertTriangle, CloudDownload, RefreshCw, Download } from 'lucide-react'
+import { CheckCircle2, XCircle, Loader2, AlertTriangle, CloudDownload, RefreshCw, Download, Database, ScrollText, ArrowRight } from 'lucide-react'
 
 type SyncMode = 'full' | 'incremental'
 
@@ -51,6 +50,7 @@ export function SyncProgressDialog({
   const [currentStep, setCurrentStep] = useState('')
   const [startTime, setStartTime] = useState(0)
   const [elapsedTime, setElapsedTime] = useState(0)
+  const [logs, setLogs] = useState<string[]>([]) // 实时日志
 
   // 同步模式
   const [syncMode, setSyncMode] = useState<SyncMode>('incremental')
@@ -84,6 +84,10 @@ export function SyncProgressDialog({
   // EventSource ref
   const eventSourceRef = useRef<EventSource | null>(null)
 
+  // 自动滚动日志 Ref
+  const logsEndRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
   // 是否自动继续下一批
   const [autoContinue, setAutoContinue] = useState(true)
 
@@ -93,6 +97,7 @@ export function SyncProgressDialog({
       setStatus('ready')
       setProgress(0)
       setCurrentStep('')
+      setLogs([])
       setStartTime(0)
       setElapsedTime(0)
       setResult({})
@@ -130,6 +135,13 @@ export function SyncProgressDialog({
       if (interval) clearInterval(interval)
     }
   }, [status, startTime])
+
+  // 自动滚动日志
+  useEffect(() => {
+    if (logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [logs])
 
   // 🎯 执行单批同步
   const executeBatch = async (
@@ -209,10 +221,14 @@ export function SyncProgressDialog({
               syncDuration: (result.syncDuration || 0) + syncDuration,
             })
 
+            // 添加批次完成日志
+            setLogs(prev => [...prev, `✅ 第 ${batchInfo.currentBatch + 1} 批次完成: 同步 ${totalSynced} 个, 新增 ${newGames} 个, 更新 ${updatedGames} 个`])
+
             // 🎯 检查是否还有更多页需要同步
             if (hasMorePages && nextStartPage && autoContinue) {
               // 自动开始下一批，传递累计值和全局同步开始时间
-              console.log(`[分批同步] 开始下一批: 第 ${nextStartPage} 页，累计: ${finalAccumulatedSynced} 个`)
+              setLogs(prev => [...prev, `🚀 准备下一批: 从第 ${nextStartPage} 页开始...`])
+
               setTimeout(() => executeBatch(
                 nextStartPage,
                 {
@@ -226,17 +242,24 @@ export function SyncProgressDialog({
               // 全部完成
               setStatus('success')
               setProgress(100)
+              setLogs(prev => [...prev, `🎉 全部同步完成! 总计 ${finalAccumulatedSynced} 个游戏`])
               onComplete?.()
             }
           } else if (data.type === 'error') {
             // 同步失败
             setStatus('failed')
             setResult({ error: data.error })
+            setLogs(prev => [...prev, `❌ 错误: ${data.error}`])
             eventSource.close()
             eventSourceRef.current = null
           } else {
             // 进度更新（后端返回的已经是累计值）
             const progressUpdate = data as SyncProgressUpdate
+
+            // 仅当步骤描述变化时添加日志，避免重复
+            if (progressUpdate.currentStep && progressUpdate.currentStep !== currentStep) {
+              setLogs(prev => [...prev, `⏱️ ${progressUpdate.currentStep}`])
+            }
 
             setCurrentStep(progressUpdate.currentStep)
             setResult(prev => ({
@@ -258,6 +281,7 @@ export function SyncProgressDialog({
           }
         } catch (error) {
           console.error('解析 SSE 消息失败:', error)
+          setLogs(prev => [...prev, `⚠️ 解析日志失败`])
         }
       }
 
@@ -265,6 +289,7 @@ export function SyncProgressDialog({
         console.error('SSE 连接错误:', error)
         setStatus('failed')
         setResult({ error: '连接中断，同步失败' })
+        setLogs(prev => [...prev, `❌ SSE 连接中断`])
         eventSource.close()
         eventSourceRef.current = null
       }
@@ -274,6 +299,7 @@ export function SyncProgressDialog({
       setResult({
         error: error instanceof Error ? error.message : '同步失败',
       })
+      setLogs(prev => [...prev, `❌ 启动同步失败: ${error instanceof Error ? error.message : '未知错误'}`])
     }
   }
 
@@ -283,6 +309,7 @@ export function SyncProgressDialog({
     setProgress(0)
     setStartTime(Date.now())
     setCurrentStep('正在准备分批同步...')
+    setLogs([`🚀 开始同步任务 (模式: ${syncMode === 'full' ? '全量' : '增量'})`])
     setResult({})
     setBatchInfo({
       currentBatch: 0,
@@ -307,6 +334,7 @@ export function SyncProgressDialog({
     setAutoContinue(false) // 停止自动继续
     setStatus('failed')
     setResult({ error: '用户取消同步' })
+    setLogs(prev => [...prev, `⚠️ 用户取消了同步任务`])
   }
 
   // 关闭弹窗
@@ -328,213 +356,149 @@ export function SyncProgressDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl" onPointerDownOutside={(e) => e.preventDefault()}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {status === 'syncing' && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
-            {status === 'success' && <CheckCircle2 className="h-5 w-5 text-green-600" />}
-            {status === 'failed' && <XCircle className="h-5 w-5 text-destructive" />}
-            {status === 'ready' && <CloudDownload className="h-5 w-5 text-muted-foreground" />}
-            <span>
-              {status === 'syncing' && '正在同步 GamePix 数据...'}
-              {status === 'success' && '同步完成'}
-              {status === 'failed' && '同步失败'}
-              {status === 'ready' && '同步 GamePix 数据到缓存'}
-            </span>
+      <DialogContent className="max-w-5xl gap-0 p-0 bg-white" onPointerDownOutside={(e) => e.preventDefault()}>
+        <DialogHeader className="px-8 pt-8 pb-4">
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            <CloudDownload className="h-6 w-6 text-blue-600" />
+            GamePix 数据同步
           </DialogTitle>
-          <DialogDescription>
-            {status === 'ready' && '选择同步模式并开始同步 GamePix 游戏数据到本地缓存数据库'}
-            {status === 'syncing' && '正在从 GamePix API 获取并保存游戏数据，请稍候...'}
-            {status === 'success' && '所有数据已成功同步到缓存数据库'}
-            {status === 'failed' && '同步过程中出现错误，请检查配置后重试'}
-          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* 同步模式选择 - 仅在 ready 状态显示 */}
-          {status === 'ready' && (
-            <div className="space-y-3">
-              <Label className="text-base font-semibold">同步模式</Label>
-              <RadioGroup value={syncMode} onValueChange={(value) => setSyncMode(value as SyncMode)}>
-                <div className="flex items-start space-x-3 space-y-0 rounded-md border p-4 hover:bg-muted/50 transition-colors">
-                  <RadioGroupItem value="incremental" id="incremental" className="mt-1" />
-                  <Label htmlFor="incremental" className="flex-1 cursor-pointer">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Download className="h-4 w-4 text-primary" />
-                      <span className="font-semibold">增量同步（推荐）</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      只同步新增的游戏，速度快，适合日常更新。按发布日期排序，自动检测新游戏数量。
-                    </p>
-                  </Label>
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-12 h-[600px]">
+          {/* 左侧：状态与控制 */}
+          <div className="md:col-span-4 border-r border-slate-100 p-8 flex flex-col gap-6 bg-slate-50/50">
 
-                <div className="flex items-start space-x-3 space-y-0 rounded-md border p-4 hover:bg-muted/50 transition-colors">
-                  <RadioGroupItem value="full" id="full" className="mt-1" />
-                  <Label htmlFor="full" className="flex-1 cursor-pointer">
-                    <div className="flex items-center gap-2 mb-1">
-                      <RefreshCw className="h-4 w-4 text-orange-500" />
-                      <span className="font-semibold">全量同步</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      同步所有游戏并更新已存在的游戏信息。耗时较长，适合首次同步或数据修复。
-                    </p>
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-          )}
-
-          {/* 进度显示 */}
-          {status !== 'ready' && (
-            <div className="space-y-4">
-              {/* 进度条 */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">同步进度</span>
-                  <span className="font-medium">{progress}%</span>
-                </div>
-                <Progress value={progress} className="h-2" />
+            {/* 状态卡片 */}
+            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-slate-800">同步状态</h3>
+                {status === 'syncing' && <span className="text-xs font-medium px-2 py-1 bg-blue-100 text-blue-700 rounded-full animate-pulse">运行中</span>}
+                {status === 'success' && <span className="text-xs font-medium px-2 py-1 bg-green-100 text-green-700 rounded-full">已完成</span>}
+                {status === 'failed' && <span className="text-xs font-medium px-2 py-1 bg-red-100 text-red-700 rounded-full">失败</span>}
+                {status === 'ready' && <span className="text-xs font-medium px-2 py-1 bg-slate-100 text-slate-600 rounded-full">就绪</span>}
               </div>
 
-              {/* 当前步骤 */}
-              <div className="rounded-lg bg-muted/50 p-4">
-                <div className="flex items-start gap-3">
-                  {status === 'syncing' && <Loader2 className="h-5 w-5 animate-spin text-primary flex-shrink-0 mt-0.5" />}
-                  {status === 'success' && <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />}
-                  {status === 'failed' && <XCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium break-words">{currentStep || '准备中...'}</p>
-                  </div>
+              {/* 核心指标 */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-slate-500">已处理总数</span>
+                  <span className="text-2xl font-bold text-slate-800">{result.totalSynced || 0}</span>
                 </div>
-              </div>
 
-              {/* 统计信息 */}
-              {status === 'syncing' && (
-                <div className="bg-muted/30 p-3 rounded-lg text-sm space-y-1">
-                  {batchInfo.totalPagesInApi > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">总页数:</span>
-                      <span className="font-medium">{batchInfo.totalPagesInApi} 页</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">当前批次:</span>
-                    <span className="font-medium">
-                      {batchInfo.currentBatch > 0 ? `第 ${batchInfo.currentBatch} 批` : '准备中...'}
-                      {totalPages > 0 && ` (每批 ${totalPages} 页)`}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">每页数量:</span>
-                    <span className="font-medium">96 个</span>
-                  </div>
-                  {estimatedTotal > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">API总数:</span>
-                      <span className="font-medium text-primary">{estimatedTotal} 个游戏</span>
-                    </div>
-                  )}
-                </div>
-              )}
+                <div className="h-px bg-slate-100 my-2" />
 
-              {/* 实时统计 */}
-              <div className={`grid gap-4 ${result.hiddenGames && result.hiddenGames > 0 ? 'grid-cols-4' : 'grid-cols-3'}`}>
-                <div className="text-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950">
-                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                    {result.totalSynced || 0}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">新增游戏</p>
+                    <p className="text-lg font-semibold text-green-600">+{result.newGames || 0}</p>
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">已处理</div>
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">更新游戏</p>
+                    <p className="text-lg font-semibold text-orange-600">{result.updatedGames || 0}</p>
+                  </div>
                 </div>
-                <div className="text-center p-3 rounded-lg bg-green-50 dark:bg-green-950">
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {result.newGames || 0}
+
+                <div className="space-y-1 pt-2">
+                  <div className="flex justify-between text-xs text-slate-500">
+                    <span>进度</span>
+                    <span>{progress}%</span>
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">新增</div>
+                  <Progress value={progress} className="h-2 bg-slate-100" />
                 </div>
-                <div className="text-center p-3 rounded-lg bg-orange-50 dark:bg-orange-950">
-                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                    {result.updatedGames || 0}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">更新</div>
-                </div>
-                {result.hiddenGames && result.hiddenGames > 0 && (
-                  <div className="text-center p-3 rounded-lg bg-gray-50 dark:bg-gray-950">
-                    <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">
-                      {result.hiddenGames}
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">已下架</div>
-                  </div>
+
+                {elapsedTime > 0 && (
+                  <p className="text-xs text-center text-slate-400 pt-2">
+                    已用时: {formatTime(elapsedTime)}
+                  </p>
                 )}
               </div>
-
-              {/* 耗时 */}
-              {status === 'syncing' && elapsedTime > 0 && (
-                <div className="text-center text-sm text-muted-foreground">
-                  已用时: {formatTime(elapsedTime)}
-                </div>
-              )}
-
-              {/* 成功消息 */}
-              {status === 'success' && (
-                <Alert className="border-green-200 bg-green-50 dark:bg-green-950">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  <AlertDescription className="text-green-800 dark:text-green-200">
-                    同步成功! 共处理 {result.totalSynced} 个游戏，
-                    新增 {result.newGames} 个，更新 {result.updatedGames} 个
-                    {result.hiddenGames && result.hiddenGames > 0 && `，标注 ${result.hiddenGames} 个已下架`}。
-                    {result.syncDuration && ` 耗时 ${formatTime(result.syncDuration)}`}
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {/* 失败消息 */}
-              {status === 'failed' && result.error && (
-                <Alert variant="destructive">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription>{result.error}</AlertDescription>
-                </Alert>
-              )}
             </div>
-          )}
 
-          {/* 操作按钮 */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
+            {/* 错误提示 */}
+            {status === 'failed' && result.error && (
+              <Alert variant="destructive" className="bg-red-50 border-red-200">
+                <AlertTriangle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800 text-xs ml-2">{result.error}</AlertDescription>
+              </Alert>
+            )}
+
+            {/* 模式选择 (仅在Ready状态显示) */}
             {status === 'ready' && (
-              <>
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
-                  取消
-                </Button>
-                <Button onClick={handleStartSync}>
-                  <CloudDownload className="mr-2 h-4 w-4" />
-                  开始同步
-                </Button>
-              </>
+              <div className="space-y-3 mt-auto">
+                <Label className="text-sm font-medium text-slate-700">选择同步模式</Label>
+                <RadioGroup value={syncMode} onValueChange={(value) => setSyncMode(value as SyncMode)} className="flex flex-col gap-3">
+                  <div className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-all ${syncMode === 'incremental' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300'}`}>
+                    <RadioGroupItem value="incremental" id="incremental" />
+                    <Label htmlFor="incremental" className="flex-1 cursor-pointer">
+                      <div className="font-semibold text-slate-800 flex items-center gap-2">
+                        <Download className="w-4 h-4 text-blue-600" /> 增量同步
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1">仅同步新发布的游戏，速度快 (推荐)</p>
+                    </Label>
+                  </div>
+                  <div className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-all ${syncMode === 'full' ? 'border-orange-500 bg-orange-50' : 'border-slate-200 hover:border-slate-300'}`}>
+                    <RadioGroupItem value="full" id="full" />
+                    <Label htmlFor="full" className="flex-1 cursor-pointer">
+                      <div className="font-semibold text-slate-800 flex items-center gap-2">
+                        <Database className="w-4 h-4 text-orange-600" /> 全量同步
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1">同步所有历史数据，耗时较长</p>
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
             )}
 
-            {status === 'syncing' && (
-              <Button variant="destructive" onClick={handleCancelSync}>
-                <XCircle className="mr-2 h-4 w-4" />
-                取消同步
-              </Button>
-            )}
-
-            {(status === 'success' || status === 'failed') && (
-              <>
-                {status === 'failed' && (
-                  <Button variant="outline" onClick={handleStartSync}>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    重试
+            {/* 操作按钮区 */}
+            <div className="mt-auto pt-4 flex gap-3">
+              {status === 'ready' ? (
+                <>
+                  <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>取消</Button>
+                  <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={handleStartSync}>
+                    开始同步 <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
-                )}
-                <Button onClick={() => onOpenChange(false)}>
-                  关闭
+                </>
+              ) : status === 'syncing' ? (
+                <Button variant="destructive" className="w-full" onClick={handleCancelSync}>
+                  停止同步
                 </Button>
-              </>
-            )}
+              ) : (
+                <Button className="w-full bg-slate-900 text-white hover:bg-slate-800" onClick={() => onOpenChange(false)}>
+                  关闭窗口
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* 右侧：实时日志时间轴 */}
+          <div className="md:col-span-8 p-8 bg-white flex flex-col h-full overflow-hidden">
+            <div className="flex items-center gap-2 mb-4 pb-4 border-b border-slate-100">
+              <ScrollText className="w-5 h-5 text-slate-400" />
+              <h3 className="font-semibold text-slate-700">实时日志</h3>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-4 pr-2" ref={scrollContainerRef}>
+              {logs.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-slate-300">
+                  <Database className="w-16 h-16 mb-4 opacity-20" />
+                  <p>等待任务开始...</p>
+                </div>
+              ) : (
+                logs.map((log, index) => (
+                  <div key={index} className="flex gap-3 text-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="min-w-[4px] w-[4px] rounded-full bg-slate-200 mt-1.5 h-auto self-stretch shrink-0" />
+                    <div className="py-1">
+                      <p className="text-slate-600 leading-relaxed font-mono text-xs">{log}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+              <div ref={logsEndRef} />
+            </div>
           </div>
         </div>
       </DialogContent>
     </Dialog>
   )
 }
+

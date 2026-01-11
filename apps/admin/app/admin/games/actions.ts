@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { prisma } from "@rungame/database"
-import type { Prisma } from '@prisma/client'
+import type { Prisma } from '@rungame/database'
 import {
   CONTENT_SECTION_KEYS,
   type ContentSection,
@@ -286,7 +286,7 @@ export async function getGame(id: string): Promise<{ success: boolean; data?: an
       success: true,
       data: {
         ...game,
-        tagIds: game.tags.map((gt) => gt.tagId),
+        tagIds: game.tags.map((gt: any) => gt.tagId),
         translations: [], // 为了满足 GameForm 类型要求，返回空数组（实际数据按需加载）
       },
     }
@@ -348,7 +348,7 @@ export async function updateGame(id: string, data: GameFormData): Promise<{ succ
     const mainCategoryId = await getMainCategoryId(validated.categoryId)
 
     // Update game in a transaction
-    const game = await prisma.$transaction(async (tx) => {
+    const game = await prisma.$transaction(async (tx: any) => {
       // Delete existing translations
       await tx.gameTranslation.deleteMany({
         where: { gameId: id },

@@ -1,6 +1,8 @@
-import type { AiConfig as PrismaAiConfig } from '@prisma/client'
+import type { AiConfig as PrismaAiConfig } from '@rungame/database-admin'
 
-export type AiConfig = PrismaAiConfig
+export type AiConfig = Omit<PrismaAiConfig, 'modelConfig'> & {
+    modelConfig: AiModelConfig
+}
 
 export interface AiModelParameters {
     [key: string]: any

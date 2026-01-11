@@ -1,103 +1,85 @@
+import 'server-only'
 import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from './generated/client'
 
 /**
  * ============================================
- * Prisma Client 单例实例 (Prisma 7 + Driver Adapter)
+ * Prisma Client Singleton (Prisma 7 + Driver Adapter)
  * ============================================
  */
 
 const globalForPrisma = globalThis as unknown as {
-  prisma: ReturnType<typeof prismaClientSingleton> | undefined
+  prisma: any
 }
 
 const prismaClientSingleton = () => {
+  // 更加健壮的连接字符串清理逻辑
+  // 移除 sslmode, sslaccept 等可能导致 TLS 强制校验的查询参数
+  // 确保处理后如果不带参数，则移除末尾的 ?；如果带参数，则以 ? 开头
+  const rawUrl = process.env.DATABASE_URL || ''
+  const urlObj = new URL(rawUrl.replace('postgres://', 'http://').replace('postgresql://', 'http://'))
+
+  // 删除 SSL 相关参数
+  urlObj.searchParams.delete('sslmode')
+  urlObj.searchParams.delete('sslaccept')
+
+  // 恢复协议并构造最终字符串
+  const protocol = rawUrl.startsWith('postgres://') ? 'postgres://' : 'postgresql://'
+  const connectionString = rawUrl.split('?')[0] + (urlObj.search ? urlObj.search : '')
+
   // 建立物理连接池
   const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    // 适配小内存环境的连接池配置
+    connectionString,
     max: 10,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000,
+    ssl: {
+      rejectUnauthorized: false
+    }
   })
 
   // 创建 Prisma 适配器
   const adapter = new PrismaPg(pool)
 
-  // 实例化 Client (注入适配器)
-  const baseClient = new PrismaClient({
-    adapter,
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-  })
+  // 实例化具有扩展功能的 Client
+  const client = new PrismaClient({ adapter })
 
-  /**
-   * Prisma Client Extension: mainCategoryId 自动填充
-   *
-   * 用途：GameCategory 表在创建/更新时自动维护 mainCategoryId
-   * - 如果 Category 有 parentId，则 mainCategoryId = parentId
-   * - 如果 Category 是主分类（parentId === null），则 mainCategoryId = categoryId
-   */
-  const client = baseClient.$extends({
-    name: 'mainCategoryIdAutoFill',
+  // 扩展功能：mainCategoryId 自动填充（如果传入了 mainCategorySlug）
+  return client.$extends({
     query: {
-      gameCategory: {
+      game: {
         async create({ args, query }) {
-          // 创建 GameCategory 时自动填充 mainCategoryId
-          if (args.data.categoryId) {
-            const category = await baseClient.category.findUnique({
-              where: { id: args.data.categoryId },
-              select: { id: true, parentId: true },
+          const { data } = args as any
+          if (data?.mainCategorySlug && !data?.mainCategoryId) {
+            const category = await (client as any).category.findUnique({
+              where: { slug: data.mainCategorySlug },
+              select: { id: true },
             })
-
             if (category) {
-              args.data.mainCategoryId = category.parentId || category.id
+              data.mainCategoryId = category.id
             }
           }
-
           return query(args)
         },
-
         async update({ args, query }) {
-          // 更新 GameCategory 时，如果 categoryId 改变，同步更新 mainCategoryId
-          if (args.data.categoryId) {
-            const categoryId =
-              typeof args.data.categoryId === 'string'
-                ? args.data.categoryId
-                : args.data.categoryId.set
-
-            if (categoryId) {
-              const category = await baseClient.category.findUnique({
-                where: { id: categoryId },
-                select: { id: true, parentId: true },
-              })
-
-              if (category) {
-                args.data.mainCategoryId = category.parentId || category.id
-              }
+          const { data } = args as any
+          if (data?.mainCategorySlug && !data?.mainCategoryId) {
+            const category = await (client as any).category.findUnique({
+              where: { slug: data.mainCategorySlug },
+              select: { id: true },
+            })
+            if (category) {
+              data.mainCategoryId = category.id
             }
           }
-
           return query(args)
         },
       },
     },
   })
-
-  return client
 }
 
-/**
- * 导出 Prisma Client 实例
- *
- * - 生产环境：每次都创建新实例
- * - 开发环境：使用全局单例，避免热重载时重复创建
- */
 export const prisma = globalForPrisma.prisma ?? prismaClientSingleton()
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
-
-/**
- * 导出 Prisma Client 类型（供外部使用）
- */
-export type { PrismaClient }

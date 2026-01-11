@@ -1,0 +1,26 @@
+{
+    "name": "@rungame/database-admin",
+    "version": "0.1.0",
+    "type": "module",
+    "private": true,
+    "description": "Admin context database layer (管理端数据库层)",
+    "main": "./src/main.ts",
+    "exports": {
+        ".": "./src/main.ts"
+    },
+    "scripts": {
+        "generate": "prisma generate --schema=./prisma/schema.prisma",
+        "db:generate": "pnpm run generate"
+    },
+    "dependencies": {
+        "@prisma/adapter-pg": "7.2.0",
+        "@prisma/client": "7.2.0",
+        "@prisma/client-runtime-utils": "7.2.0",
+        "pg": "^8.12.0",
+        "server-only": "^0.0.1"
+    },
+    "devDependencies": {
+        "prisma": "7.2.0",
+        "typescript": "^5"
+    }
+}

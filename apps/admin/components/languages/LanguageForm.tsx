@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
 import { createLanguage, updateLanguage, type LanguageFormData } from "@/app/admin/languages/actions"
-import type { Language } from "@prisma/client"
+import type { Language } from "@rungame/database"
 
 const languageSchema = z.object({
   code: z.string().min(2, "语言代码不能为空").max(10, "语言代码过长"),

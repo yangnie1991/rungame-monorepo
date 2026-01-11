@@ -28,7 +28,7 @@ log_error() {
 
 # 配置
 PROJECT_NAME="rungame-admin"
-DOCKER_COMPOSE_FILE="docker-compose.admin.yml"
+DOCKER_COMPOSE_FILE="docker-compose.deploy.yml"
 BACKUP_DIR="/opt/1panel/docker/compose/${PROJECT_NAME}/backups"
 MAX_BACKUPS=5
 

@@ -15,7 +15,7 @@ async function getLanguages() {
     orderBy: { sortOrder: "asc" },
   })
 
-  return languages.map(lang => ({
+  return languages.map((lang: any) => ({
     id: lang.id,
     code: lang.code,
     name: lang.name,
@@ -56,7 +56,7 @@ async function LanguagesTable() {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {languages.map((language) => (
+        {languages.map((language: any) => (
           <TableRow key={language.id}>
             <TableCell className="font-mono">{language.sortOrder}</TableCell>
             <TableCell className="font-mono text-sm">{language.code}</TableCell>

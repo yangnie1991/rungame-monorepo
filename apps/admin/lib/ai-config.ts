@@ -1,3 +1,4 @@
+import 'server-only'
 import { unstable_cache } from 'next/cache'
 import { prismaAdmin } from "@/lib/prisma"
 import { decrypt } from './crypto'

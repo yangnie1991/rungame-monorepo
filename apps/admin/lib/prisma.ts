@@ -1,41 +1,11 @@
-import { Pool } from 'pg'
-import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient } from './generated/prisma-client'
+import 'server-only'
 
 /**
- * ============================================
- * Admin 管理数据库 Prisma Client (Prisma 7 + Driver Adapter)
- * ============================================
+ * Prisma Client Proxy (Monorepo 桥接)
+ * 
+ * 将共享包 @rungame/database 和 @rungame/database-admin 中的 Client
+ * 代理到 apps/admin/lib/prisma.ts，以保持现有业务代码的 import 路径不变。
  */
 
-const globalForPrismaAdmin = globalThis as unknown as {
-  prismaAdmin: PrismaClient | undefined
-}
-
-const prismaAdminClientSingleton = () => {
-  // 建立物理连接池
-  const pool = new Pool({
-    connectionString: process.env.CACHE_DATABASE_URL,
-    // 配置库并发较低，连接池可以设小一点
-    max: 5,
-    idleTimeoutMillis: 30000,
-  })
-
-  // 创建 Prisma 适配器
-  const adapter = new PrismaPg(pool)
-
-  return new PrismaClient({
-    adapter,
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-  })
-}
-
-/**
- * 导出管理数据库 Prisma Client 实例
- *
- * - 生产环境：每次都创建新实例
- * - 开发环境：使用全局单例，避免热重载时重复创建
- */
-export const prismaAdmin = globalForPrismaAdmin.prismaAdmin ?? prismaAdminClientSingleton()
-
-if (process.env.NODE_ENV !== 'production') globalForPrismaAdmin.prismaAdmin = prismaAdmin
+export { prisma } from '@rungame/database'
+export { prismaAdmin } from '@rungame/database-admin'

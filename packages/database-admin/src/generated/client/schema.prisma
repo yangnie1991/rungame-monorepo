@@ -1,0 +1,450 @@
+// Prisma Schema for Admin & Cache Database (Neon)
+// 管理配置和缓存数据专用 schema
+// 包含：管理表（6个）+ 缓存表（3个）= 共 9 个表
+
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../src/generated/client"
+  binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x", "rhel-openssl-1.1.x", "rhel-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  // url      = env("CACHE_DATABASE_URL") // Prisma 7 moved this to prisma.config.ts
+}
+
+// ==================== 枚举定义 ====================
+
+// URL提交状态枚举
+enum SubmissionStatus {
+  PENDING // 待提交
+  SUBMITTED // 已提交（等待响应）
+  SUCCESS // 成功
+  FAILED // 失败
+  RETRYING // 重试中
+}
+
+// 批量提交任务状态枚举
+enum BatchStatus {
+  PENDING // 待处理
+  PROCESSING // 处理中
+  COMPLETED // 已完成
+  FAILED // 失败
+  CANCELLED // 已取消
+}
+
+// ==================== 管理配置表（6个）====================
+
+// 管理员用户
+model Admin {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  password    String
+  name        String?
+  role        String    @default("ADMIN") // ADMIN, SUPER_ADMIN
+  isActive    Boolean   @default(true) @map("is_active")
+  lastLoginAt DateTime? @map("last_login_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([email])
+  @@map("admins")
+}
+
+// 导入平台配置表
+model ImportPlatform {
+  id   String  @id @default(cuid())
+  name String // 平台名称（如：GamePix, CrazyGames）
+  slug String  @unique // 平台标识（如：gamepix, crazygames）
+  type String // 平台类型（gamepix, crazygames, custom）
+  icon String? // 平台图标
+
+  // API 配置
+  apiConfig Json @map("api_config") // 平台 API 配置（如 siteId, apiKey 等）
+
+  // 默认导入配置
+  defaultConfig Json? @default("{}") @map("default_config") // 默认导入选项
+
+  // 状态
+  isEnabled Boolean @default(true) @map("is_enabled")
+  sortOrder Int     @default(0) @map("sort_order")
+
+  // 统计
+  totalImported Int       @default(0) @map("total_imported") // 总导入游戏数
+  lastImportAt  DateTime? @map("last_import_at") // 最后导入时间
+
+  // 时间戳
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([slug])
+  @@index([isEnabled])
+  @@index([sortOrder])
+  @@map("import_platforms")
+}
+
+// AI 配置表（精简版）
+model AiConfig {
+  id String @id @default(cuid())
+
+  // 基本信息
+  name     String // 配置名称（如：OpenRouter - Gemini 2.0 Flash）
+  provider String // 提供商标识：openrouter, openai, anthropic, custom
+
+  // API 配置
+  apiKey  String @map("api_key") // API 密钥
+  baseUrl String @map("base_url") // API 端点地址
+
+  // 模型配置（JSON 格式存储所有模型和参数）
+  modelConfig Json @map("model_config")
+  // 结构示例：
+  // {
+  //   "models": [
+  //     {
+  //       "id": "google/gemini-2.0-flash-exp:free",
+  //       "name": "Gemini 2.0 Flash",
+  //       "isDefault": true,
+  //       "isEnabled": true,
+  //       "parameters": {
+  //         "temperature": 0.7,
+  //         "max_tokens": 2000,
+  //         "top_p": 1.0,
+  //         "stream": true
+  //       },
+  //       "headers": {
+  //         "HTTP-Referer": "https://rungame.online"
+  //       }
+  //     }
+  //   ]
+  // }
+
+  // 状态
+  isActive  Boolean @default(false) @map("is_active") // 是否为当前激活配置
+  isEnabled Boolean @default(true) @map("is_enabled") // 是否启用
+
+  // 时间戳
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([provider])
+  @@index([isActive])
+  @@index([isEnabled])
+  @@map("ai_configs")
+}
+
+// 外部 API 配置表（Jina, Google Search 等）
+model ExternalApiConfig {
+  id String @id @default(cuid())
+
+  // 基本信息
+  name        String  @unique // 配置名称：google_search, jina_reader, custom_api_name
+  displayName String  @map("display_name") // 显示名称：Google Search API, Jina Reader API
+  description String? @db.Text // 描述信息
+  provider    String // 提供商：google, jina, custom
+
+  // API 配置（JSON 格式存储所有配置项）
+  // 使用 JSON 格式以支持不同 API 的不同配置需求
+  apiConfig Json @map("api_config")
+  // 结构示例（Google Search）:
+  // {
+  //   "apiKey": "[加密的 API Key]",
+  //   "engineId": "xxx",
+  //   "endpoint": "https://www.googleapis.com/customsearch/v1",
+  //   "quota": {
+  //     "daily": 100,
+  //     "current": 23
+  //   }
+  // }
+  //
+  // 结构示例（Jina Reader）:
+  // {
+  //   "apiKey": "[加密的 API Key]",  // 可选
+  //   "endpoint": "https://r.jina.ai",
+  //   "timeout": 20,
+  //   "options": {
+  //     "withGeneratedAlt": true,
+  //     "withImagesSummary": true
+  //   }
+  // }
+
+  // 安全性
+  isEncrypted Boolean @default(true) @map("is_encrypted") // API Key 是否已加密
+
+  // 状态（保留字段，但不用于逻辑判断）
+  isEnabled Boolean @default(true) @map("is_enabled")
+  isActive  Boolean @default(true) @map("is_active")
+
+  // 使用统计
+  totalCalls   Int       @default(0) @map("total_calls") // 总调用次数
+  successCalls Int       @default(0) @map("success_calls") // 成功次数
+  failedCalls  Int       @default(0) @map("failed_calls") // 失败次数
+  lastUsedAt   DateTime? @map("last_used_at") // 最后使用时间
+
+  // 配额管理（可选）
+  quotaConfig Json? @map("quota_config")
+  // 结构示例：
+  // {
+  //   "daily": 100,
+  //   "monthly": 3000,
+  //   "resetDate": "2025-01-01T00:00:00Z"
+  // }
+
+  // 时间戳
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([name])
+  @@index([provider])
+  @@index([isEnabled])
+  @@index([isActive])
+  @@map("external_api_configs")
+}
+
+// 搜索引擎配置表
+model SearchEngineConfig {
+  id String @id @default(cuid())
+
+  // ========== 基本信息 ==========
+  name String // 搜索引擎名称：Bing, Baidu, Yandex, Google
+  slug String  @unique // 标识符：bing-indexnow, baidu, yandex, google
+  type String // 类型：indexnow, baidu, google, custom
+  icon String? // 图标URL或emoji (🔍, 🌐)
+
+  description String? // 描述信息
+
+  // ========== API配置 ==========
+  apiEndpoint String  @map("api_endpoint") // API端点URL
+  apiKey      String? @map("api_key") // API密钥（需加密存储）
+  apiToken    String? @map("api_token") // API令牌（百度使用）
+  siteUrl     String? @map("site_url") // 网站URL（百度需要）
+
+  // ========== 额外配置（JSON）==========
+  extraConfig Json? @default("{}") @map("extra_config")
+
+  // ========== 状态配置 ==========
+  isEnabled  Boolean @default(true) @map("is_enabled") // 是否启用
+  autoSubmit Boolean @default(false) @map("auto_submit") // 是否自动提交（内容发布时）
+  sortOrder  Int     @default(0) @map("sort_order") // 显示排序
+
+  // ========== 统计数据 ==========
+  totalSubmitted Int       @default(0) @map("total_submitted") // 总提交URL数
+  totalSuccess   Int       @default(0) @map("total_success") // 总成功数
+  totalFailed    Int       @default(0) @map("total_failed") // 总失败数
+  lastSubmitAt   DateTime? @map("last_submit_at") // 最后提交时间
+
+  // ========== 时间戳 ==========
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([slug])
+  @@index([type])
+  @@index([isEnabled])
+  @@index([autoSubmit])
+  @@index([sortOrder])
+  @@map("search_engine_configs")
+}
+
+// URL提交记录表
+model UrlSubmission {
+  id String @id @default(cuid())
+
+  // ========== 基本信息 ==========
+  url      String // 完整URL，包含语言前缀：https://rungame.online/zh/play/puzzle-game
+  urlType  String  @map("url_type") // URL类型：game, category, tag, pagetype, sitemap, other
+  entityId String? @map("entity_id") // 关联实体ID（游戏ID、分类ID等），用于批量操作 and 数据清理
+  locale   String? // 语言代码：en, zh, es（仅作标记，用于前端筛选和统计）
+
+  // ========== Google 提交状态 ==========
+  googleSubmitStatus        SubmissionStatus? @map("google_submit_status")
+  googleSubmitStatusMessage String?           @map("google_submit_status_message")
+  googleSubmitHttpStatus    Int?              @map("google_submit_http_status")
+  googleSubmitResponseBody  String?           @map("google_submit_response_body")
+  googleSubmitResponseTime  Int?              @map("google_submit_response_time")
+  googleSubmittedAt         DateTime?         @map("google_submitted_at")
+
+  // ========== Bing 提交状态 ==========
+  bingSubmitStatus        SubmissionStatus? @map("bing_submit_status")
+  bingSubmitStatusMessage String?           @map("bing_submit_status_message")
+  bingSubmitHttpStatus    Int?              @map("bing_submit_http_status")
+  bingSubmitResponseBody  String?           @map("bing_submit_response_body")
+  bingSubmitResponseTime  Int?              @map("bing_submit_response_time")
+  bingSubmittedAt         DateTime?         @map("bing_submitted_at")
+
+  // ========== Google 收录状态 ==========
+  indexedByGoogle      Boolean?  @map("indexed_by_google") // 快速查询字段（verdict === 'PASS'）
+  googleIndexedAt      DateTime? @map("google_indexed_at")
+  googleLastCheckAt    DateTime? @map("google_last_check_at")
+  googleCheckMessage   String?   @map("google_check_message")
+  googleIndexStatusRaw Json?     @map("google_index_status_raw") // 存储完整的 API 响应信息
+
+  // ========== Bing 收录状态 ==========
+  indexedByBing      Boolean?  @map("indexed_by_bing") // 快速查询字段
+  bingIndexedAt      DateTime? @map("bing_indexed_at")
+  bingLastCheckAt    DateTime? @map("bing_last_check_at")
+  bingCheckMessage   String?   @map("bing_check_message")
+  bingIndexStatusRaw Json?     @map("bing_index_status_raw") // 存储完整的 API 响应信息
+
+  // ========== 时间戳 ==========
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // ========== 索引 ==========
+  @@unique([url], name: "unique_url") // URL 本身已包含语言前缀，保证全局唯一
+  @@index([url])
+  @@index([urlType])
+  @@index([entityId])
+  @@index([locale])
+  @@index([indexedByGoogle])
+  @@index([indexedByBing])
+  @@index([googleLastCheckAt])
+  @@index([bingLastCheckAt])
+  @@index([createdAt])
+  @@map("url_submissions")
+}
+
+// 批量提交任务表
+model SubmissionBatch {
+  id String @id @default(cuid())
+
+  // ========== 批次信息 ==========
+  name        String // 批次名称：如 "发布所有游戏到Bing"
+  description String? // 批次描述
+  status      BatchStatus @default(PENDING)
+
+  // ========== 统计信息 ==========
+  totalUrls     Int @default(0) @map("total_urls") // 总URL数
+  processedUrls Int @default(0) @map("processed_urls") // 已处理数
+  successUrls   Int @default(0) @map("success_urls") // 成功数
+  failedUrls    Int @default(0) @map("failed_urls") // 失败数
+  pendingUrls   Int @default(0) @map("pending_urls") // 待处理数
+
+  // ========== 配置信息 ==========
+  searchEngineConfigIds String[] @default([]) @map("search_engine_config_ids") // 目标搜索引擎ID列表
+
+  // URL筛选条件（JSON）
+  urlFilters Json? @default("{}") @map("url_filters")
+
+  // ========== 执行信息 ==========
+  startedAt   DateTime? @map("started_at") // 开始处理时间
+  completedAt DateTime? @map("completed_at") // 完成时间
+  cancelledAt DateTime? @map("cancelled_at") // 取消时间
+
+  errorMessage String? @map("error_message") // 错误信息（如果失败）
+
+  createdBy String @map("created_by") // 创建人（管理员ID或 "system"）
+
+  // ========== 时间戳 ==========
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([createdBy])
+  @@map("submission_batches")
+}
+
+// ==================== 缓存数据表（3个）====================
+
+// GamePix 游戏缓存表
+model GamePixGameCache {
+  id             String   @id // GamePix 游戏 ID
+  namespace      String   @unique // 游戏的唯一标识符
+  title          String // 游戏标题
+  description    String   @db.Text // 游戏描述
+  category       String // 游戏分类
+  quality_score  Float // 质量评分 0-1
+  banner_image   String // 游戏封面 URL
+  image          String // 游戏图标 URL
+  url            String // 游戏游玩 URL
+  width          Int // 游戏框架宽度
+  height         Int // 游戏框架高度
+  orientation    String // 游戏方向 landscape/portrait
+  date_published DateTime // 发布日期
+  date_modified  DateTime // 修改日期
+
+  // 自定义管理字段
+  isImported     Boolean   @default(false) // 是否已导入到生产数据库
+  importCount    Int       @default(0) // 导入次数统计
+  lastImportedAt DateTime? // 最后导入时间
+  customTags     String[]  @default([]) // 自定义标签
+  notes          String?   @db.Text // 备注信息
+  priority       Int       @default(0) // 优先级 0-10
+  isHidden       Boolean   @default(false) // 是否隐藏（不显示在列表）
+
+  // 网页提取数据缓存
+  extractedTags        String[]  @default([]) // 从游戏网页提取的标签
+  extractedMarkdown    String?   @db.Text // 从游戏网页提取的 Markdown 内容
+  extractedVideos      String[]  @default([]) // 从游戏网页提取的视频 URL 列表
+  extractedScreenshots String[]  @default([]) // 从游戏网页提取的截图 URL 列表
+  extractedAt          DateTime? // 提取时间
+
+  // 同步相关
+  lastSyncAt DateTime @default(now()) // 最后同步时间
+  syncSource String   @default("gamepix") // 数据来源
+
+  // 时间戳
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 索引优化查询性能
+  @@index([category])
+  @@index([quality_score])
+  @@index([isImported])
+  @@index([lastSyncAt])
+  @@index([priority])
+  @@index([date_published])
+  @@map("gamepix_games_cache")
+}
+
+// 同步日志表
+model SyncLog {
+  id           String   @id @default(cuid())
+  totalGames   Int // 本次同步的游戏总数
+  newGames     Int // 新增游戏数
+  updatedGames Int // 更新游戏数
+  deletedGames Int      @default(0) // 删除游戏数
+  status       String // success, failed, partial
+  errorMessage String?  @db.Text // 错误信息
+  syncDuration Int? // 同步耗时（毫秒）
+  apiParams    Json? // 同步时使用的 API 参数
+  syncedAt     DateTime @default(now())
+
+  @@index([syncedAt])
+  @@index([status])
+  @@map("sync_logs")
+}
+
+// AI 对话历史表
+model AiChatHistory {
+  id String @id @default(cuid())
+
+  // 关联信息
+  gameId  String  @map("game_id") // 游戏 ID（主数据库的游戏 ID）
+  locale  String // 语言代码（en, zh, es 等）
+  adminId String? @map("admin_id") // 管理员 ID（可选，用于追踪谁创建的对话）
+
+  // 对话内容
+  messages Json // 对话消息数组 [{ role, content }, ...]
+
+  // 元数据
+  templateId String? @map("template_id") // 使用的提示词模板 ID（可选）
+  context    Json? // 对话上下文（keywords, selectedText 等）
+
+  // 统计信息
+  messageCount Int @default(0) @map("message_count") // 消息数量
+  totalTokens  Int @default(0) @map("total_tokens") // 累计 token 消耗（估算）
+
+  // 时间管理
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  lastUsedAt DateTime @default(now()) @map("last_used_at") // 最后使用时间
+  expiresAt  DateTime @map("expires_at") // 过期时间（7天后自动清理）
+
+  // 索引优化
+  @@unique([gameId, locale]) // 每个游戏的每个语言只有一个对话历史
+  @@index([adminId])
+  @@index([lastUsedAt])
+  @@index([expiresAt])
+  @@index([createdAt])
+  @@map("ai_chat_history")
+}

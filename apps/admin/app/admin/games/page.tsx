@@ -54,7 +54,7 @@ async function getGames() {
     orderBy: { createdAt: 'desc' },
   })
 
-  return games.map((game) => {
+  return games.map((game: any) => {
     const primaryCategory = game.gameCategories[0]?.category
     return {
       id: game.id,
@@ -64,7 +64,7 @@ async function getGames() {
       description: game.translations[0]?.description || game.description || '',
       thumbnail: game.thumbnail,
       categoryName: primaryCategory?.translations[0]?.name || primaryCategory?.name || '未分类',
-      tags: game.tags.map((gt) => gt.tag.translations[0]?.name || gt.tag.name),
+      tags: game.tags.map((gt: any) => gt.tag.translations[0]?.name || gt.tag.name),
       // 新架构: status 替代 isPublished
       status: game.status,
       isFeatured: game.isFeatured,
@@ -107,7 +107,7 @@ async function GamesTable() {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {games.map((game) => (
+        {games.map((game: any) => (
           <TableRow key={game.id}>
             <TableCell>
               <div className="relative w-16 h-16 rounded overflow-hidden bg-muted">
@@ -134,7 +134,7 @@ async function GamesTable() {
             </TableCell>
             <TableCell>
               <div className="flex flex-wrap gap-1">
-                {game.tags.slice(0, 3).map((tag, index) => (
+                {game.tags.slice(0, 3).map((tag: any, index: number) => (
                   <Badge key={index} variant="outline" className="text-xs">
                     {tag}
                   </Badge>

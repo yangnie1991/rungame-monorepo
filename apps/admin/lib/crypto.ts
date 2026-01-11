@@ -1,3 +1,4 @@
+import 'server-only'
 /**
  * 加密工具函数
  * 用于加密/解密敏感数据（如 API Key）

@@ -14,11 +14,10 @@ export async function getAiConfigs() {
   try {
     const configs = await getCachedAiConfigs()
 
-    // 将数据库模型转换为类型化的配置
-    return configs.map(config => ({
+    return configs.map((config: any) => ({
       ...config,
-      modelConfig: config.modelConfig as AiModelConfig,
-    })) as AiConfig[]
+      modelConfig: config.modelConfig as any as AiModelConfig,
+    } as any)) as AiConfig[]
   } catch (error) {
     console.error("获取 AI 配置失败:", error)
     throw new Error("获取 AI 配置失败")
@@ -334,11 +333,11 @@ export async function getAiConfigsWithModels() {
     const allConfigs = await getCachedAiConfigs()
 
     // 过滤启用的配置
-    const configs = allConfigs.filter(config => config.isEnabled)
+    const configs = allConfigs.filter((config: any) => config.isEnabled)
 
     // 转换为前端需要的格式
-    const formattedConfigs = configs.map(config => {
-      const modelConfig = config.modelConfig as AiModelConfig
+    const formattedConfigs = configs.map((config: any) => {
+      const modelConfig = config.modelConfig as any as AiModelConfig
       const models = (modelConfig.models || [])
         .filter(m => m.isEnabled)
         .map(m => ({

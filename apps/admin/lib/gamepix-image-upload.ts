@@ -9,8 +9,10 @@
  * 5. 返回 R2 CDN URL
  */
 
+import 'server-only'
 import { uploadToR2, fileExistsInR2, type UploadResult } from './r2-upload'
 import { getR2Config } from './external-api-config'
+import { removeWidthParameter } from './utils-ui'
 import crypto from 'crypto'
 
 /**
@@ -43,32 +45,7 @@ export interface ImageUploadResult {
   contentType: string
 }
 
-/**
- * 从 GamePix URL 中移除 w= 参数，获取原图
- *
- * @param url GamePix 图片 URL
- * @returns 原图 URL
- *
- * @example
- * ```typescript
- * const originalUrl = removeWidthParameter('https://img.gamepix.com/games/abc/cover.jpg?w=400')
- * // => 'https://img.gamepix.com/games/abc/cover.jpg'
- * ```
- */
-export function removeWidthParameter(url: string): string {
-  if (!url) return url
 
-  try {
-    const urlObj = new URL(url)
-    // 删除 w 参数
-    urlObj.searchParams.delete('w')
-    urlObj.searchParams.delete('W')
-    return urlObj.toString()
-  } catch (error) {
-    console.error('解析 URL 失败:', error)
-    return url
-  }
-}
 
 /**
  * 计算图片的 SHA-256 哈希值

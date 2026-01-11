@@ -71,9 +71,9 @@ RUN pnpm db:generate
 # turbo 会自动先构建 @rungame/database，再构建 @rungame/admin
 # 本地构建镜像建议给予充足内存 (4096)
 # 明确指定只编译 admin 及其依赖
-RUN NODE_OPTIONS="--max-old-space-size=4096" \
+RUN NODE_OPTIONS="--max-old-space-size=1024" \
     SKIP_ENV_VALIDATION=true \
-    pnpm turbo build --filter=@rungame/admin
+    pnpm turbo build --filter=@rungame/admin --concurrency=1
 
 # ============================================
 # 第四阶段: 生产运行时（Standalone 优化）

@@ -1,115 +1,26 @@
-/**
- * ============================================
- * @rungame/database - 共享数据库包
- * ============================================
- *
- * 提供 Website 应用共享的数据库访问层
- * 包含：Prisma Client、缓存配置、i18n 工具和数据查询函数
- *
- * 注意：Admin 应用有独立的 Prisma 客户端配置 (apps/admin/lib/prisma.ts)
- */
+// ============================================
+// Prisma Client Export (Prisma 7 Standard)
+// ============================================
 
-// ============================================
-// Prisma Client
-// ============================================
-// 业务数据库 Client（展示端使用，管理端仅用于业务数据查询）
+// 业务数据库 Client
 export { prisma } from "./client"
-export type { PrismaClient } from "./client"
+
+// 全量导出生成模型、枚举与类型
+export * from "./generated/client"
 
 // ============================================
-// 缓存配置
+// 业务逻辑与数据访问层导出
 // ============================================
-export { CACHE_TAGS, REVALIDATE_TIME } from "./cache-config"
 
-// ============================================
-// i18n 工具函数
-// ============================================
-export {
-  DEFAULT_LOCALE,
-  buildLocaleCondition,
-  getTranslationWithFallback,
-  getTranslatedField,
-  getTranslatedFields,
-} from "./i18n-helpers"
+export * from "./data/categories/index"
+export * from "./data/games/index"
+export * from "./data/languages/index"
+export * from "./data/tags/index"
+export * from "./data/stats/index"
+export * from "./data/page-types/index"
 
-// ============================================
-// 语言数据查询
-// ============================================
-export { getDefaultLanguage, getEnabledLanguages } from "./data/languages"
+export * from "./cache-config"
+export * from "./i18n-helpers"
 
-// ============================================
-// 分类数据查询
-// ============================================
-export {
-  // 缓存层函数
-  getAllCategoriesFullData,
-  getCategoriesBaseData,
-  getCategoriesStats,
-  getSubCategoriesCount,
-  // 业务层函数
-  getAllCategoryTranslationsMap,
-  getAllCategoryInfoMap,
-  getAllCategoriesDataMap,
-  getAllCategories,
-  getMainCategories,
-  getSubCategories,
-  getSubCategoriesByParentId,
-  getSubCategoriesByParentSlug,
-} from "./data/categories"
-
-// ============================================
-// 标签数据查询
-// ============================================
-export {
-  // 缓存层函数
-  getAllTagsFullData,
-  getTagsBaseData,
-  getTagsStats,
-  // 业务层函数
-  getAllTagTranslationsMap,
-  getAllTagsDataMap,
-  getAllTags,
-  getAllTagsInfoMap,
-  getPopularTags,
-} from "./data/tags"
-
-// ============================================
-// 统计数据查询
-// ============================================
-export { getDashboardStats } from "./data/stats"
-
-// ============================================
-// PageType 数据查询
-// ============================================
-export { getAllPageTypes, getPageTypeInfo, getPageTypeGames } from "./data/page-types"
-
-// ============================================
-// 游戏数据查询
-// ============================================
-export {
-  // 特色游戏
-  getFeaturedGames,
-  getMostPlayedGames,
-  getTrendingGames,
-  getNewestGames,
-  // 浏览游戏
-  getGamesByCategory,
-  getGamesByTag,
-  getGamesByTagSlug,
-  getGamesByTagWithPagination,
-  getAllGames,
-  // 搜索游戏
-  searchGames,
-  // 游戏详情
-  getGameBySlug,
-  getRecommendedGames,
-  getMixedRecommendedGames,
-  getPublishedGames,
-  // 游戏统计
-  getTotalGamesCount,
-  getGamesCategoryStats,
-  getGamesTagStats,
-  getGameRealtimeStats,
-  // 工具函数
-  incrementPlayCount,
-} from "./data/games"
+// Lib 导出
+export * from "./lib/recommendation-engine"

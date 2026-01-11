@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { CheckCircle2, XCircle, Loader2, RefreshCw, Upload, Database, Tag, CheckCheck } from 'lucide-react'
+import { CheckCircle2, XCircle, Loader2, RefreshCw, Upload, Database, Tag, CheckCheck, ScrollText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 /**
@@ -42,6 +42,7 @@ interface ImportProgressDialogProps {
   onExecuteStep?: (stepIndex: number) => void // 执行指定的步骤(跳过之前的步骤)
   onCancel?: () => void
   allowClose?: boolean
+  logs?: string[] // 实时日志
 }
 
 /**
@@ -64,19 +65,24 @@ export function ImportProgressDialog({
   onExecuteStep,
   onCancel,
   allowClose = false,
+  logs = [],
 }: ImportProgressDialogProps) {
   const [executingStepIndex, setExecutingStepIndex] = useState<number | null>(null)
 
+  // 自动滚动日志
+  const logsEndRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [logs])
+
   // 是否有步骤失败
   const hasError = steps.some(step => step.status === 'error')
-
-  // 获取失败的步骤索引
   const failedStepIndex = steps.findIndex(step => step.status === 'error')
-
-  // 是否正在运行
   const isRunning = steps.some(step => step.status === 'running')
-
-  // 是否全部完成
   const isCompleted = steps.every(step => step.status === 'success')
 
   // 获取状态图标
@@ -92,20 +98,6 @@ export function ImportProgressDialog({
         return (
           <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30" />
         )
-    }
-  }
-
-  // 获取状态文本颜色
-  const getStatusColor = (status: ImportStepStatus) => {
-    switch (status) {
-      case 'success':
-        return 'text-green-600'
-      case 'error':
-        return 'text-destructive'
-      case 'running':
-        return 'text-primary'
-      default:
-        return 'text-muted-foreground'
     }
   }
 
@@ -141,182 +133,171 @@ export function ImportProgressDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent
-        className="sm:max-w-[500px]"
-        onPointerDownOutside={(e) => {
-          // 进行中时阻止点击外部关闭
-          if (!allowClose && (isRunning || !isCompleted)) {
-            e.preventDefault()
-          }
-        }}
-        onEscapeKeyDown={(e) => {
-          // 进行中时阻止 ESC 关闭
-          if (!allowClose && (isRunning || !isCompleted)) {
-            e.preventDefault()
-          }
-        }}
-      >
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="sm:max-w-5xl gap-0 p-0 bg-white" onPointerDownOutside={(e) => {
+        if (!allowClose && (isRunning || !isCompleted)) e.preventDefault()
+      }}>
+        <DialogHeader className="px-8 pt-8 pb-4">
+          <DialogTitle className="flex items-center gap-2 text-xl">
             {isCompleted ? (
-              <>
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
-                {title} - 完成
-              </>
+              <CheckCircle2 className="h-6 w-6 text-green-600" />
             ) : hasError ? (
-              <>
-                <XCircle className="h-5 w-5 text-destructive" />
-                {title} - 失败
-              </>
+              <XCircle className="h-6 w-6 text-destructive" />
             ) : (
-              <>
-                <Loader2 className="h-5 w-5 text-primary animate-spin" />
-                {title} - 进行中
-              </>
+              <Loader2 className="h-6 w-6 text-primary animate-spin" />
             )}
+            {title}
+            {isCompleted && <span className="ml-2 text-sm font-normal text-muted-foreground">已完成</span>}
           </DialogTitle>
-          <DialogDescription>
-            {isCompleted
-              ? '所有步骤已成功完成'
-              : hasError
-              ? '部分步骤执行失败，请重试'
-              : '请等待导入完成，请勿关闭此窗口'}
-          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* 总进度条 */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium">总进度</span>
-              <span className="text-muted-foreground">{overallProgress}%</span>
-            </div>
-            <Progress value={overallProgress} className="h-2" />
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-12 h-[600px]">
+          {/* 左侧：进度步骤 */}
+          <div className="md:col-span-4 border-r border-slate-100 p-8 flex flex-col gap-6 bg-slate-50/50 overflow-y-auto">
 
-          {/* 步骤列表 */}
-          <div className="space-y-3">
-            {steps.map((step, index) => (
-              <div
-                key={step.id}
-                className={cn(
-                  'flex items-start gap-3 p-3 rounded-lg border transition-all',
-                  step.status === 'running' && 'border-primary bg-primary/5',
-                  step.status === 'success' && 'border-green-200 bg-green-50',
-                  step.status === 'error' && 'border-destructive bg-destructive/5',
-                  step.status === 'pending' && 'border-muted bg-muted/30'
-                )}
-              >
-                {/* 状态图标 */}
-                <div className="flex-shrink-0 mt-0.5">
-                  {step.icon || getStatusIcon(step)}
-                </div>
-
-                {/* 步骤信息 */}
-                <div className="flex-1 min-w-0 space-y-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <h4
-                      className={cn(
-                        'font-medium text-sm',
-                        getStatusColor(step.status)
-                      )}
-                    >
-                      {step.label}
-                    </h4>
-                    {step.status === 'running' && step.progress !== undefined && (
-                      <span className="text-xs text-muted-foreground">
-                        {step.progress}%
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="text-xs text-muted-foreground">
-                    {step.description}
-                  </p>
-
-                  {/* 步骤进度条（运行中时） */}
-                  {step.status === 'running' && step.progress !== undefined && (
-                    <Progress value={step.progress} className="h-1 mt-2" />
-                  )}
-
-                  {/* 错误信息 */}
-                  {step.status === 'error' && step.error && (
-                    <div className="mt-2 p-2 bg-destructive/10 rounded text-xs text-destructive">
-                      {step.error}
-                    </div>
-                  )}
-
-                  {/* 操作按钮 */}
-                  <div className="mt-2 flex gap-2">
-                    {/* 失败步骤: 显示重试按钮 */}
-                    {step.status === 'error' && onRetryStep && (
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleRetryStep(index)}
-                        disabled={executingStepIndex !== null}
-                      >
-                        {executingStepIndex === index ? (
-                          <>
-                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                            重试中...
-                          </>
-                        ) : (
-                          <>
-                            <RefreshCw className="mr-1 h-3 w-3" />
-                            重试此步骤
-                          </>
-                        )}
-                      </Button>
-                    )}
-
-                    {/* 待执行步骤(在失败步骤之后): 显示执行按钮 */}
-                    {step.status === 'pending' && failedStepIndex !== -1 && index > failedStepIndex && onExecuteStep && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleExecuteStep(index)}
-                        disabled={executingStepIndex !== null}
-                      >
-                        {executingStepIndex === index ? (
-                          <>
-                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                            执行中...
-                          </>
-                        ) : (
-                          <>
-                            执行此步骤
-                          </>
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                </div>
+            {/* 总进度 */}
+            <div className="space-y-2 mb-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium">总进度</span>
+                <span className="text-muted-foreground">{overallProgress}%</span>
               </div>
-            ))}
+              <Progress value={overallProgress} className="h-2" />
+            </div>
+
+            {/* 步骤列表 */}
+            <div className="space-y-3 flex-1">
+              {steps.map((step, index) => (
+                <div
+                  key={step.id}
+                  className={cn(
+                    'flex items-start gap-3 p-3 rounded-lg border transition-all',
+                    step.status === 'running' && 'border-primary bg-primary/5 shadow-sm',
+                    step.status === 'success' && 'border-green-200 bg-green-50/50',
+                    step.status === 'error' && 'border-destructive bg-destructive/5',
+                    step.status === 'pending' && 'border-slate-100 bg-white opacity-60'
+                  )}
+                >
+                  <div className="flex-shrink-0 mt-0.5">
+                    {step.icon ? (
+                      <div className={cn(
+                        "text-slate-400",
+                        step.status === 'success' && "text-green-600",
+                        step.status === 'running' && "text-primary",
+                        step.status === 'error' && "text-destructive"
+                      )}>
+                        {step.status === 'success' ? <CheckCircle2 className="h-5 w-5" /> :
+                          step.status === 'error' ? <XCircle className="h-5 w-5" /> :
+                            step.status === 'running' ? <Loader2 className="h-5 w-5 animate-spin" /> :
+                              step.icon}
+                      </div>
+                    ) : getStatusIcon(step)}
+                  </div>
+
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <h4 className={cn(
+                        'font-medium text-sm',
+                        step.status === 'success' && 'text-green-700',
+                        step.status === 'error' && 'text-destructive',
+                        step.status === 'running' && 'text-primary',
+                        step.status === 'pending' && 'text-slate-500'
+                      )}>
+                        {step.label}
+                      </h4>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-snug">
+                      {step.description}
+                    </p>
+
+                    {/* 错误信息 */}
+                    {step.status === 'error' && step.error && (
+                      <div className="mt-2 p-2 bg-white/50 border border-destructive/20 rounded text-xs text-destructive">
+                        {step.error}
+                      </div>
+                    )}
+
+                    {/* 操作按钮 */}
+                    <div className="mt-2 flex gap-2">
+                      {step.status === 'error' && onRetryStep && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleRetryStep(index)}
+                          disabled={executingStepIndex !== null}
+                          className="h-7 text-xs"
+                        >
+                          {executingStepIndex === index ? (
+                            <><Loader2 className="mr-1 h-3 w-3 animate-spin" />重试中</>
+                          ) : (
+                            <><RefreshCw className="mr-1 h-3 w-3" />重试</>
+                          )}
+                        </Button>
+                      )}
+
+                      {step.status === 'pending' && failedStepIndex !== -1 && index > failedStepIndex && onExecuteStep && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleExecuteStep(index)}
+                          disabled={executingStepIndex !== null}
+                          className="h-7 text-xs"
+                        >
+                          {executingStepIndex === index ? (
+                            <><Loader2 className="mr-1 h-3 w-3 animate-spin" />执行中</>
+                          ) : (
+                            "执行"
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* 底部按钮 */}
+            <div className="pt-4 border-t border-slate-200 mt-auto flex gap-2 justify-end">
+              {isCompleted ? (
+                <Button onClick={handleClose} className="w-full bg-green-600 hover:bg-green-700">
+                  <CheckCheck className="mr-2 h-4 w-4" /> 完成
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleClose}
+                  variant="outline"
+                  disabled={!allowClose && (isRunning || !isCompleted)}
+                  className="w-full"
+                >
+                  {isRunning ? '导入中...' : '关闭'}
+                </Button>
+              )}
+            </div>
           </div>
 
-          {/* 底部操作按钮 */}
-          <div className="flex items-center justify-end gap-2 pt-2 border-t">
+          {/* 右侧：实时日志 */}
+          <div className="md:col-span-8 p-8 bg-white flex flex-col h-full overflow-hidden">
+            <div className="flex items-center gap-2 mb-4 pb-4 border-b border-slate-100">
+              <ScrollText className="w-5 h-5 text-slate-400" />
+              <h3 className="font-semibold text-slate-700">导入日志</h3>
+            </div>
 
-            {isRunning && onCancel && (
-              <Button onClick={onCancel} variant="outline">
-                取消导入
-              </Button>
-            )}
-
-            {isCompleted && (
-              <Button onClick={handleClose} variant="default">
-                <CheckCheck className="mr-2 h-4 w-4" />
-                完成
-              </Button>
-            )}
-
-            {!isRunning && !isCompleted && !hasError && (
-              <Button onClick={handleClose} variant="outline">
-                关闭
-              </Button>
-            )}
+            <div className="flex-1 overflow-y-auto space-y-3 pr-2 font-mono text-xs" ref={scrollContainerRef}>
+              {logs.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-slate-300">
+                  <Database className="w-16 h-16 mb-4 opacity-20" />
+                  <p>等待任务开始...</p>
+                </div>
+              ) : (
+                logs.map((log, index) => (
+                  <div key={index} className="flex gap-3 animate-in fade-in slide-in-from-bottom-1 duration-200">
+                    <div className="min-w-[4px] w-[4px] rounded-full bg-slate-200 mt-1.5 h-auto self-stretch shrink-0" />
+                    <span className="text-slate-600 py-1 leading-relaxed break-all">
+                      {log}
+                    </span>
+                  </div>
+                ))
+              )}
+              <div ref={logsEndRef} />
+            </div>
           </div>
         </div>
       </DialogContent>

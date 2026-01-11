@@ -60,7 +60,7 @@ import {
 import type { GamePixGameItem } from '@/lib/gamepix-importer'
 import { GamePixExtractButton, type ExtractedGameData } from './GamePixExtractButton'
 import { matchGamePixCategory } from '@/app/admin/games/import-actions'
-import { removeWidthParameter } from '@/lib/gamepix-image-upload'
+import { removeWidthParameter } from '@/lib/utils-ui'
 import { ImageFieldWithUpload } from './ImageFieldWithUpload'
 import { ScreenshotsFieldWithUpload } from './ScreenshotsFieldWithUpload'
 import {
@@ -281,6 +281,9 @@ export function GameImportConfirmDialog({
   const [loadingConfigs, setLoadingConfigs] = useState(false)
   const [configError, setConfigError] = useState<string | null>(null)
   const [showAiConfigDialog, setShowAiConfigDialog] = useState(false)
+
+  // 导入日志
+  const [importLogs, setImportLogs] = useState<string[]>([])
 
   // AI 生成进度状态
   const [isGenerating, setIsGenerating] = useState(false)
@@ -746,6 +749,7 @@ export function GameImportConfirmDialog({
       setOverallProgress(0)
       setImportError(null)
       setStepContext({})
+      setImportLogs([])
     } else {
       // 从指定步骤恢复,前面的步骤标记为成功
       setImportSteps(DEFAULT_IMPORT_STEPS.map((step, index) => ({
@@ -849,8 +853,37 @@ export function GameImportConfirmDialog({
           if (!line.trim() || !line.startsWith('data:')) continue
 
           try {
+            console.log('[SSE Debug] Raw line:', line)
             const jsonStr = line.substring(5).trim()
+            console.log('[SSE Debug] JSON string:', jsonStr)
             const eventData = JSON.parse(jsonStr)
+            console.log('[SSE Debug] Parsed event:', eventData)
+
+            if (eventData.type === 'conflict') {
+              const isGameExists = eventData.conflictType === 'game_exists'
+              const conflictData = eventData.data || {}
+              const message = isGameExists
+                ? `游戏 "${conflictData.title || data.title}" (slug: ${conflictData.slug || data.slug}) 已存在。\n是否更新现有游戏？`
+                : `发现来源重复 (ID: ${conflictData.id})。\n是否更新现有游戏？`
+
+              if (window.confirm(message)) {
+                console.log('🔄 用户选择更新现有游戏，重新发起请求...')
+                reader.cancel()
+                const newData = { ...data, conflictStrategy: 'update' }
+                await executeImport(newData, 1, context)
+                return
+              } else {
+                reader.cancel()
+                const errorMsg = isGameExists ? '游戏已存在 (Slug冲突)' : '游戏已存在 (来源冲突)'
+                setImportError(errorMsg)
+                // 标记步骤失败
+                const currentStep = DEFAULT_IMPORT_STEPS[currentStepIndex]
+                if (currentStep) {
+                  updateStep(currentStep.id, 'error', undefined, errorMsg)
+                }
+                return // 退出函数，不抛出错误以免触发 catch 块的通用错误处理
+              }
+            }
 
             if (eventData.type === 'step_completed' && eventData.context) {
               // 步骤完成,保存上下文数据
@@ -870,7 +903,8 @@ export function GameImportConfirmDialog({
               }
 
               console.log(`[导入进度] ${eventData.percentage}% - ${eventData.message}`)
-            } else if (eventData.success && eventData.gameId) {
+              setImportLogs(prev => [...prev, `[进度 ${eventData.percentage}%] ${eventData.message}`])
+            } else if (eventData.type === 'success') {
               // 完成
               setOverallProgress(100)
               DEFAULT_IMPORT_STEPS.forEach(step => {
@@ -878,6 +912,7 @@ export function GameImportConfirmDialog({
               })
               finalResult = eventData
               console.log('✅ 导入成功:', eventData)
+              setImportLogs(prev => [...prev, `✅ 导入成功! 游戏 ID: ${eventData.gameId}`])
 
               // 保存最终的上下文
               if (eventData.context) {
@@ -886,13 +921,14 @@ export function GameImportConfirmDialog({
                   ...eventData.context
                 }))
               }
-            } else if (eventData.error) {
+            } else if (eventData.type === 'error') {
               // 错误
+              const errorMessage = eventData.message || '未知错误'
               const currentStep = DEFAULT_IMPORT_STEPS[currentStepIndex]
               if (currentStep) {
-                updateStep(currentStep.id, 'error', undefined, eventData.error)
+                updateStep(currentStep.id, 'error', undefined, errorMessage)
               }
-              setImportError(eventData.error)
+              setImportError(errorMessage)
 
               // 保存错误时的上下文
               if (eventData.context) {
@@ -902,16 +938,18 @@ export function GameImportConfirmDialog({
                 }))
               }
 
-              throw new Error(eventData.error)
+              throw new Error(errorMessage)
             }
           } catch (e) {
             console.warn('解析 SSE 数据失败:', line, e)
+            setImportLogs(prev => [...prev, `⚠️ 解析日志失败: ${line}`])
+            console.error('[SSE Debug] Parse error:', e)
           }
         }
       }
 
-      if (!finalResult || !finalResult.success) {
-        throw new Error('导入失败：未收到成功响应')
+      if (!finalResult || finalResult.type !== 'success') {
+        throw new Error('Did not receive a success response')
       }
 
       // 导入成功，延迟关闭
@@ -947,6 +985,11 @@ export function GameImportConfirmDialog({
     }
 
     await executeImport(data)
+  }, (errors) => {
+    console.error('❌ 表单验证失败:', errors)
+    // 简单的提示，帮助定位问题
+    const errorFields = Object.keys(errors).join(', ')
+    alert(`无法提交：请检查必填项 (${errorFields})`)
   })
 
   // 自动匹配分类
@@ -2937,6 +2980,7 @@ export function GameImportConfirmDialog({
         steps={importSteps}
         currentStepIndex={currentStepIndex}
         overallProgress={overallProgress}
+        logs={importLogs}
         onRetryStep={async (stepIndex) => {
           // 重试指定的步骤(步骤索引是从0开始,API需要从1开始)
           const formData = lastFormData || form.getValues()

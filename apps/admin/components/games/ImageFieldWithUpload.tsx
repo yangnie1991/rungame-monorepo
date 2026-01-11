@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Loader2, Upload, Trash2, ExternalLink, Copy, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { removeWidthParameter } from '@/lib/gamepix-image-upload'
+import { removeWidthParameter } from '@/lib/utils-ui'
 
 interface ImageFieldWithUploadProps {
   /**

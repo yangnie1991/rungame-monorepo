@@ -323,7 +323,7 @@ export async function POST(req: NextRequest) {
             }
 
             validatedTagIds = existingTagIds
-            console.log(`[导入游戏 v2] ✓ 标签验证完成: ${validatedTagIds.length}/${uniqueTagIds.length}`)
+            console.log(`[导入游戏 v2] ✓ 标签验证完成: ${validatedTagIds?.length}/${uniqueTagIds.length}`)
           } else {
             console.log(`[导入游戏 v2] 未指定标签，跳过标签验证`)
           }

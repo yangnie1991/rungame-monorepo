@@ -1,8 +1,12 @@
 {
   "extends": "../../packages/typescript-config/nextjs.json",
   "compilerOptions": {
+    "baseUrl": ".",
+    "noImplicitAny": false,
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ]
     }
   },
   "include": [

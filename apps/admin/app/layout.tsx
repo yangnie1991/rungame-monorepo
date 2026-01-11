@@ -26,7 +26,7 @@ export default function AdminRootLayout({
 }) {
   return (
     <html lang="zh" suppressHydrationWarning className="light">
-      <body className="antialiased" style={{ colorScheme: 'light' }}>
+      <body className="antialiased" style={{ colorScheme: 'light' }} suppressHydrationWarning>
         {children}
         <Toaster />
       </body>

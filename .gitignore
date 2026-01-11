@@ -80,3 +80,4 @@ packages/database/src/generated/
 
 # archives
 *.tar.gz
+build.detailed.log

@@ -32,7 +32,7 @@ import {
   unmarkGameAsImported,
 } from '@/app/admin/import-games/cache-actions'
 import type { GamePixGameItem } from '@/lib/gamepix-importer'
-import { removeWidthParameter } from '@/lib/gamepix-image-upload'
+import { removeWidthParameter } from '@/lib/utils-ui'
 import { SyncProgressDialog } from './SyncProgressDialog'
 import { GameImportConfirmDialog, type ImportFormData } from './GameImportConfirmDialog'
 import { UnimportConfirmDialog } from './UnimportConfirmDialog'

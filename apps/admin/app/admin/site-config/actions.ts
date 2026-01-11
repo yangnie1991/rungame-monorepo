@@ -6,7 +6,7 @@ import { prismaAdmin } from "@/lib/prisma"
 import { encrypt, decrypt, maskSensitiveData } from "@/lib/crypto"
 import { clearConfigCache, getExternalApiConfig } from "@/lib/external-api-config"
 import { z } from "zod"
-import type { SiteConfig } from '@prisma/client'
+import type { SiteConfig } from '@rungame/database'
 
 /**
  * 获取网站配置

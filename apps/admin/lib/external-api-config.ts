@@ -10,6 +10,7 @@
  * - 应用重启时自动重新加载
  */
 
+import 'server-only'
 import { unstable_cache } from 'next/cache'
 import { prismaAdmin } from '@/lib/prisma'
 import { decrypt } from '@/lib/crypto'

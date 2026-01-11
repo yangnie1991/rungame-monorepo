@@ -1,3 +1,4 @@
+import 'server-only'
 /**
  * GamePix 分类到本地分类的映射工具
  * 用于自动匹配导入游戏的分类

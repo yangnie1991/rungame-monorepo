@@ -3,14 +3,14 @@
 // 包含：管理表（6个）+ 缓存表（3个）= 共 9 个表
 
 generator client {
-  provider      = "prisma-client"
-  output        = "../lib/generated/prisma-client"
+  provider      = "prisma-client-js"
+  output        = "../src/generated/client"
   binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x", "rhel-openssl-1.1.x", "rhel-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("CACHE_DATABASE_URL")
+  // url      = env("CACHE_DATABASE_URL") // Prisma 7 moved this to prisma.config.ts
 }
 
 // ==================== 枚举定义 ====================
@@ -251,7 +251,7 @@ model UrlSubmission {
   // ========== 基本信息 ==========
   url      String  // 完整URL，包含语言前缀：https://rungame.online/zh/play/puzzle-game
   urlType  String  @map("url_type") // URL类型：game, category, tag, pagetype, sitemap, other
-  entityId String? @map("entity_id") // 关联实体ID（游戏ID、分类ID等），用于批量操作和数据清理
+  entityId String? @map("entity_id") // 关联实体ID（游戏ID、分类ID等），用于批量操作 and 数据清理
   locale   String? // 语言代码：en, zh, es（仅作标记，用于前端筛选和统计）
 
   // ========== Google 提交状态 ==========
@@ -276,15 +276,6 @@ model UrlSubmission {
   googleLastCheckAt    DateTime? @map("google_last_check_at")
   googleCheckMessage   String?   @map("google_check_message")
   googleIndexStatusRaw Json?     @map("google_index_status_raw") // 存储完整的 API 响应信息
-  // googleIndexStatusRaw 结构示例:
-  // {
-  //   "verdict": "PASS" | "FAIL" | "NEUTRAL",
-  //   "indexingState": "INDEXING_ALLOWED" | "BLOCKED_BY_META_TAG" | "BLOCKED_BY_HTTP_HEADER",
-  //   "coverageState": "Submitted and indexed" | "Crawled - currently not indexed",
-  //   "pageFetchState": "...",
-  //   "robotsTxtState": "...",
-  //   "lastCrawlTime": "..."
-  // }
 
   // ========== Bing 收录状态 ==========
   indexedByBing      Boolean?  @map("indexed_by_bing") // 快速查询字段

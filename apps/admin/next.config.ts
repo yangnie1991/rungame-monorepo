@@ -9,27 +9,42 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname, '../../'),
   },
-  // 转译内部 monorepo 包（JIT 模式下的 TypeScript 源文件）
-  transpilePackages: ['@rungame/database'],
-  // Webpack 配置：外部化 Prisma Client
+
+  // 确保 Node.js 特定包不被打包到浏览器
+  serverExternalPackages: ['pg', '@prisma/client', '@prisma/adapter-pg', '@rungame/database', '@rungame/database-admin'],
+
+  // 转译内部 monorepo 包
+  transpilePackages: [],
+
+  // Webpack 配置：锁定环境依赖
   webpack: (config, { isServer }) => {
-    if (isServer) {
-      // 仅外部化 Prisma Client（@rungame/database 由 transpilePackages 处理）
-      config.externals = config.externals || []
-      config.externals.push({
-        '@prisma/client': 'commonjs @prisma/client',
-      })
+    if (!isServer) {
+      // 强制在客户端完全禁用这些包的解析
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'pg': false,
+        '@prisma/adapter-pg': false,
+        '@prisma/client': false,
+      }
+      // 同时也保留 fallback 作为次级防御
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        net: false,
+        tls: false,
+        fs: false,
+        dns: false,
+        perf_hooks: false,
+      }
     }
     return config
   },
 
-
   async redirects() {
     return []
   },
+
   images: {
     remotePatterns: [
-      // 游戏平台图片
       {
         protocol: "https",
         hostname: "img.gamepix.com",
@@ -54,7 +69,6 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "html5.gamedistribution.com",
       },
-      // Cloudflare R2 CDN (自定义域名)
       {
         protocol: "https",
         hostname: "pub-*.r2.dev",

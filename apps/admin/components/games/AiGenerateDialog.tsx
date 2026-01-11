@@ -36,6 +36,7 @@ import {
   FileText,
 } from 'lucide-react'
 import { RichTextEditor } from '@/components/RichTextEditor'
+import { AiProgressTimeline, type TimelineStep } from './ai-generation/AiProgressTimeline'
 
 // 生成进度数据
 interface GenerationProgress {
@@ -104,6 +105,14 @@ const GENERATION_FIELDS = [
   { id: 'extras', label: '其他内容', description: '补充信息和提示' },
 ]
 
+// 定义步骤常量
+const GENERATION_STEPS: TimelineStep[] = [
+  { id: 'searching', title: '市场调研', description: '分析竞品和关键词趋势', status: 'pending', icon: <Search className="w-5 h-5 text-blue-500" /> },
+  { id: 'parsing', title: '内容分析', description: '解析数据结构与核心卖点', status: 'pending', icon: <FileText className="w-5 h-5 text-orange-500" /> },
+  { id: 'generating', title: 'AI 撰写', description: '生成多语言游戏内容初稿', status: 'pending', icon: <Sparkles className="w-5 h-5 text-purple-500" /> },
+  { id: 'finalizing', title: 'SEO 优化', description: '优化关键词密度与搜索可见性', status: 'pending', icon: <Globe className="w-5 h-5 text-green-500" /> }
+]
+
 /**
  * 统一的 AI 内容生成对话框
  *
@@ -158,6 +167,9 @@ export function AiGenerateDialog({
   // SSE 进度
   const [generationProgress, setGenerationProgress] = useState<GenerationProgress | null>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
+
+  // 新增日志状态
+  const [logs, setLogs] = useState<string[]>([])
 
   // 预览标签页
   const [activePreviewTab, setActivePreviewTab] = useState<string>('description')
@@ -243,6 +255,7 @@ export function AiGenerateDialog({
     setEditedResults({})
     setCitations([])
     setGenerationProgress(null)
+    setLogs([])
 
     // 清理 EventSource
     if (eventSourceRef.current) {
@@ -266,6 +279,7 @@ export function AiGenerateDialog({
     setPhase('generating')
     setError(null)
     setGenerationProgress(null)
+    setLogs([])
 
     // 清理旧连接
     if (eventSourceRef.current) {
@@ -315,7 +329,11 @@ export function AiGenerateDialog({
 
           if (data.type === 'progress') {
             setGenerationProgress(data.data)
+            if (data.data.step) {
+              setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${data.data.step}`])
+            }
           } else if (data.type === 'complete') {
+            setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] Generation completed successfully.`])
             setGeneratedResults(data.data.results)
             setEditedResults(data.data.results)
             setCitations(data.data.citations || [])
@@ -325,8 +343,9 @@ export function AiGenerateDialog({
             eventSource.close()
             eventSourceRef.current = null
           } else if (data.type === 'error') {
+            setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] Error: ${data.error}`])
             setError(data.error || '生成失败')
-            setPhase('config')
+            // setPhase('config') // 保持在生成界面以显示错误日志
             setGenerationProgress(null)
             eventSource.close()
             eventSourceRef.current = null
@@ -337,8 +356,9 @@ export function AiGenerateDialog({
       }
 
       eventSource.onerror = () => {
+        setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] Connection error.`])
         setError('连接失败，请检查网络后重试')
-        setPhase('config')
+        // setPhase('config')
         setGenerationProgress(null)
         eventSource.close()
         eventSourceRef.current = null
@@ -367,302 +387,286 @@ export function AiGenerateDialog({
     }
   }
 
+  // 计算当前步骤状态
+  const getStepStatus = (stepId: string, currentPhase: string | undefined): 'pending' | 'active' | 'completed' => {
+    const phases = ['searching', 'parsing', 'generating', 'finalizing']
+    // 注意：后端SSE返回的phase名称可能与这里定义的不完全一致，需要对齐
+    // 后端返回: 'searching', 'parsing', 'generating'
+    // 映射关系:
+    // searching -> searching
+    // parsing -> parsing
+    // generating -> generating (drafting + optimization)
+
+    // 简化处理：根据后端返回的 phase 来决定
+    const mapping: Record<string, number> = {
+      'searching': 0,
+      'parsing': 1,
+      'generating': 2,
+    }
+
+    const currentPhaseIndex = mapping[currentPhase || 'searching'] || 0
+    const stepIds = ['searching', 'parsing', 'generating', 'finalizing'] // Index: 0, 1, 2, 3
+    const stepIndex = stepIds.indexOf(stepId)
+
+    if (stepIndex < currentPhaseIndex) return 'completed'
+    if (stepIndex === currentPhaseIndex) return 'active'
+    if (currentPhase === 'generating' && stepIndex === 3) return 'active' // 都在 generating
+
+    return 'pending'
+  }
+
+  const currentSteps = GENERATION_STEPS.map(step => {
+    // 特殊处理：如果是 SEO 优化阶段，通常是生成的一部分
+    let status: 'pending' | 'active' | 'completed' | 'error' = 'pending'
+
+    // 如果出错了
+    if (error) {
+      status = 'error'
+    } else {
+      // 简单的进度映射逻辑
+      if (generationProgress?.phase === 'searching') {
+        if (step.id === 'searching') status = 'active'
+        else status = 'pending'
+      } else if (generationProgress?.phase === 'parsing') {
+        if (step.id === 'searching') status = 'completed'
+        else if (step.id === 'parsing') status = 'active'
+        else status = 'pending'
+      } else if (generationProgress?.phase === 'generating') {
+        if (step.id === 'searching' || step.id === 'parsing') status = 'completed'
+        else if (step.id === 'generating') status = 'active'
+        else if (step.id === 'finalizing') status = 'pending' // 或者也 active
+      }
+    }
+
+    return { ...step, status }
+  })
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="max-w-5xl sm:max-w-5xl max-h-[85vh] overflow-y-auto p-0 gap-0 bg-white">
+        <DialogHeader className="px-8 pt-8 pb-2">
+          <DialogTitle className="flex items-center gap-2 text-xl">
             <Sparkles className="w-5 h-5 text-purple-600" />
             AI 内容生成
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-base mt-2">
             {phase === 'config' && '配置生成选项，使用 AI 一次性生成所有字段的内容'}
-            {phase === 'generating' && '正在生成内容，请稍候...'}
+            {phase === 'generating' && '正在生成内容，请自动滚动查看实时日志...'}
             {phase === 'preview' && '预览并编辑生成的内容，确认后应用到表单'}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-6 px-8 pb-8 pt-2">
+          {/* 配置阶段 */}
           {/* 配置阶段 */}
           {phase === 'config' && (
-            <>
-              {/* 游戏信息 */}
-              <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                <div className="text-sm">
-                  <span className="font-medium text-gray-700">游戏标题：</span>
-                  <span className="text-gray-900">{gameTitle || '未命名游戏'}</span>
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 py-2">
+              {/* 左侧：核心配置 */}
+              <div className="md:col-span-8 space-y-8">
+                {/* 游戏信息摘要 */}
+                <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 flex items-start justify-between">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">目标游戏</p>
+                    <p className="text-base font-medium text-slate-900 line-clamp-1">{gameTitle || '未命名游戏'}</p>
+                  </div>
+                  <Badge variant="outline" className="text-slate-500 bg-white border-slate-200">
+                    {locale.toUpperCase()}
+                  </Badge>
                 </div>
-                <div className="text-sm">
-                  <span className="font-medium text-gray-700">语言：</span>
-                  <span className="text-gray-900">{locale.toUpperCase()}</span>
-                </div>
-                {markdownContent && (
-                  <div className="text-sm pt-2 border-t border-gray-200">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-green-600" />
-                      <span className="font-medium text-green-700">
-                        已提取游戏内容（{markdownContent.length} 字符）
-                      </span>
+
+                {/* AI 供应商与模型 */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Database className="w-4 h-4 text-slate-400" />
+                    <h3 className="text-base font-semibold text-slate-900">AI 参数配置</h3>
+                  </div>
+
+                  {loadingConfigs ? (
+                    <div className="flex items-center gap-3 text-sm text-slate-500 p-4 border border-slate-100 rounded-xl bg-slate-50/50">
+                      <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                      正在加载模型配置...
                     </div>
-                    <p className="text-xs text-gray-600 mt-1">
-                      AI 将参考提取的内容生成更准确的游戏说明
-                    </p>
-                  </div>
-                )}
-                {category && (
-                  <div className="text-sm">
-                    <span className="font-medium text-gray-700">分类：</span>
-                    <span className="text-gray-900">{category}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* AI 配置选择 */}
-              <div className="space-y-4 border rounded-lg p-4 bg-purple-50/30">
-                <div className="flex items-center gap-2">
-                  <Database className="w-4 h-4 text-purple-600" />
-                  <h4 className="text-sm font-medium text-gray-900">AI 配置</h4>
-                  <span className="text-red-500">*</span>
-                </div>
-
-                {loadingConfigs ? (
-                  <div className="flex items-center gap-2 text-sm text-gray-500 p-3 border rounded-lg bg-white">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    正在加载配置列表...
-                  </div>
-                ) : (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="config-select">AI 供应商</Label>
-                      <Select value={selectedConfigId} onValueChange={handleConfigChange}>
-                        <SelectTrigger id="config-select" className="bg-white">
-                          <SelectValue placeholder="选择 AI 供应商" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableConfigs.map((config) => (
-                            <SelectItem key={config.id} value={config.id}>
-                              <div className="flex items-center gap-2">
-                                {config.name}
-                                {config.isActive && (
-                                  <Badge variant="secondary" className="text-xs">激活</Badge>
-                                )}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="model-select" className="flex items-center gap-2">
-                        <Cpu className="w-4 h-4 text-purple-600" />
-                        AI 模型
-                      </Label>
-                      <Select value={selectedModelId} onValueChange={setSelectedModelId}>
-                        <SelectTrigger id="model-select" className="bg-white">
-                          <SelectValue placeholder="选择 AI 模型" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableModels.map((model) => (
-                            <SelectItem key={model.id} value={model.id}>
-                              <div className="flex items-center gap-2">
-                                {model.name}
-                                {model.isDefault && (
-                                  <Badge variant="secondary" className="text-xs">默认</Badge>
-                                )}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* 关键词输入 */}
-              <div className="space-y-4 border rounded-lg p-4 bg-blue-50/30">
-                <div className="space-y-2">
-                  <Label htmlFor="main-keyword" className="flex items-center gap-1">
-                    主关键词
-                    <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="main-keyword"
-                    value={mainKeyword}
-                    onChange={(e) => setMainKeyword(e.target.value)}
-                    placeholder="例如：puzzle, action, adventure"
-                    className="bg-white"
-                  />
-                  <p className="text-xs text-gray-500">
-                    游戏的主要类型或特征，这是必填项
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="sub-keywords">
-                    子关键词（可选）
-                  </Label>
-                  <Textarea
-                    id="sub-keywords"
-                    value={subKeywords}
-                    onChange={(e) => setSubKeywords(e.target.value)}
-                    placeholder="例如：multiplayer, 3D, casual, strategy"
-                    rows={2}
-                    className="resize-none bg-white"
-                  />
-                  <p className="text-xs text-gray-500">
-                    补充的游戏特征或标签，用逗号分隔
-                  </p>
-                </div>
-              </div>
-
-              {/* 生成模式选择 */}
-              <div className="space-y-3 border rounded-lg p-4 bg-gradient-to-br from-purple-50 to-indigo-50">
-                <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="w-4 h-4 text-purple-600" />
-                  <h4 className="text-sm font-medium text-gray-900">SEO 优化生成</h4>
-                </div>
-
-                <p className="text-xs text-gray-600 mb-3">
-                  基于 Google Top 5 页面分析和竞品内容，生成符合 SEO 最佳实践的游戏内容
-                </p>
-
-                <div>
-                  <Label className="text-sm mb-2 block">生成质量</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setSeoMode('fast')}
-                      className={`px-3 py-2 rounded-md text-sm transition-all ${seoMode === 'fast'
-                        ? 'bg-purple-600 text-white shadow-sm'
-                        : 'bg-white border border-gray-200 text-gray-700 hover:border-purple-300'
-                        }`}
-                    >
-                      快速模式 (~15s)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSeoMode('quality')}
-                      className={`px-3 py-2 rounded-md text-sm transition-all ${seoMode === 'quality'
-                        ? 'bg-purple-600 text-white shadow-sm'
-                        : 'bg-white border border-gray-200 text-gray-700 hover:border-purple-300'
-                        }`}
-                    >
-                      质量模式 (~30s)
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-2 pt-2 border-t border-purple-200">
-                  <Info className="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" />
-                  <p className="text-xs text-purple-700">
-                    {seoMode === 'fast'
-                      ? '单步生成：直接基于竞品分析生成内容'
-                      : '两步生成：先分析竞品策略，再针对性生成高质量内容'}
-                  </p>
-                </div>
-              </div>
-
-              {/* 生成字段说明 */}
-              <div className="border rounded-lg p-4 bg-green-50/30">
-                <div className="flex items-start gap-2 mb-3">
-                  <Info className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="text-sm font-medium text-green-900">将生成以下字段</h4>
-                    <p className="text-xs text-green-700 mt-1">
-                      系统将自动生成所有字段的内容，您可以在预览阶段编辑它们
-                    </p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2 mt-3">
-                  {GENERATION_FIELDS.map(field => (
-                    <div key={field.id} className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-green-600" />
-                      <span className="text-gray-700">{field.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* 生成阶段 - 三阶段进度显示 */}
-          {phase === 'generating' && (
-            <div className="space-y-4 py-8">
-              <div className="flex flex-col items-center justify-center gap-4">
-                <Loader2 className="w-12 h-12 animate-spin text-purple-600" />
-                <div className="text-center w-full max-w-lg">
-                  <p className="text-lg font-medium">正在生成内容...</p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    AI 正在分析游戏信息并生成 {GENERATION_FIELDS.length} 个字段的内容
-                  </p>
-                  <div className="flex items-center justify-center gap-2 mt-3">
-                    {selectedModelId && (
-                      <Badge variant="outline" className="gap-1">
-                        <Cpu className="w-3 h-3" />
-                        {availableModels.find(m => m.id === selectedModelId)?.name || selectedModelId}
-                      </Badge>
-                    )}
-                    <Badge variant="secondary" className="gap-1">
-                      <Sparkles className="w-3 h-3" />
-                      SEO {seoMode === 'fast' ? '快速' : '质量'}模式
-                    </Badge>
-                  </div>
-
-                  {/* 实时进度显示 */}
-                  {generationProgress && (
-                    <div className="mt-6 space-y-3 text-left">
-                      {/* 阶段指示器 */}
-                      <div className="flex items-center justify-center gap-4">
-                        <div className={`flex items-center gap-2 ${generationProgress.phase === 'searching' ? 'text-blue-600' : 'text-gray-400'
-                          }`}>
-                          <Search className="w-4 h-4" />
-                          <span className="text-xs font-medium">搜索竞品</span>
-                        </div>
-                        <div className={`flex items-center gap-2 ${generationProgress.phase === 'parsing' ? 'text-orange-600' : 'text-gray-400'
-                          }`}>
-                          <FileText className="w-4 h-4" />
-                          <span className="text-xs font-medium">解析网页</span>
-                        </div>
-                        <div className={`flex items-center gap-2 ${generationProgress.phase === 'generating' ? 'text-purple-600' : 'text-gray-400'
-                          }`}>
-                          <Sparkles className="w-4 h-4" />
-                          <span className="text-xs font-medium">生成内容</span>
-                        </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-xs text-slate-500 font-medium ml-1">AI 供应商</Label>
+                        <Select value={selectedConfigId} onValueChange={handleConfigChange}>
+                          <SelectTrigger className="h-10 bg-white border-slate-200 focus:ring-slate-100 rounded-lg">
+                            <SelectValue placeholder="选择供应商" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableConfigs.map((config) => (
+                              <SelectItem key={config.id} value={config.id}>{config.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
 
-                      {/* 进度条 */}
-                      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all duration-300 ${generationProgress.phase === 'searching' ? 'bg-blue-600' :
-                            generationProgress.phase === 'parsing' ? 'bg-orange-600' :
-                              'bg-purple-600'
-                            }`}
-                          style={{ width: `${generationProgress.progress}%` }}
-                        />
-                      </div>
-
-                      {/* 当前步骤信息 */}
-                      <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                        <p className="text-sm font-medium text-gray-900">
-                          {generationProgress.step}
-                        </p>
-                        {generationProgress.current !== undefined && generationProgress.total !== undefined && (
-                          <p className="text-xs text-gray-600 mt-1">
-                            进度: {generationProgress.current}/{generationProgress.total}
-                          </p>
-                        )}
-                        {generationProgress.details && (
-                          <p className="text-xs text-gray-500 mt-1 break-all">
-                            {generationProgress.details}
-                          </p>
-                        )}
+                      <div className="space-y-2">
+                        <Label className="text-xs text-slate-500 font-medium ml-1">模型版本</Label>
+                        <Select value={selectedModelId} onValueChange={setSelectedModelId}>
+                          <SelectTrigger className="h-10 bg-white border-slate-200 focus:ring-slate-100 rounded-lg">
+                            <SelectValue placeholder="选择模型" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableModels.map((model) => (
+                              <SelectItem key={model.id} value={model.id}>
+                                <div className="flex items-center gap-2">
+                                  {model.name}
+                                  {model.isDefault && <Badge variant="secondary" className="text-[10px] h-4 min-h-0 px-1">默认</Badge>}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                   )}
                 </div>
+
+                {/* 关键词配置 */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Search className="w-4 h-4 text-slate-400" />
+                    <h3 className="text-base font-semibold text-slate-900">关键词设置</h3>
+                  </div>
+
+                  <div className="space-y-4 p-5 border border-slate-100 rounded-xl bg-white shadow-sm">
+                    <div className="space-y-2">
+                      <Label htmlFor="main-keyword" className="text-sm font-medium text-slate-700">主关键词 <span className="text-red-400">*</span></Label>
+                      <Input
+                        id="main-keyword"
+                        value={mainKeyword}
+                        onChange={(e) => setMainKeyword(e.target.value)}
+                        placeholder="例如：Action RPG, Puzzle, Strategy"
+                        className="bg-slate-50/50 border-slate-200 focus-visible:ring-slate-200 focus-visible:border-slate-400 h-10"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="sub-keywords" className="text-sm font-medium text-slate-700">辅助标签</Label>
+                      <Textarea
+                        id="sub-keywords"
+                        value={subKeywords}
+                        onChange={(e) => setSubKeywords(e.target.value)}
+                        placeholder="例如：multiplayer, 3D, open world (用逗号分隔)"
+                        rows={3}
+                        className="resize-none bg-slate-50/50 border-slate-200 focus-visible:ring-slate-200 focus-visible:border-slate-400 text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
+
+              {/* 右侧：生成模式与预览 */}
+              <div className="md:col-span-4 space-y-8 pl-0 md:pl-4 border-l border-transparent md:border-slate-100">
+                {/* 模式选择 */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="w-4 h-4 text-slate-400" />
+                    <h3 className="text-base font-semibold text-slate-900">生成模式</h3>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSeoMode('fast')}
+                      className={`relative group p-4 rounded-xl border text-left transition-all duration-200 ${seoMode === 'fast'
+                        ? 'bg-slate-900 border-slate-900 text-white shadow-md ring-2 ring-slate-200 ring-offset-2'
+                        : 'bg-white border-slate-100 text-slate-600 hover:border-blue-200 hover:bg-blue-50/30 hover:shadow-sm'
+                        }`}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <Cpu
+                          className={`w-5 h-5 ${seoMode === 'fast' ? '!text-blue-400' : 'text-slate-400 group-hover:text-blue-500'}`}
+                          style={{ color: seoMode === 'fast' ? '#60a5fa' : undefined }}
+                        />
+                        {seoMode === 'fast' && <div className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.6)]" />}
+                      </div>
+                      <p
+                        className={`text-sm font-semibold mb-1 ${seoMode === 'fast' ? '!text-white' : 'text-slate-900 group-hover:text-blue-600'}`}
+                        style={{ color: seoMode === 'fast' ? 'white' : undefined }}
+                      >
+                        快速模式
+                      </p>
+                      <p
+                        className={`text-[10px] leading-tight ${seoMode === 'fast' ? '!text-slate-200' : 'text-slate-500 group-hover:text-slate-600'}`}
+                        style={{ color: seoMode === 'fast' ? '#e2e8f0' : undefined }}
+                      >
+                        ~15s | 基础竞品分析
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSeoMode('quality')}
+                      className={`relative group p-4 rounded-xl border text-left transition-all duration-200 ${seoMode === 'quality'
+                        ? 'bg-slate-900 border-slate-900 text-white shadow-md ring-2 ring-slate-200 ring-offset-2'
+                        : 'bg-white border-slate-100 text-slate-600 hover:border-purple-200 hover:bg-purple-50/30 hover:shadow-sm'
+                        }`}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <Sparkles
+                          className={`w-5 h-5 ${seoMode === 'quality' ? '!text-purple-400' : 'text-slate-400 group-hover:text-purple-500'}`}
+                          style={{ color: seoMode === 'quality' ? '#c084fc' : undefined }}
+                        />
+                        {seoMode === 'quality' && <div className="w-2 h-2 rounded-full bg-purple-400 shadow-[0_0_8px_rgba(192,132,252,0.6)]" />}
+                      </div>
+                      <p
+                        className={`text-sm font-semibold mb-1 ${seoMode === 'quality' ? '!text-white' : 'text-slate-900 group-hover:text-purple-700'}`}
+                        style={{ color: seoMode === 'quality' ? 'white' : undefined }}
+                      >
+                        质量模式
+                      </p>
+                      <p
+                        className={`text-[10px] leading-tight ${seoMode === 'quality' ? '!text-slate-200' : 'text-slate-500 group-hover:text-slate-600'}`}
+                        style={{ color: seoMode === 'quality' ? '#e2e8f0' : undefined }}
+                      >
+                        ~30s | 深度 SEO 优化
+                      </p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 生成字段预览 */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FileText className="w-4 h-4 text-slate-400" />
+                    <h3 className="text-base font-semibold text-slate-900">生成字段预览</h3>
+                  </div>
+
+                  <div className="bg-slate-50/50 border border-slate-100 rounded-xl p-4">
+                    <div className="gap-y-2 grid grid-cols-1">
+                      {GENERATION_FIELDS.slice(0, 5).map(field => (
+                        <div key={field.id} className="flex items-center gap-3 py-1">
+                          <div className="flex items-center justify-center w-4 h-4 rounded-full bg-green-100 border border-green-200">
+                            <CheckCircle2 className="w-2.5 h-2.5 text-green-600" />
+                          </div>
+                          <span className="text-sm text-slate-600">{field.label}</span>
+                        </div>
+                      ))}
+                      <div className="flex items-center gap-3 py-1">
+                        <div className="flex items-center justify-center w-4 h-4 rounded-full bg-green-100 border border-green-200">
+                          <CheckCircle2 className="w-2.5 h-2.5 text-green-600" />
+                        </div>
+                        <span className="text-sm text-slate-500 italic">... 以及其他 4 个字段</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 生成阶段 - 新的 Timeline UI */}
+          {phase === 'generating' && (
+            <div className="py-2">
+              <AiProgressTimeline
+                steps={currentSteps}
+                logs={logs}
+                currentPhase={generationProgress?.phase || 'searching'}
+                progress={generationProgress?.progress || 0}
+              />
             </div>
           )}
 
@@ -801,47 +805,28 @@ export function AiGenerateDialog({
           )}
         </div>
 
-        {/* 操作按钮 */}
-        <DialogFooter className="flex items-center justify-between pt-4 border-t">
-          <div>
+        <DialogFooter className="flex justify-between items-center border-t px-6 py-4">
+          <div className="flex gap-2">
             {phase === 'preview' && (
-              <Button
-                variant="outline"
-                onClick={handleRegenerate}
-                className="gap-2"
-              >
+              <Button variant="outline" onClick={handleRegenerate} className="gap-2">
                 <RefreshCw className="w-4 h-4" />
                 重新生成
               </Button>
             )}
           </div>
-
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={handleClose}
-              disabled={phase === 'generating'}
-            >
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleClose}>
               {phase === 'preview' ? '取消' : '关闭'}
             </Button>
-
             {phase === 'config' && (
-              <Button
-                onClick={handleGenerate}
-                disabled={!mainKeyword.trim() || !selectedConfigId || !selectedModelId || loadingConfigs}
-                className="bg-purple-600 hover:bg-purple-700 gap-2"
-              >
-                <Sparkles className="w-4 h-4" />
-                开始生成
+              <Button onClick={handleGenerate} disabled={loadingConfigs || !!configError}>
+                <Sparkles className="w-4 h-4 mr-2" />
+                开始生成内容
               </Button>
             )}
-
             {phase === 'preview' && (
-              <Button
-                onClick={handleApplyToForm}
-                className="bg-green-600 hover:bg-green-700 gap-2"
-              >
-                <CheckCircle2 className="w-4 h-4" />
+              <Button onClick={handleApplyToForm} className="bg-green-600 hover:bg-green-700">
+                <CheckCircle2 className="w-4 h-4 mr-2" />
                 应用到表单
               </Button>
             )}

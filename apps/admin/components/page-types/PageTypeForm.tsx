@@ -17,7 +17,7 @@ import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { createPageType, updatePageType, type PageTypeFormData } from "@/app/admin/page-types/actions"
 import { useEnabledLanguages } from "@/hooks/useEnabledLanguages"
-import type { PageType, PageTypeTranslation } from "@prisma/client"
+import type { PageType, PageTypeTranslation } from "@rungame/database"
 
 const pageTypeSchema = z.object({
   slug: z.string().min(1, "标识符不能为空").regex(/^[a-z0-9-]+$/, "标识符只能包含小写字母、数字和连字符"),

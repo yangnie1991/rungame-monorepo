@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Loader2, Upload, Trash2, ExternalLink, Copy, Check, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { removeWidthParameter } from '@/lib/gamepix-image-upload'
+import { removeWidthParameter } from '@/lib/utils-ui'
 
 interface ScreenshotsFieldWithUploadProps {
   /**

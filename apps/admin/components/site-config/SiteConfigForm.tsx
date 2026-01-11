@@ -12,8 +12,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { updateSiteConfigAction, updateSiteConfigTranslationAction } from '@/app/admin/site-config/actions'
+
 import { Loader2, Save } from 'lucide-react'
-import type { SiteConfig, SiteConfigTranslation } from '@prisma/client'
+import type { SiteConfig, SiteConfigTranslation } from "@rungame/database"
 
 const siteConfigSchema = z.object({
   siteName: z.string().min(1, '网站名称不能为空'),

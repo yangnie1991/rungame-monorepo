@@ -11,65 +11,73 @@ import { Badge } from '@/components/ui/badge'
 import { ExternalLink, Settings, Send } from 'lucide-react'
 
 async function getSearchEnginesStats() {
-  // 获取 Google 和 Bing 配置
-  const [googleConfig, bingConfig] = await Promise.all([
-    prismaAdmin.searchEngineConfig.findFirst({
-      where: { type: 'google' },
-    }),
-    prismaAdmin.searchEngineConfig.findFirst({
-      where: { type: 'indexnow' },
-    }),
-  ])
-
-  // 获取 Google 统计
-  let googleStats = null
-  if (googleConfig) {
-    const [total, indexed] = await Promise.all([
-      prismaAdmin.urlSubmission.count({
-        where: {},
+  try {
+    // 获取 Google 和 Bing 配置
+    const [googleConfig, bingConfig] = await Promise.all([
+      prismaAdmin.searchEngineConfig.findFirst({
+        where: { type: 'google' },
       }),
-      prismaAdmin.urlSubmission.count({
-        where: {
-          indexedByGoogle: true,
-        },
+      prismaAdmin.searchEngineConfig.findFirst({
+        where: { type: 'indexnow' },
       }),
     ])
-    googleStats = {
-      total,
-      indexed,
-      indexRate: total > 0 ? ((indexed / total) * 100).toFixed(1) : '0',
-    }
-  }
 
-  // 获取 Bing 统计
-  let bingStats = null
-  if (bingConfig) {
-    const [total, indexed] = await Promise.all([
-      prismaAdmin.urlSubmission.count({
-        where: {},
-      }),
-      prismaAdmin.urlSubmission.count({
-        where: {
-          indexedByBing: true,
-        },
-      }),
-    ])
-    bingStats = {
-      total,
-      indexed,
-      indexRate: total > 0 ? ((indexed / total) * 100).toFixed(1) : '0',
+    // 获取 Google 统计
+    let googleStats: any = null
+    if (googleConfig) {
+      const [total, indexed] = await Promise.all([
+        prismaAdmin.urlSubmission.count({
+          where: {},
+        }),
+        prismaAdmin.urlSubmission.count({
+          where: {
+            indexedByGoogle: true,
+          },
+        }),
+      ])
+      googleStats = {
+        total,
+        indexed,
+        indexRate: total > 0 ? ((indexed / total) * 100).toFixed(1) : '0',
+      }
     }
-  }
 
-  return {
-    google: {
-      config: googleConfig,
-      stats: googleStats,
-    },
-    bing: {
-      config: bingConfig,
-      stats: bingStats,
-    },
+    // 获取 Bing 统计
+    let bingStats: any = null
+    if (bingConfig) {
+      const [total, indexed] = await Promise.all([
+        prismaAdmin.urlSubmission.count({
+          where: {},
+        }),
+        prismaAdmin.urlSubmission.count({
+          where: {
+            indexedByBing: true,
+          },
+        }),
+      ])
+      bingStats = {
+        total,
+        indexed,
+        indexRate: total > 0 ? ((indexed / total) * 100).toFixed(1) : '0',
+      }
+    }
+
+    return {
+      google: {
+        config: googleConfig,
+        stats: googleStats,
+      },
+      bing: {
+        config: bingConfig,
+        stats: bingStats,
+      },
+    }
+  } catch (error) {
+    console.error('Failed to get search engine stats:', error)
+    return {
+      google: { config: null, stats: null },
+      bing: { config: null, stats: null },
+    }
   }
 }
 

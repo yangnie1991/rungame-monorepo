@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import { createTag, updateTag, type TagFormData } from "@/app/admin/tags/actions"
-import type { Tag, TagTranslation } from "@prisma/client"
+import type { Tag, TagTranslation } from "@rungame/database"
 import { useEnabledLanguages } from "@/hooks/useEnabledLanguages"
 import { Loader2 } from "lucide-react"
 import { ImageUploader } from "@/components/ImageUploader"
