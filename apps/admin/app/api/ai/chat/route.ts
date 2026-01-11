@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server'
 import { auth } from '@/lib/auth'
 import { getDecryptedAiConfig } from '@/lib/ai-config'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * AI 对话 API（支持流式响应）
  *

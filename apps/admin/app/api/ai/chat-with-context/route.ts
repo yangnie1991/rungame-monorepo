@@ -1,6 +1,8 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@rungame/database'
 
+export const dynamic = 'force-dynamic'
+
 interface Message {
   role: 'system' | 'user' | 'assistant' | 'tool'
   content: string

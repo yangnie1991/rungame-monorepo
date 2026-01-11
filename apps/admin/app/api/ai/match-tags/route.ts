@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@rungame/database'
 import { parseAIJsonResponse } from '@/lib/ai-json-parser'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * AI Match Tags API
  *
