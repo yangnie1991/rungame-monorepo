@@ -16,6 +16,8 @@ import { uploadGamePixImageToR2 } from '@/lib/gamepix-image-upload'
 import { prisma, CACHE_TAGS } from '@rungame/database'
 import { revalidateTag } from 'next/cache'
 
+export const dynamic = 'force-dynamic'
+
 // SSE 辅助函数
 function createSSEMessage(data: any): string {
   return `data: ${JSON.stringify(data)}\n\n`
