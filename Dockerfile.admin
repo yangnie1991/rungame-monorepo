@@ -77,7 +77,9 @@ ENV SKIP_ENV_VALIDATION=true
 # 关键修复: 在构建阶段设置一个有效的 NEXTAUTH_URL，防止 NextAuth 初始化因 URL 为空而报错 (Invalid URL)
 # 这个设置仅在构建阶段生效，不会影响运行时（运行时使用 docker run 传入的环境变量）
 ENV NEXTAUTH_URL=http://localhost:3000
+ENV AUTH_URL=http://localhost:3000
 RUN echo "Debug: NEXTAUTH_URL during build is $NEXTAUTH_URL"
+RUN echo "Debug: AUTH_URL during build is $AUTH_URL"
 RUN pnpm turbo build --filter=@rungame/admin --verbosity=2
 
 # ============================================
