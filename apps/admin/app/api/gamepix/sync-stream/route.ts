@@ -17,6 +17,8 @@
 import { NextRequest } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prismaCache } from '@/lib/prisma-cache'
+
+export const dynamic = 'force-dynamic'
 import { fetchGamePixFeed, type GamePixGameItem } from '@/lib/gamepix-importer'
 
 type SyncMode = 'full' | 'incremental'

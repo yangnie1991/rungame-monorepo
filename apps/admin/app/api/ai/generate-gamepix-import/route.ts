@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth'
 import { generateGamePixImportContent, type GamePixImportInput } from '@/lib/ai-seo-optimizer'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 export const maxDuration = 60 // GamePix 导入生成可能需要更长时间
 
 // 🎯 创建 Server-Sent Events 编码器

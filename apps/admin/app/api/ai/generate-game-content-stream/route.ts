@@ -17,6 +17,7 @@ import { decrypt } from '@/lib/crypto'
 import { parseAIJsonResponse } from '@/lib/ai-json-parser'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 export const maxDuration = 60 // Pro 计划有效，Hobby 计划忽略（但保留配置）
 
 /**

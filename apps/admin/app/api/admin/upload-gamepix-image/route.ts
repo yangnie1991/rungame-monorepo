@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth'
 import { uploadGamePixImageToR2 } from '@/lib/gamepix-image-upload'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 export const maxDuration = 30
 
 /**

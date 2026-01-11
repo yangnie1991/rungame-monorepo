@@ -35,6 +35,8 @@ import { NextRequest } from 'next/server'
 import { auth } from '@/lib/auth'
 import { uploadGamePixImageToR2, type ImageUploadResult } from '@/lib/gamepix-image-upload'
 import { prisma, CACHE_TAGS } from '@rungame/database'
+
+export const dynamic = 'force-dynamic'
 import { revalidateTag } from 'next/cache'
 import { z } from 'zod'
 
