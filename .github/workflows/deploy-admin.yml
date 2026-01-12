@@ -59,8 +59,10 @@ jobs:
           echo "🔨 构建 Docker 镜像（在 GitHub Actions 上，内存充足）..."
           docker build \
             --build-arg DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-            --build-arg NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}" \
-            --build-arg NEXTAUTH_URL="${{ secrets.NEXTAUTH_URL }}" \
+            --build-arg CACHE_DATABASE_URL="${{ secrets.CACHE_DATABASE_URL }}" \
+            --build-arg BETTER_AUTH_SECRET="${{ secrets.BETTER_AUTH_SECRET }}" \
+            --build-arg BETTER_AUTH_URL="${{ secrets.BETTER_AUTH_URL }}" \
+            --build-arg NEXT_PUBLIC_APP_URL="${{ secrets.NEXT_PUBLIC_APP_URL }}" \
             --build-arg ENCRYPTION_KEY="${{ secrets.ENCRYPTION_KEY }}" \
             -t rungame-admin:latest \
             -f Dockerfile.admin \
@@ -110,8 +112,10 @@ jobs:
           # Admin 特定环境变量（apps/admin/.env.local）
           # ============================================
           CACHE_DATABASE_URL: ${{ secrets.CACHE_DATABASE_URL }}
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          AUTH_TRUST_HOST: "true"
           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
           # R2 存储配置
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
@@ -127,7 +131,7 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
-          envs: DEPLOY_BRANCH,DEPLOY_ENV,DATABASE_URL,NODE_ENV,NEXT_PUBLIC_SITE_URL,NEXT_PUBLIC_GA_ID,NEXT_PUBLIC_ADSENSE_ID,CACHE_DATABASE_URL,NEXTAUTH_SECRET,NEXTAUTH_URL,ENCRYPTION_KEY,R2_ACCOUNT_ID,R2_ACCESS_KEY_ID,R2_SECRET_ACCESS_KEY,R2_BUCKET_NAME,R2_PUBLIC_URL,GOOGLE_SEARCH_API_KEY,GOOGLE_SEARCH_ENGINE_ID
+          envs: DEPLOY_BRANCH,DEPLOY_ENV,DATABASE_URL,NODE_ENV,NEXT_PUBLIC_SITE_URL,NEXT_PUBLIC_GA_ID,NEXT_PUBLIC_ADSENSE_ID,CACHE_DATABASE_URL,BETTER_AUTH_SECRET,BETTER_AUTH_URL,NEXT_PUBLIC_APP_URL,AUTH_TRUST_HOST,ENCRYPTION_KEY,R2_ACCOUNT_ID,R2_ACCESS_KEY_ID,R2_SECRET_ACCESS_KEY,R2_BUCKET_NAME,R2_PUBLIC_URL,GOOGLE_SEARCH_API_KEY,GOOGLE_SEARCH_ENGINE_ID
           script: |
             # 设置错误时退出
             set -e
