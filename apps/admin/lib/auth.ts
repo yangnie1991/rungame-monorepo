@@ -8,6 +8,17 @@ export const auth = betterAuth({
   trustedOrigins: [
     process.env.NEXT_PUBLIC_APP_URL || "http://localhost:4000",
   ],
+  // 安全配置
+  advanced: {
+    // 禁用跨子域 cookie
+    crossSubDomainCookies: {
+      enabled: false,
+    },
+    // SameSite cookie 设置
+    useSameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  },
+  // 允许相对路径的 callbackURL（内部路由）
+  allowRelativeURLs: true,
   database: prismaAdapter(prismaAdmin, {
     provider: "postgresql",
   }),
