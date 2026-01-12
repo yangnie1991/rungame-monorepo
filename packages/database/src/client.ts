@@ -15,10 +15,20 @@ const globalForPrisma = globalThis as unknown as {
 
 const prismaClientSingleton = () => {
   // 更加健壮的连接字符串清理逻辑
-  // 移除 sslmode, sslaccept 等可能导致 TLS 强制校验的查询参数
-  // 确保处理后如果不带参数，则移除末尾的 ?；如果带参数，则以 ? 开头
   const rawUrl = process.env.DATABASE_URL || ''
-  const urlObj = new URL(rawUrl.replace('postgres://', 'http://').replace('postgresql://', 'http://'))
+
+  // 预先处理 postgres:// 和 postgresql:// 协议头，确保 URL 构造器能正确解析
+  const cleanProtocolUrl = rawUrl.replace(/^postgres:\/\//, 'http://').replace(/^postgresql:\/\//, 'http://')
+
+  let urlObj: URL
+  try {
+    urlObj = new URL(cleanProtocolUrl)
+  } catch (e) {
+    // 如果 URL 解析失败（例如空字符串），则创建一个空的 URL 对象避免崩溃
+    // 这种情况通常发生在构建阶段没有环境变量时
+    console.warn('⚠️ [Prisma Client] Failed to parse DATABASE_URL, using fallback empty URL.')
+    urlObj = new URL('http://localhost')
+  }
 
   // 删除 SSL 相关参数
   urlObj.searchParams.delete('sslmode')

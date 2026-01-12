@@ -65,8 +65,14 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 ENV PRISMA_BINARIES_MIRROR=https://registry.npmmirror.com/-/binary/prisma
 
-# 生成 Prisma Client
-RUN pnpm db:generate
+# 生成 Prisma Client (显式运行以确保两个包都生成)
+WORKDIR /app/packages/database
+RUN npx prisma generate --schema=./prisma/schema.prisma
+
+WORKDIR /app/packages/database-admin
+RUN npx prisma generate --schema=./prisma/schema.prisma
+
+WORKDIR /app
 
 # 使用 turbo 构建（自动处理依赖顺序）
 # 注意：turbo prune 已经修剪了 monorepo，无需使用 --filter
