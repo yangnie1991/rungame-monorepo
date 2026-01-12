@@ -356,6 +356,31 @@ exports.Prisma.AiChatHistoryScalarFieldEnum = {
   expiresAt: 'expiresAt'
 };
 
+exports.Prisma.AITaskScalarFieldEnum = {
+  id: 'id',
+  taskType: 'taskType',
+  status: 'status',
+  progress: 'progress',
+  currentStep: 'currentStep',
+  inputData: 'inputData',
+  outputData: 'outputData',
+  searchingCheckpoint: 'searchingCheckpoint',
+  parsingCheckpoint: 'parsingCheckpoint',
+  filteringCheckpoint: 'filteringCheckpoint',
+  generatingCheckpoint: 'generatingCheckpoint',
+  errorMessage: 'errorMessage',
+  errorDetails: 'errorDetails',
+  requiresAction: 'requiresAction',
+  needsConfirmation: 'needsConfirmation',
+  confirmPrompt: 'confirmPrompt',
+  confirmedAt: 'confirmedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  lastCheckpoint: 'lastCheckpoint'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -401,6 +426,15 @@ exports.BatchStatus = exports.$Enums.BatchStatus = {
   CANCELLED: 'CANCELLED'
 };
 
+exports.AITaskStatus = exports.$Enums.AITaskStatus = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  WAITING_CONFIRM: 'WAITING_CONFIRM',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+  CANCELLED: 'CANCELLED'
+};
+
 exports.Prisma.ModelName = {
   User: 'User',
   Session: 'Session',
@@ -414,7 +448,8 @@ exports.Prisma.ModelName = {
   SubmissionBatch: 'SubmissionBatch',
   GamePixGameCache: 'GamePixGameCache',
   SyncLog: 'SyncLog',
-  AiChatHistory: 'AiChatHistory'
+  AiChatHistory: 'AiChatHistory',
+  AITask: 'AITask'
 };
 
 /**

@@ -78,6 +78,11 @@ export type SyncLog = $Result.DefaultSelection<Prisma.$SyncLogPayload>
  * 
  */
 export type AiChatHistory = $Result.DefaultSelection<Prisma.$AiChatHistoryPayload>
+/**
+ * Model AITask
+ * 
+ */
+export type AITask = $Result.DefaultSelection<Prisma.$AITaskPayload>
 
 /**
  * Enums
@@ -104,6 +109,18 @@ export const BatchStatus: {
 
 export type BatchStatus = (typeof BatchStatus)[keyof typeof BatchStatus]
 
+
+export const AITaskStatus: {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  WAITING_CONFIRM: 'WAITING_CONFIRM',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+  CANCELLED: 'CANCELLED'
+};
+
+export type AITaskStatus = (typeof AITaskStatus)[keyof typeof AITaskStatus]
+
 }
 
 export type SubmissionStatus = $Enums.SubmissionStatus
@@ -113,6 +130,10 @@ export const SubmissionStatus: typeof $Enums.SubmissionStatus
 export type BatchStatus = $Enums.BatchStatus
 
 export const BatchStatus: typeof $Enums.BatchStatus
+
+export type AITaskStatus = $Enums.AITaskStatus
+
+export const AITaskStatus: typeof $Enums.AITaskStatus
 
 /**
  * ##  Prisma Client ʲˢ
@@ -360,6 +381,16 @@ export class PrismaClient<
     * ```
     */
   get aiChatHistory(): Prisma.AiChatHistoryDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.aITask`: Exposes CRUD operations for the **AITask** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more AITasks
+    * const aITasks = await prisma.aITask.findMany()
+    * ```
+    */
+  get aITask(): Prisma.AITaskDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -806,7 +837,8 @@ export namespace Prisma {
     SubmissionBatch: 'SubmissionBatch',
     GamePixGameCache: 'GamePixGameCache',
     SyncLog: 'SyncLog',
-    AiChatHistory: 'AiChatHistory'
+    AiChatHistory: 'AiChatHistory',
+    AITask: 'AITask'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -822,7 +854,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "session" | "account" | "verification" | "importPlatform" | "aiConfig" | "externalApiConfig" | "searchEngineConfig" | "urlSubmission" | "submissionBatch" | "gamePixGameCache" | "syncLog" | "aiChatHistory"
+      modelProps: "user" | "session" | "account" | "verification" | "importPlatform" | "aiConfig" | "externalApiConfig" | "searchEngineConfig" | "urlSubmission" | "submissionBatch" | "gamePixGameCache" | "syncLog" | "aiChatHistory" | "aITask"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1788,6 +1820,80 @@ export namespace Prisma {
           }
         }
       }
+      AITask: {
+        payload: Prisma.$AITaskPayload<ExtArgs>
+        fields: Prisma.AITaskFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.AITaskFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AITaskPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.AITaskFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AITaskPayload>
+          }
+          findFirst: {
+            args: Prisma.AITaskFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AITaskPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.AITaskFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AITaskPayload>
+          }
+          findMany: {
+            args: Prisma.AITaskFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AITaskPayload>[]
+          }
+          create: {
+            args: Prisma.AITaskCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AITaskPayload>
+          }
+          createMany: {
+            args: Prisma.AITaskCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.AITaskCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AITaskPayload>[]
+          }
+          delete: {
+            args: Prisma.AITaskDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AITaskPayload>
+          }
+          update: {
+            args: Prisma.AITaskUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AITaskPayload>
+          }
+          deleteMany: {
+            args: Prisma.AITaskDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.AITaskUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.AITaskUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AITaskPayload>[]
+          }
+          upsert: {
+            args: Prisma.AITaskUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AITaskPayload>
+          }
+          aggregate: {
+            args: Prisma.AITaskAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateAITask>
+          }
+          groupBy: {
+            args: Prisma.AITaskGroupByArgs<ExtArgs>
+            result: $Utils.Optional<AITaskGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.AITaskCountArgs<ExtArgs>
+            result: $Utils.Optional<AITaskCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -1909,6 +2015,7 @@ export namespace Prisma {
     gamePixGameCache?: GamePixGameCacheOmit
     syncLog?: SyncLogOmit
     aiChatHistory?: AiChatHistoryOmit
+    aITask?: AITaskOmit
   }
 
   /* Types for Logging */
@@ -17201,6 +17308,1228 @@ export namespace Prisma {
 
 
   /**
+   * Model AITask
+   */
+
+  export type AggregateAITask = {
+    _count: AITaskCountAggregateOutputType | null
+    _avg: AITaskAvgAggregateOutputType | null
+    _sum: AITaskSumAggregateOutputType | null
+    _min: AITaskMinAggregateOutputType | null
+    _max: AITaskMaxAggregateOutputType | null
+  }
+
+  export type AITaskAvgAggregateOutputType = {
+    progress: number | null
+  }
+
+  export type AITaskSumAggregateOutputType = {
+    progress: number | null
+  }
+
+  export type AITaskMinAggregateOutputType = {
+    id: string | null
+    taskType: string | null
+    status: $Enums.AITaskStatus | null
+    progress: number | null
+    currentStep: string | null
+    errorMessage: string | null
+    requiresAction: boolean | null
+    needsConfirmation: boolean | null
+    confirmPrompt: string | null
+    confirmedAt: Date | null
+    createdAt: Date | null
+    updatedAt: Date | null
+    startedAt: Date | null
+    completedAt: Date | null
+    lastCheckpoint: Date | null
+  }
+
+  export type AITaskMaxAggregateOutputType = {
+    id: string | null
+    taskType: string | null
+    status: $Enums.AITaskStatus | null
+    progress: number | null
+    currentStep: string | null
+    errorMessage: string | null
+    requiresAction: boolean | null
+    needsConfirmation: boolean | null
+    confirmPrompt: string | null
+    confirmedAt: Date | null
+    createdAt: Date | null
+    updatedAt: Date | null
+    startedAt: Date | null
+    completedAt: Date | null
+    lastCheckpoint: Date | null
+  }
+
+  export type AITaskCountAggregateOutputType = {
+    id: number
+    taskType: number
+    status: number
+    progress: number
+    currentStep: number
+    inputData: number
+    outputData: number
+    searchingCheckpoint: number
+    parsingCheckpoint: number
+    filteringCheckpoint: number
+    generatingCheckpoint: number
+    errorMessage: number
+    errorDetails: number
+    requiresAction: number
+    needsConfirmation: number
+    confirmPrompt: number
+    confirmedAt: number
+    createdAt: number
+    updatedAt: number
+    startedAt: number
+    completedAt: number
+    lastCheckpoint: number
+    _all: number
+  }
+
+
+  export type AITaskAvgAggregateInputType = {
+    progress?: true
+  }
+
+  export type AITaskSumAggregateInputType = {
+    progress?: true
+  }
+
+  export type AITaskMinAggregateInputType = {
+    id?: true
+    taskType?: true
+    status?: true
+    progress?: true
+    currentStep?: true
+    errorMessage?: true
+    requiresAction?: true
+    needsConfirmation?: true
+    confirmPrompt?: true
+    confirmedAt?: true
+    createdAt?: true
+    updatedAt?: true
+    startedAt?: true
+    completedAt?: true
+    lastCheckpoint?: true
+  }
+
+  export type AITaskMaxAggregateInputType = {
+    id?: true
+    taskType?: true
+    status?: true
+    progress?: true
+    currentStep?: true
+    errorMessage?: true
+    requiresAction?: true
+    needsConfirmation?: true
+    confirmPrompt?: true
+    confirmedAt?: true
+    createdAt?: true
+    updatedAt?: true
+    startedAt?: true
+    completedAt?: true
+    lastCheckpoint?: true
+  }
+
+  export type AITaskCountAggregateInputType = {
+    id?: true
+    taskType?: true
+    status?: true
+    progress?: true
+    currentStep?: true
+    inputData?: true
+    outputData?: true
+    searchingCheckpoint?: true
+    parsingCheckpoint?: true
+    filteringCheckpoint?: true
+    generatingCheckpoint?: true
+    errorMessage?: true
+    errorDetails?: true
+    requiresAction?: true
+    needsConfirmation?: true
+    confirmPrompt?: true
+    confirmedAt?: true
+    createdAt?: true
+    updatedAt?: true
+    startedAt?: true
+    completedAt?: true
+    lastCheckpoint?: true
+    _all?: true
+  }
+
+  export type AITaskAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which AITask to aggregate.
+     */
+    where?: AITaskWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of AITasks to fetch.
+     */
+    orderBy?: AITaskOrderByWithRelationInput | AITaskOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: AITaskWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` AITasks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` AITasks.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned AITasks
+    **/
+    _count?: true | AITaskCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: AITaskAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: AITaskSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: AITaskMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: AITaskMaxAggregateInputType
+  }
+
+  export type GetAITaskAggregateType<T extends AITaskAggregateArgs> = {
+        [P in keyof T & keyof AggregateAITask]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateAITask[P]>
+      : GetScalarType<T[P], AggregateAITask[P]>
+  }
+
+
+
+
+  export type AITaskGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: AITaskWhereInput
+    orderBy?: AITaskOrderByWithAggregationInput | AITaskOrderByWithAggregationInput[]
+    by: AITaskScalarFieldEnum[] | AITaskScalarFieldEnum
+    having?: AITaskScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: AITaskCountAggregateInputType | true
+    _avg?: AITaskAvgAggregateInputType
+    _sum?: AITaskSumAggregateInputType
+    _min?: AITaskMinAggregateInputType
+    _max?: AITaskMaxAggregateInputType
+  }
+
+  export type AITaskGroupByOutputType = {
+    id: string
+    taskType: string
+    status: $Enums.AITaskStatus
+    progress: number
+    currentStep: string | null
+    inputData: JsonValue | null
+    outputData: JsonValue | null
+    searchingCheckpoint: JsonValue | null
+    parsingCheckpoint: JsonValue | null
+    filteringCheckpoint: JsonValue | null
+    generatingCheckpoint: JsonValue | null
+    errorMessage: string | null
+    errorDetails: JsonValue | null
+    requiresAction: boolean
+    needsConfirmation: boolean
+    confirmPrompt: string | null
+    confirmedAt: Date | null
+    createdAt: Date
+    updatedAt: Date
+    startedAt: Date | null
+    completedAt: Date | null
+    lastCheckpoint: Date | null
+    _count: AITaskCountAggregateOutputType | null
+    _avg: AITaskAvgAggregateOutputType | null
+    _sum: AITaskSumAggregateOutputType | null
+    _min: AITaskMinAggregateOutputType | null
+    _max: AITaskMaxAggregateOutputType | null
+  }
+
+  type GetAITaskGroupByPayload<T extends AITaskGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<AITaskGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof AITaskGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], AITaskGroupByOutputType[P]>
+            : GetScalarType<T[P], AITaskGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type AITaskSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    taskType?: boolean
+    status?: boolean
+    progress?: boolean
+    currentStep?: boolean
+    inputData?: boolean
+    outputData?: boolean
+    searchingCheckpoint?: boolean
+    parsingCheckpoint?: boolean
+    filteringCheckpoint?: boolean
+    generatingCheckpoint?: boolean
+    errorMessage?: boolean
+    errorDetails?: boolean
+    requiresAction?: boolean
+    needsConfirmation?: boolean
+    confirmPrompt?: boolean
+    confirmedAt?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    startedAt?: boolean
+    completedAt?: boolean
+    lastCheckpoint?: boolean
+  }, ExtArgs["result"]["aITask"]>
+
+  export type AITaskSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    taskType?: boolean
+    status?: boolean
+    progress?: boolean
+    currentStep?: boolean
+    inputData?: boolean
+    outputData?: boolean
+    searchingCheckpoint?: boolean
+    parsingCheckpoint?: boolean
+    filteringCheckpoint?: boolean
+    generatingCheckpoint?: boolean
+    errorMessage?: boolean
+    errorDetails?: boolean
+    requiresAction?: boolean
+    needsConfirmation?: boolean
+    confirmPrompt?: boolean
+    confirmedAt?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    startedAt?: boolean
+    completedAt?: boolean
+    lastCheckpoint?: boolean
+  }, ExtArgs["result"]["aITask"]>
+
+  export type AITaskSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    taskType?: boolean
+    status?: boolean
+    progress?: boolean
+    currentStep?: boolean
+    inputData?: boolean
+    outputData?: boolean
+    searchingCheckpoint?: boolean
+    parsingCheckpoint?: boolean
+    filteringCheckpoint?: boolean
+    generatingCheckpoint?: boolean
+    errorMessage?: boolean
+    errorDetails?: boolean
+    requiresAction?: boolean
+    needsConfirmation?: boolean
+    confirmPrompt?: boolean
+    confirmedAt?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    startedAt?: boolean
+    completedAt?: boolean
+    lastCheckpoint?: boolean
+  }, ExtArgs["result"]["aITask"]>
+
+  export type AITaskSelectScalar = {
+    id?: boolean
+    taskType?: boolean
+    status?: boolean
+    progress?: boolean
+    currentStep?: boolean
+    inputData?: boolean
+    outputData?: boolean
+    searchingCheckpoint?: boolean
+    parsingCheckpoint?: boolean
+    filteringCheckpoint?: boolean
+    generatingCheckpoint?: boolean
+    errorMessage?: boolean
+    errorDetails?: boolean
+    requiresAction?: boolean
+    needsConfirmation?: boolean
+    confirmPrompt?: boolean
+    confirmedAt?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    startedAt?: boolean
+    completedAt?: boolean
+    lastCheckpoint?: boolean
+  }
+
+  export type AITaskOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "taskType" | "status" | "progress" | "currentStep" | "inputData" | "outputData" | "searchingCheckpoint" | "parsingCheckpoint" | "filteringCheckpoint" | "generatingCheckpoint" | "errorMessage" | "errorDetails" | "requiresAction" | "needsConfirmation" | "confirmPrompt" | "confirmedAt" | "createdAt" | "updatedAt" | "startedAt" | "completedAt" | "lastCheckpoint", ExtArgs["result"]["aITask"]>
+
+  export type $AITaskPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "AITask"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      taskType: string
+      status: $Enums.AITaskStatus
+      progress: number
+      currentStep: string | null
+      inputData: Prisma.JsonValue | null
+      outputData: Prisma.JsonValue | null
+      searchingCheckpoint: Prisma.JsonValue | null
+      parsingCheckpoint: Prisma.JsonValue | null
+      filteringCheckpoint: Prisma.JsonValue | null
+      generatingCheckpoint: Prisma.JsonValue | null
+      errorMessage: string | null
+      errorDetails: Prisma.JsonValue | null
+      requiresAction: boolean
+      needsConfirmation: boolean
+      confirmPrompt: string | null
+      confirmedAt: Date | null
+      createdAt: Date
+      updatedAt: Date
+      startedAt: Date | null
+      completedAt: Date | null
+      lastCheckpoint: Date | null
+    }, ExtArgs["result"]["aITask"]>
+    composites: {}
+  }
+
+  type AITaskGetPayload<S extends boolean | null | undefined | AITaskDefaultArgs> = $Result.GetResult<Prisma.$AITaskPayload, S>
+
+  type AITaskCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<AITaskFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: AITaskCountAggregateInputType | true
+    }
+
+  export interface AITaskDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['AITask'], meta: { name: 'AITask' } }
+    /**
+     * Find zero or one AITask that matches the filter.
+     * @param {AITaskFindUniqueArgs} args - Arguments to find a AITask
+     * @example
+     * // Get one AITask
+     * const aITask = await prisma.aITask.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends AITaskFindUniqueArgs>(args: SelectSubset<T, AITaskFindUniqueArgs<ExtArgs>>): Prisma__AITaskClient<$Result.GetResult<Prisma.$AITaskPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one AITask that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {AITaskFindUniqueOrThrowArgs} args - Arguments to find a AITask
+     * @example
+     * // Get one AITask
+     * const aITask = await prisma.aITask.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends AITaskFindUniqueOrThrowArgs>(args: SelectSubset<T, AITaskFindUniqueOrThrowArgs<ExtArgs>>): Prisma__AITaskClient<$Result.GetResult<Prisma.$AITaskPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first AITask that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AITaskFindFirstArgs} args - Arguments to find a AITask
+     * @example
+     * // Get one AITask
+     * const aITask = await prisma.aITask.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends AITaskFindFirstArgs>(args?: SelectSubset<T, AITaskFindFirstArgs<ExtArgs>>): Prisma__AITaskClient<$Result.GetResult<Prisma.$AITaskPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first AITask that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AITaskFindFirstOrThrowArgs} args - Arguments to find a AITask
+     * @example
+     * // Get one AITask
+     * const aITask = await prisma.aITask.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends AITaskFindFirstOrThrowArgs>(args?: SelectSubset<T, AITaskFindFirstOrThrowArgs<ExtArgs>>): Prisma__AITaskClient<$Result.GetResult<Prisma.$AITaskPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more AITasks that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AITaskFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all AITasks
+     * const aITasks = await prisma.aITask.findMany()
+     * 
+     * // Get first 10 AITasks
+     * const aITasks = await prisma.aITask.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const aITaskWithIdOnly = await prisma.aITask.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends AITaskFindManyArgs>(args?: SelectSubset<T, AITaskFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AITaskPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a AITask.
+     * @param {AITaskCreateArgs} args - Arguments to create a AITask.
+     * @example
+     * // Create one AITask
+     * const AITask = await prisma.aITask.create({
+     *   data: {
+     *     // ... data to create a AITask
+     *   }
+     * })
+     * 
+     */
+    create<T extends AITaskCreateArgs>(args: SelectSubset<T, AITaskCreateArgs<ExtArgs>>): Prisma__AITaskClient<$Result.GetResult<Prisma.$AITaskPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many AITasks.
+     * @param {AITaskCreateManyArgs} args - Arguments to create many AITasks.
+     * @example
+     * // Create many AITasks
+     * const aITask = await prisma.aITask.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends AITaskCreateManyArgs>(args?: SelectSubset<T, AITaskCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many AITasks and returns the data saved in the database.
+     * @param {AITaskCreateManyAndReturnArgs} args - Arguments to create many AITasks.
+     * @example
+     * // Create many AITasks
+     * const aITask = await prisma.aITask.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many AITasks and only return the `id`
+     * const aITaskWithIdOnly = await prisma.aITask.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends AITaskCreateManyAndReturnArgs>(args?: SelectSubset<T, AITaskCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AITaskPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a AITask.
+     * @param {AITaskDeleteArgs} args - Arguments to delete one AITask.
+     * @example
+     * // Delete one AITask
+     * const AITask = await prisma.aITask.delete({
+     *   where: {
+     *     // ... filter to delete one AITask
+     *   }
+     * })
+     * 
+     */
+    delete<T extends AITaskDeleteArgs>(args: SelectSubset<T, AITaskDeleteArgs<ExtArgs>>): Prisma__AITaskClient<$Result.GetResult<Prisma.$AITaskPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one AITask.
+     * @param {AITaskUpdateArgs} args - Arguments to update one AITask.
+     * @example
+     * // Update one AITask
+     * const aITask = await prisma.aITask.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends AITaskUpdateArgs>(args: SelectSubset<T, AITaskUpdateArgs<ExtArgs>>): Prisma__AITaskClient<$Result.GetResult<Prisma.$AITaskPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more AITasks.
+     * @param {AITaskDeleteManyArgs} args - Arguments to filter AITasks to delete.
+     * @example
+     * // Delete a few AITasks
+     * const { count } = await prisma.aITask.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends AITaskDeleteManyArgs>(args?: SelectSubset<T, AITaskDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more AITasks.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AITaskUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many AITasks
+     * const aITask = await prisma.aITask.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends AITaskUpdateManyArgs>(args: SelectSubset<T, AITaskUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more AITasks and returns the data updated in the database.
+     * @param {AITaskUpdateManyAndReturnArgs} args - Arguments to update many AITasks.
+     * @example
+     * // Update many AITasks
+     * const aITask = await prisma.aITask.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more AITasks and only return the `id`
+     * const aITaskWithIdOnly = await prisma.aITask.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends AITaskUpdateManyAndReturnArgs>(args: SelectSubset<T, AITaskUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AITaskPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one AITask.
+     * @param {AITaskUpsertArgs} args - Arguments to update or create a AITask.
+     * @example
+     * // Update or create a AITask
+     * const aITask = await prisma.aITask.upsert({
+     *   create: {
+     *     // ... data to create a AITask
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the AITask we want to update
+     *   }
+     * })
+     */
+    upsert<T extends AITaskUpsertArgs>(args: SelectSubset<T, AITaskUpsertArgs<ExtArgs>>): Prisma__AITaskClient<$Result.GetResult<Prisma.$AITaskPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of AITasks.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AITaskCountArgs} args - Arguments to filter AITasks to count.
+     * @example
+     * // Count the number of AITasks
+     * const count = await prisma.aITask.count({
+     *   where: {
+     *     // ... the filter for the AITasks we want to count
+     *   }
+     * })
+    **/
+    count<T extends AITaskCountArgs>(
+      args?: Subset<T, AITaskCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], AITaskCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a AITask.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AITaskAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends AITaskAggregateArgs>(args: Subset<T, AITaskAggregateArgs>): Prisma.PrismaPromise<GetAITaskAggregateType<T>>
+
+    /**
+     * Group by AITask.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AITaskGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends AITaskGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: AITaskGroupByArgs['orderBy'] }
+        : { orderBy?: AITaskGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, AITaskGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetAITaskGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the AITask model
+   */
+  readonly fields: AITaskFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for AITask.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__AITaskClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the AITask model
+   */
+  interface AITaskFieldRefs {
+    readonly id: FieldRef<"AITask", 'String'>
+    readonly taskType: FieldRef<"AITask", 'String'>
+    readonly status: FieldRef<"AITask", 'AITaskStatus'>
+    readonly progress: FieldRef<"AITask", 'Int'>
+    readonly currentStep: FieldRef<"AITask", 'String'>
+    readonly inputData: FieldRef<"AITask", 'Json'>
+    readonly outputData: FieldRef<"AITask", 'Json'>
+    readonly searchingCheckpoint: FieldRef<"AITask", 'Json'>
+    readonly parsingCheckpoint: FieldRef<"AITask", 'Json'>
+    readonly filteringCheckpoint: FieldRef<"AITask", 'Json'>
+    readonly generatingCheckpoint: FieldRef<"AITask", 'Json'>
+    readonly errorMessage: FieldRef<"AITask", 'String'>
+    readonly errorDetails: FieldRef<"AITask", 'Json'>
+    readonly requiresAction: FieldRef<"AITask", 'Boolean'>
+    readonly needsConfirmation: FieldRef<"AITask", 'Boolean'>
+    readonly confirmPrompt: FieldRef<"AITask", 'String'>
+    readonly confirmedAt: FieldRef<"AITask", 'DateTime'>
+    readonly createdAt: FieldRef<"AITask", 'DateTime'>
+    readonly updatedAt: FieldRef<"AITask", 'DateTime'>
+    readonly startedAt: FieldRef<"AITask", 'DateTime'>
+    readonly completedAt: FieldRef<"AITask", 'DateTime'>
+    readonly lastCheckpoint: FieldRef<"AITask", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * AITask findUnique
+   */
+  export type AITaskFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AITask
+     */
+    select?: AITaskSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AITask
+     */
+    omit?: AITaskOmit<ExtArgs> | null
+    /**
+     * Filter, which AITask to fetch.
+     */
+    where: AITaskWhereUniqueInput
+  }
+
+  /**
+   * AITask findUniqueOrThrow
+   */
+  export type AITaskFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AITask
+     */
+    select?: AITaskSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AITask
+     */
+    omit?: AITaskOmit<ExtArgs> | null
+    /**
+     * Filter, which AITask to fetch.
+     */
+    where: AITaskWhereUniqueInput
+  }
+
+  /**
+   * AITask findFirst
+   */
+  export type AITaskFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AITask
+     */
+    select?: AITaskSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AITask
+     */
+    omit?: AITaskOmit<ExtArgs> | null
+    /**
+     * Filter, which AITask to fetch.
+     */
+    where?: AITaskWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of AITasks to fetch.
+     */
+    orderBy?: AITaskOrderByWithRelationInput | AITaskOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for AITasks.
+     */
+    cursor?: AITaskWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` AITasks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` AITasks.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of AITasks.
+     */
+    distinct?: AITaskScalarFieldEnum | AITaskScalarFieldEnum[]
+  }
+
+  /**
+   * AITask findFirstOrThrow
+   */
+  export type AITaskFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AITask
+     */
+    select?: AITaskSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AITask
+     */
+    omit?: AITaskOmit<ExtArgs> | null
+    /**
+     * Filter, which AITask to fetch.
+     */
+    where?: AITaskWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of AITasks to fetch.
+     */
+    orderBy?: AITaskOrderByWithRelationInput | AITaskOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for AITasks.
+     */
+    cursor?: AITaskWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` AITasks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` AITasks.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of AITasks.
+     */
+    distinct?: AITaskScalarFieldEnum | AITaskScalarFieldEnum[]
+  }
+
+  /**
+   * AITask findMany
+   */
+  export type AITaskFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AITask
+     */
+    select?: AITaskSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AITask
+     */
+    omit?: AITaskOmit<ExtArgs> | null
+    /**
+     * Filter, which AITasks to fetch.
+     */
+    where?: AITaskWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of AITasks to fetch.
+     */
+    orderBy?: AITaskOrderByWithRelationInput | AITaskOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing AITasks.
+     */
+    cursor?: AITaskWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` AITasks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` AITasks.
+     */
+    skip?: number
+    distinct?: AITaskScalarFieldEnum | AITaskScalarFieldEnum[]
+  }
+
+  /**
+   * AITask create
+   */
+  export type AITaskCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AITask
+     */
+    select?: AITaskSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AITask
+     */
+    omit?: AITaskOmit<ExtArgs> | null
+    /**
+     * The data needed to create a AITask.
+     */
+    data: XOR<AITaskCreateInput, AITaskUncheckedCreateInput>
+  }
+
+  /**
+   * AITask createMany
+   */
+  export type AITaskCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many AITasks.
+     */
+    data: AITaskCreateManyInput | AITaskCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * AITask createManyAndReturn
+   */
+  export type AITaskCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AITask
+     */
+    select?: AITaskSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the AITask
+     */
+    omit?: AITaskOmit<ExtArgs> | null
+    /**
+     * The data used to create many AITasks.
+     */
+    data: AITaskCreateManyInput | AITaskCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * AITask update
+   */
+  export type AITaskUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AITask
+     */
+    select?: AITaskSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AITask
+     */
+    omit?: AITaskOmit<ExtArgs> | null
+    /**
+     * The data needed to update a AITask.
+     */
+    data: XOR<AITaskUpdateInput, AITaskUncheckedUpdateInput>
+    /**
+     * Choose, which AITask to update.
+     */
+    where: AITaskWhereUniqueInput
+  }
+
+  /**
+   * AITask updateMany
+   */
+  export type AITaskUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update AITasks.
+     */
+    data: XOR<AITaskUpdateManyMutationInput, AITaskUncheckedUpdateManyInput>
+    /**
+     * Filter which AITasks to update
+     */
+    where?: AITaskWhereInput
+    /**
+     * Limit how many AITasks to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * AITask updateManyAndReturn
+   */
+  export type AITaskUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AITask
+     */
+    select?: AITaskSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the AITask
+     */
+    omit?: AITaskOmit<ExtArgs> | null
+    /**
+     * The data used to update AITasks.
+     */
+    data: XOR<AITaskUpdateManyMutationInput, AITaskUncheckedUpdateManyInput>
+    /**
+     * Filter which AITasks to update
+     */
+    where?: AITaskWhereInput
+    /**
+     * Limit how many AITasks to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * AITask upsert
+   */
+  export type AITaskUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AITask
+     */
+    select?: AITaskSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AITask
+     */
+    omit?: AITaskOmit<ExtArgs> | null
+    /**
+     * The filter to search for the AITask to update in case it exists.
+     */
+    where: AITaskWhereUniqueInput
+    /**
+     * In case the AITask found by the `where` argument doesn't exist, create a new AITask with this data.
+     */
+    create: XOR<AITaskCreateInput, AITaskUncheckedCreateInput>
+    /**
+     * In case the AITask was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<AITaskUpdateInput, AITaskUncheckedUpdateInput>
+  }
+
+  /**
+   * AITask delete
+   */
+  export type AITaskDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AITask
+     */
+    select?: AITaskSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AITask
+     */
+    omit?: AITaskOmit<ExtArgs> | null
+    /**
+     * Filter which AITask to delete.
+     */
+    where: AITaskWhereUniqueInput
+  }
+
+  /**
+   * AITask deleteMany
+   */
+  export type AITaskDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which AITasks to delete
+     */
+    where?: AITaskWhereInput
+    /**
+     * Limit how many AITasks to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * AITask without action
+   */
+  export type AITaskDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AITask
+     */
+    select?: AITaskSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AITask
+     */
+    omit?: AITaskOmit<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -17489,6 +18818,34 @@ export namespace Prisma {
   export type AiChatHistoryScalarFieldEnum = (typeof AiChatHistoryScalarFieldEnum)[keyof typeof AiChatHistoryScalarFieldEnum]
 
 
+  export const AITaskScalarFieldEnum: {
+    id: 'id',
+    taskType: 'taskType',
+    status: 'status',
+    progress: 'progress',
+    currentStep: 'currentStep',
+    inputData: 'inputData',
+    outputData: 'outputData',
+    searchingCheckpoint: 'searchingCheckpoint',
+    parsingCheckpoint: 'parsingCheckpoint',
+    filteringCheckpoint: 'filteringCheckpoint',
+    generatingCheckpoint: 'generatingCheckpoint',
+    errorMessage: 'errorMessage',
+    errorDetails: 'errorDetails',
+    requiresAction: 'requiresAction',
+    needsConfirmation: 'needsConfirmation',
+    confirmPrompt: 'confirmPrompt',
+    confirmedAt: 'confirmedAt',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt',
+    startedAt: 'startedAt',
+    completedAt: 'completedAt',
+    lastCheckpoint: 'lastCheckpoint'
+  };
+
+  export type AITaskScalarFieldEnum = (typeof AITaskScalarFieldEnum)[keyof typeof AITaskScalarFieldEnum]
+
+
   export const SortOrder: {
     asc: 'asc',
     desc: 'desc'
@@ -17644,6 +19001,20 @@ export namespace Prisma {
    * Reference to a field of type 'Float[]'
    */
   export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'AITaskStatus'
+   */
+  export type EnumAITaskStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AITaskStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'AITaskStatus[]'
+   */
+  export type ListEnumAITaskStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AITaskStatus[]'>
     
   /**
    * Deep Input Types
@@ -19013,6 +20384,145 @@ export namespace Prisma {
     updatedAt?: DateTimeWithAggregatesFilter<"AiChatHistory"> | Date | string
     lastUsedAt?: DateTimeWithAggregatesFilter<"AiChatHistory"> | Date | string
     expiresAt?: DateTimeWithAggregatesFilter<"AiChatHistory"> | Date | string
+  }
+
+  export type AITaskWhereInput = {
+    AND?: AITaskWhereInput | AITaskWhereInput[]
+    OR?: AITaskWhereInput[]
+    NOT?: AITaskWhereInput | AITaskWhereInput[]
+    id?: StringFilter<"AITask"> | string
+    taskType?: StringFilter<"AITask"> | string
+    status?: EnumAITaskStatusFilter<"AITask"> | $Enums.AITaskStatus
+    progress?: IntFilter<"AITask"> | number
+    currentStep?: StringNullableFilter<"AITask"> | string | null
+    inputData?: JsonNullableFilter<"AITask">
+    outputData?: JsonNullableFilter<"AITask">
+    searchingCheckpoint?: JsonNullableFilter<"AITask">
+    parsingCheckpoint?: JsonNullableFilter<"AITask">
+    filteringCheckpoint?: JsonNullableFilter<"AITask">
+    generatingCheckpoint?: JsonNullableFilter<"AITask">
+    errorMessage?: StringNullableFilter<"AITask"> | string | null
+    errorDetails?: JsonNullableFilter<"AITask">
+    requiresAction?: BoolFilter<"AITask"> | boolean
+    needsConfirmation?: BoolFilter<"AITask"> | boolean
+    confirmPrompt?: StringNullableFilter<"AITask"> | string | null
+    confirmedAt?: DateTimeNullableFilter<"AITask"> | Date | string | null
+    createdAt?: DateTimeFilter<"AITask"> | Date | string
+    updatedAt?: DateTimeFilter<"AITask"> | Date | string
+    startedAt?: DateTimeNullableFilter<"AITask"> | Date | string | null
+    completedAt?: DateTimeNullableFilter<"AITask"> | Date | string | null
+    lastCheckpoint?: DateTimeNullableFilter<"AITask"> | Date | string | null
+  }
+
+  export type AITaskOrderByWithRelationInput = {
+    id?: SortOrder
+    taskType?: SortOrder
+    status?: SortOrder
+    progress?: SortOrder
+    currentStep?: SortOrderInput | SortOrder
+    inputData?: SortOrderInput | SortOrder
+    outputData?: SortOrderInput | SortOrder
+    searchingCheckpoint?: SortOrderInput | SortOrder
+    parsingCheckpoint?: SortOrderInput | SortOrder
+    filteringCheckpoint?: SortOrderInput | SortOrder
+    generatingCheckpoint?: SortOrderInput | SortOrder
+    errorMessage?: SortOrderInput | SortOrder
+    errorDetails?: SortOrderInput | SortOrder
+    requiresAction?: SortOrder
+    needsConfirmation?: SortOrder
+    confirmPrompt?: SortOrderInput | SortOrder
+    confirmedAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    startedAt?: SortOrderInput | SortOrder
+    completedAt?: SortOrderInput | SortOrder
+    lastCheckpoint?: SortOrderInput | SortOrder
+  }
+
+  export type AITaskWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: AITaskWhereInput | AITaskWhereInput[]
+    OR?: AITaskWhereInput[]
+    NOT?: AITaskWhereInput | AITaskWhereInput[]
+    taskType?: StringFilter<"AITask"> | string
+    status?: EnumAITaskStatusFilter<"AITask"> | $Enums.AITaskStatus
+    progress?: IntFilter<"AITask"> | number
+    currentStep?: StringNullableFilter<"AITask"> | string | null
+    inputData?: JsonNullableFilter<"AITask">
+    outputData?: JsonNullableFilter<"AITask">
+    searchingCheckpoint?: JsonNullableFilter<"AITask">
+    parsingCheckpoint?: JsonNullableFilter<"AITask">
+    filteringCheckpoint?: JsonNullableFilter<"AITask">
+    generatingCheckpoint?: JsonNullableFilter<"AITask">
+    errorMessage?: StringNullableFilter<"AITask"> | string | null
+    errorDetails?: JsonNullableFilter<"AITask">
+    requiresAction?: BoolFilter<"AITask"> | boolean
+    needsConfirmation?: BoolFilter<"AITask"> | boolean
+    confirmPrompt?: StringNullableFilter<"AITask"> | string | null
+    confirmedAt?: DateTimeNullableFilter<"AITask"> | Date | string | null
+    createdAt?: DateTimeFilter<"AITask"> | Date | string
+    updatedAt?: DateTimeFilter<"AITask"> | Date | string
+    startedAt?: DateTimeNullableFilter<"AITask"> | Date | string | null
+    completedAt?: DateTimeNullableFilter<"AITask"> | Date | string | null
+    lastCheckpoint?: DateTimeNullableFilter<"AITask"> | Date | string | null
+  }, "id">
+
+  export type AITaskOrderByWithAggregationInput = {
+    id?: SortOrder
+    taskType?: SortOrder
+    status?: SortOrder
+    progress?: SortOrder
+    currentStep?: SortOrderInput | SortOrder
+    inputData?: SortOrderInput | SortOrder
+    outputData?: SortOrderInput | SortOrder
+    searchingCheckpoint?: SortOrderInput | SortOrder
+    parsingCheckpoint?: SortOrderInput | SortOrder
+    filteringCheckpoint?: SortOrderInput | SortOrder
+    generatingCheckpoint?: SortOrderInput | SortOrder
+    errorMessage?: SortOrderInput | SortOrder
+    errorDetails?: SortOrderInput | SortOrder
+    requiresAction?: SortOrder
+    needsConfirmation?: SortOrder
+    confirmPrompt?: SortOrderInput | SortOrder
+    confirmedAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    startedAt?: SortOrderInput | SortOrder
+    completedAt?: SortOrderInput | SortOrder
+    lastCheckpoint?: SortOrderInput | SortOrder
+    _count?: AITaskCountOrderByAggregateInput
+    _avg?: AITaskAvgOrderByAggregateInput
+    _max?: AITaskMaxOrderByAggregateInput
+    _min?: AITaskMinOrderByAggregateInput
+    _sum?: AITaskSumOrderByAggregateInput
+  }
+
+  export type AITaskScalarWhereWithAggregatesInput = {
+    AND?: AITaskScalarWhereWithAggregatesInput | AITaskScalarWhereWithAggregatesInput[]
+    OR?: AITaskScalarWhereWithAggregatesInput[]
+    NOT?: AITaskScalarWhereWithAggregatesInput | AITaskScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"AITask"> | string
+    taskType?: StringWithAggregatesFilter<"AITask"> | string
+    status?: EnumAITaskStatusWithAggregatesFilter<"AITask"> | $Enums.AITaskStatus
+    progress?: IntWithAggregatesFilter<"AITask"> | number
+    currentStep?: StringNullableWithAggregatesFilter<"AITask"> | string | null
+    inputData?: JsonNullableWithAggregatesFilter<"AITask">
+    outputData?: JsonNullableWithAggregatesFilter<"AITask">
+    searchingCheckpoint?: JsonNullableWithAggregatesFilter<"AITask">
+    parsingCheckpoint?: JsonNullableWithAggregatesFilter<"AITask">
+    filteringCheckpoint?: JsonNullableWithAggregatesFilter<"AITask">
+    generatingCheckpoint?: JsonNullableWithAggregatesFilter<"AITask">
+    errorMessage?: StringNullableWithAggregatesFilter<"AITask"> | string | null
+    errorDetails?: JsonNullableWithAggregatesFilter<"AITask">
+    requiresAction?: BoolWithAggregatesFilter<"AITask"> | boolean
+    needsConfirmation?: BoolWithAggregatesFilter<"AITask"> | boolean
+    confirmPrompt?: StringNullableWithAggregatesFilter<"AITask"> | string | null
+    confirmedAt?: DateTimeNullableWithAggregatesFilter<"AITask"> | Date | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"AITask"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"AITask"> | Date | string
+    startedAt?: DateTimeNullableWithAggregatesFilter<"AITask"> | Date | string | null
+    completedAt?: DateTimeNullableWithAggregatesFilter<"AITask"> | Date | string | null
+    lastCheckpoint?: DateTimeNullableWithAggregatesFilter<"AITask"> | Date | string | null
   }
 
   export type UserCreateInput = {
@@ -20673,6 +22183,181 @@ export namespace Prisma {
     expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type AITaskCreateInput = {
+    id?: string
+    taskType: string
+    status?: $Enums.AITaskStatus
+    progress?: number
+    currentStep?: string | null
+    inputData?: NullableJsonNullValueInput | InputJsonValue
+    outputData?: NullableJsonNullValueInput | InputJsonValue
+    searchingCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    parsingCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    filteringCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    generatingCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    errorMessage?: string | null
+    errorDetails?: NullableJsonNullValueInput | InputJsonValue
+    requiresAction?: boolean
+    needsConfirmation?: boolean
+    confirmPrompt?: string | null
+    confirmedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    startedAt?: Date | string | null
+    completedAt?: Date | string | null
+    lastCheckpoint?: Date | string | null
+  }
+
+  export type AITaskUncheckedCreateInput = {
+    id?: string
+    taskType: string
+    status?: $Enums.AITaskStatus
+    progress?: number
+    currentStep?: string | null
+    inputData?: NullableJsonNullValueInput | InputJsonValue
+    outputData?: NullableJsonNullValueInput | InputJsonValue
+    searchingCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    parsingCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    filteringCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    generatingCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    errorMessage?: string | null
+    errorDetails?: NullableJsonNullValueInput | InputJsonValue
+    requiresAction?: boolean
+    needsConfirmation?: boolean
+    confirmPrompt?: string | null
+    confirmedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    startedAt?: Date | string | null
+    completedAt?: Date | string | null
+    lastCheckpoint?: Date | string | null
+  }
+
+  export type AITaskUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    taskType?: StringFieldUpdateOperationsInput | string
+    status?: EnumAITaskStatusFieldUpdateOperationsInput | $Enums.AITaskStatus
+    progress?: IntFieldUpdateOperationsInput | number
+    currentStep?: NullableStringFieldUpdateOperationsInput | string | null
+    inputData?: NullableJsonNullValueInput | InputJsonValue
+    outputData?: NullableJsonNullValueInput | InputJsonValue
+    searchingCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    parsingCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    filteringCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    generatingCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    errorDetails?: NullableJsonNullValueInput | InputJsonValue
+    requiresAction?: BoolFieldUpdateOperationsInput | boolean
+    needsConfirmation?: BoolFieldUpdateOperationsInput | boolean
+    confirmPrompt?: NullableStringFieldUpdateOperationsInput | string | null
+    confirmedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    startedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    completedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastCheckpoint?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type AITaskUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    taskType?: StringFieldUpdateOperationsInput | string
+    status?: EnumAITaskStatusFieldUpdateOperationsInput | $Enums.AITaskStatus
+    progress?: IntFieldUpdateOperationsInput | number
+    currentStep?: NullableStringFieldUpdateOperationsInput | string | null
+    inputData?: NullableJsonNullValueInput | InputJsonValue
+    outputData?: NullableJsonNullValueInput | InputJsonValue
+    searchingCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    parsingCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    filteringCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    generatingCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    errorDetails?: NullableJsonNullValueInput | InputJsonValue
+    requiresAction?: BoolFieldUpdateOperationsInput | boolean
+    needsConfirmation?: BoolFieldUpdateOperationsInput | boolean
+    confirmPrompt?: NullableStringFieldUpdateOperationsInput | string | null
+    confirmedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    startedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    completedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastCheckpoint?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type AITaskCreateManyInput = {
+    id?: string
+    taskType: string
+    status?: $Enums.AITaskStatus
+    progress?: number
+    currentStep?: string | null
+    inputData?: NullableJsonNullValueInput | InputJsonValue
+    outputData?: NullableJsonNullValueInput | InputJsonValue
+    searchingCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    parsingCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    filteringCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    generatingCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    errorMessage?: string | null
+    errorDetails?: NullableJsonNullValueInput | InputJsonValue
+    requiresAction?: boolean
+    needsConfirmation?: boolean
+    confirmPrompt?: string | null
+    confirmedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    startedAt?: Date | string | null
+    completedAt?: Date | string | null
+    lastCheckpoint?: Date | string | null
+  }
+
+  export type AITaskUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    taskType?: StringFieldUpdateOperationsInput | string
+    status?: EnumAITaskStatusFieldUpdateOperationsInput | $Enums.AITaskStatus
+    progress?: IntFieldUpdateOperationsInput | number
+    currentStep?: NullableStringFieldUpdateOperationsInput | string | null
+    inputData?: NullableJsonNullValueInput | InputJsonValue
+    outputData?: NullableJsonNullValueInput | InputJsonValue
+    searchingCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    parsingCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    filteringCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    generatingCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    errorDetails?: NullableJsonNullValueInput | InputJsonValue
+    requiresAction?: BoolFieldUpdateOperationsInput | boolean
+    needsConfirmation?: BoolFieldUpdateOperationsInput | boolean
+    confirmPrompt?: NullableStringFieldUpdateOperationsInput | string | null
+    confirmedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    startedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    completedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastCheckpoint?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type AITaskUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    taskType?: StringFieldUpdateOperationsInput | string
+    status?: EnumAITaskStatusFieldUpdateOperationsInput | $Enums.AITaskStatus
+    progress?: IntFieldUpdateOperationsInput | number
+    currentStep?: NullableStringFieldUpdateOperationsInput | string | null
+    inputData?: NullableJsonNullValueInput | InputJsonValue
+    outputData?: NullableJsonNullValueInput | InputJsonValue
+    searchingCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    parsingCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    filteringCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    generatingCheckpoint?: NullableJsonNullValueInput | InputJsonValue
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    errorDetails?: NullableJsonNullValueInput | InputJsonValue
+    requiresAction?: BoolFieldUpdateOperationsInput | boolean
+    needsConfirmation?: BoolFieldUpdateOperationsInput | boolean
+    confirmPrompt?: NullableStringFieldUpdateOperationsInput | string | null
+    confirmedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    startedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    completedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastCheckpoint?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
   export type StringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -21853,6 +23538,92 @@ export namespace Prisma {
     totalTokens?: SortOrder
   }
 
+  export type EnumAITaskStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.AITaskStatus | EnumAITaskStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.AITaskStatus[] | ListEnumAITaskStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AITaskStatus[] | ListEnumAITaskStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumAITaskStatusFilter<$PrismaModel> | $Enums.AITaskStatus
+  }
+
+  export type AITaskCountOrderByAggregateInput = {
+    id?: SortOrder
+    taskType?: SortOrder
+    status?: SortOrder
+    progress?: SortOrder
+    currentStep?: SortOrder
+    inputData?: SortOrder
+    outputData?: SortOrder
+    searchingCheckpoint?: SortOrder
+    parsingCheckpoint?: SortOrder
+    filteringCheckpoint?: SortOrder
+    generatingCheckpoint?: SortOrder
+    errorMessage?: SortOrder
+    errorDetails?: SortOrder
+    requiresAction?: SortOrder
+    needsConfirmation?: SortOrder
+    confirmPrompt?: SortOrder
+    confirmedAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    startedAt?: SortOrder
+    completedAt?: SortOrder
+    lastCheckpoint?: SortOrder
+  }
+
+  export type AITaskAvgOrderByAggregateInput = {
+    progress?: SortOrder
+  }
+
+  export type AITaskMaxOrderByAggregateInput = {
+    id?: SortOrder
+    taskType?: SortOrder
+    status?: SortOrder
+    progress?: SortOrder
+    currentStep?: SortOrder
+    errorMessage?: SortOrder
+    requiresAction?: SortOrder
+    needsConfirmation?: SortOrder
+    confirmPrompt?: SortOrder
+    confirmedAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    startedAt?: SortOrder
+    completedAt?: SortOrder
+    lastCheckpoint?: SortOrder
+  }
+
+  export type AITaskMinOrderByAggregateInput = {
+    id?: SortOrder
+    taskType?: SortOrder
+    status?: SortOrder
+    progress?: SortOrder
+    currentStep?: SortOrder
+    errorMessage?: SortOrder
+    requiresAction?: SortOrder
+    needsConfirmation?: SortOrder
+    confirmPrompt?: SortOrder
+    confirmedAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    startedAt?: SortOrder
+    completedAt?: SortOrder
+    lastCheckpoint?: SortOrder
+  }
+
+  export type AITaskSumOrderByAggregateInput = {
+    progress?: SortOrder
+  }
+
+  export type EnumAITaskStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.AITaskStatus | EnumAITaskStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.AITaskStatus[] | ListEnumAITaskStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AITaskStatus[] | ListEnumAITaskStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumAITaskStatusWithAggregatesFilter<$PrismaModel> | $Enums.AITaskStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumAITaskStatusFilter<$PrismaModel>
+    _max?: NestedEnumAITaskStatusFilter<$PrismaModel>
+  }
+
   export type SessionCreateNestedManyWithoutUserInput = {
     create?: XOR<SessionCreateWithoutUserInput, SessionUncheckedCreateWithoutUserInput> | SessionCreateWithoutUserInput[] | SessionUncheckedCreateWithoutUserInput[]
     connectOrCreate?: SessionCreateOrConnectWithoutUserInput | SessionCreateOrConnectWithoutUserInput[]
@@ -22064,6 +23835,10 @@ export namespace Prisma {
   export type GamePixGameCacheUpdateextractedScreenshotsInput = {
     set?: string[]
     push?: string | string[]
+  }
+
+  export type EnumAITaskStatusFieldUpdateOperationsInput = {
+    set?: $Enums.AITaskStatus
   }
 
   export type NestedStringFilter<$PrismaModel = never> = {
@@ -22374,6 +24149,23 @@ export namespace Prisma {
     _sum?: NestedFloatFilter<$PrismaModel>
     _min?: NestedFloatFilter<$PrismaModel>
     _max?: NestedFloatFilter<$PrismaModel>
+  }
+
+  export type NestedEnumAITaskStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.AITaskStatus | EnumAITaskStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.AITaskStatus[] | ListEnumAITaskStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AITaskStatus[] | ListEnumAITaskStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumAITaskStatusFilter<$PrismaModel> | $Enums.AITaskStatus
+  }
+
+  export type NestedEnumAITaskStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.AITaskStatus | EnumAITaskStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.AITaskStatus[] | ListEnumAITaskStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AITaskStatus[] | ListEnumAITaskStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumAITaskStatusWithAggregatesFilter<$PrismaModel> | $Enums.AITaskStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumAITaskStatusFilter<$PrismaModel>
+    _max?: NestedEnumAITaskStatusFilter<$PrismaModel>
   }
 
   export type SessionCreateWithoutUserInput = {

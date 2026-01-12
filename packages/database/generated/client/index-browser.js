@@ -342,25 +342,6 @@ exports.Prisma.GameVoteScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
-exports.Prisma.AITaskScalarFieldEnum = {
-  id: 'id',
-  taskType: 'taskType',
-  status: 'status',
-  progress: 'progress',
-  currentStep: 'currentStep',
-  inputData: 'inputData',
-  outputData: 'outputData',
-  errorMessage: 'errorMessage',
-  errorDetails: 'errorDetails',
-  needsConfirmation: 'needsConfirmation',
-  confirmPrompt: 'confirmPrompt',
-  confirmedAt: 'confirmedAt',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  startedAt: 'startedAt',
-  completedAt: 'completedAt'
-};
-
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -408,15 +389,6 @@ exports.TextDirection = exports.$Enums.TextDirection = {
   RTL: 'RTL'
 };
 
-exports.AITaskStatus = exports.$Enums.AITaskStatus = {
-  PENDING: 'PENDING',
-  PROCESSING: 'PROCESSING',
-  WAITING_CONFIRM: 'WAITING_CONFIRM',
-  COMPLETED: 'COMPLETED',
-  FAILED: 'FAILED',
-  CANCELLED: 'CANCELLED'
-};
-
 exports.Prisma.ModelName = {
   Category: 'Category',
   CategoryTranslation: 'CategoryTranslation',
@@ -432,8 +404,7 @@ exports.Prisma.ModelName = {
   LanguageTranslation: 'LanguageTranslation',
   SiteConfig: 'SiteConfig',
   SiteConfigTranslation: 'SiteConfigTranslation',
-  GameVote: 'GameVote',
-  AITask: 'AITask'
+  GameVote: 'GameVote'
 };
 
 /**

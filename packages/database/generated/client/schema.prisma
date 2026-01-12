@@ -32,16 +32,6 @@ enum GameStatus {
   MAINTENANCE // 维护中
 }
 
-// AI 任务状态枚举
-enum AITaskStatus {
-  PENDING // 等待处理
-  PROCESSING // 处理中
-  WAITING_CONFIRM // 等待用户确认
-  COMPLETED // 已完成
-  FAILED // 失败
-  CANCELLED // 已取消
-}
-
 // 删除枚举，改用 String 字段存储原始 API 返回值
 
 // ==================== 数据模型 ====================
@@ -525,39 +515,5 @@ model GameVote {
   @@map("game_votes")
 }
 
-// ========================================
-// AI 任务表（用于 SSE 实时交互）
-// ========================================
-model AITask {
-  id String @id @default(cuid())
-
-  // 任务信息
-  taskType    String       @map("task_type") // 任务类型：game_import, seo_optimize, etc.
-  status      AITaskStatus @default(PENDING) // 任务状态
-  progress    Int          @default(0) // 进度百分比 0-100
-  currentStep String?      @map("current_step") // 当前步骤标识（用于断点恢复）
-
-  // 任务数据（JSON 格式）
-  inputData  Json? @map("input_data") // 输入数据
-  outputData Json? @map("output_data") // 输出结果
-
-  // 错误信息
-  errorMessage String? @map("error_message") // 错误消息
-  errorDetails Json?   @map("error_details") // 错误详情
-
-  // 确认相关
-  needsConfirmation Boolean   @default(false) @map("needs_confirmation") // 是否需要用户确认
-  confirmPrompt     String?   @map("confirm_prompt") // 确认提示文本
-  confirmedAt       DateTime? @map("confirmed_at") // 用户确认时间
-
-  // 时间戳
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  startedAt   DateTime? @map("started_at") // 开始处理时间
-  completedAt DateTime? @map("completed_at") // 完成时间
-
-  @@index([status])
-  @@index([taskType])
-  @@index([createdAt])
-  @@map("ai_tasks")
-}
+// 注意：AITask 表已移至管理数据库 (packages/database-admin/prisma/schema.prisma)
+// 因为 AI 任务是管理后台功能，不属于核心业务数据
