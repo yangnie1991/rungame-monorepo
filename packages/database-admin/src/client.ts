@@ -26,14 +26,22 @@ const prismaAdminSingleton = () => {
     }
 
     let connectionString = rawUrl
+    let sslConfig: { rejectUnauthorized: boolean } | boolean = false
 
     try {
         if (rawUrl) {
             const urlObj = new URL(rawUrl.replace('postgres://', 'http://').replace('postgresql://', 'http://'))
 
-            // 删除 SSL 相关参数
+            // 检查 SSL 参数
+            const sslmode = urlObj.searchParams.get('sslmode')
+            if (sslmode === 'require' || sslmode === 'prefer') {
+                sslConfig = { rejectUnauthorized: false }
+            }
+
+            // 删除 SSL 相关参数（pg 库通过 ssl 配置项处理）
             urlObj.searchParams.delete('sslmode')
             urlObj.searchParams.delete('sslaccept')
+            urlObj.searchParams.delete('pgbouncer') // 移除 pgbouncer 参数
 
             // 构造最终字符串
             connectionString = rawUrl.split('?')[0] + (urlObj.search ? urlObj.search : '')
@@ -46,6 +54,7 @@ const prismaAdminSingleton = () => {
     // 建立物理连接池 (使用 CACHE_DATABASE_URL)
     const pool = new Pool({
         connectionString,
+        ssl: sslConfig,
         max: 10,
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 10000, // 增加到 10 秒

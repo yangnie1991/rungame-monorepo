@@ -30,20 +30,28 @@ const prismaClientSingleton = () => {
     urlObj = new URL('http://localhost')
   }
 
-  // 删除 SSL 相关参数
+  // 检查 SSL 参数
+  const sslmode = urlObj.searchParams.get('sslmode')
+  let sslConfig: { rejectUnauthorized: boolean } | boolean = false
+  if (sslmode === 'require' || sslmode === 'prefer') {
+    sslConfig = { rejectUnauthorized: false }
+  }
+
+  // 删除 SSL 相关参数（pg 库通过 ssl 配置项处理）
   urlObj.searchParams.delete('sslmode')
   urlObj.searchParams.delete('sslaccept')
+  urlObj.searchParams.delete('pgbouncer') // 移除 pgbouncer 参数
 
-  // 恢复协议并构造最终字符串
-  const protocol = rawUrl.startsWith('postgres://') ? 'postgres://' : 'postgresql://'
+  // 构造最终字符串
   const connectionString = rawUrl.split('?')[0] + (urlObj.search ? urlObj.search : '')
 
   // 建立物理连接池
   const pool = new Pool({
     connectionString,
+    ssl: sslConfig,
     max: 10,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    connectionTimeoutMillis: 5000, // 增加超时时间以适应云数据库
   })
 
   // 创建 Prisma 适配器
