@@ -1,172 +1,112 @@
 #!/bin/bash
+# RunGame Admin - Docker Compose 部署脚本
 
-# ==============================================
-# RunGame 管理端自动部署脚本
-# 适用于 1Panel Docker 环境
-# ==============================================
+set -e
 
-set -e  # 遇到错误立即退出
+echo "=========================================="
+echo "🚀 RunGame Admin 部署脚本"
+echo "=========================================="
+echo ""
 
-# 颜色输出
+# 颜色定义
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+BLUE='\033[0;34m'
+NC='\033[0m'
 
-# 日志函数
-log_info() {
-    echo -e "${GREEN}[INFO]${NC} $1"
-}
-
-log_warn() {
-    echo -e "${YELLOW}[WARN]${NC} $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
-# 配置
-PROJECT_NAME="rungame-admin"
-DOCKER_COMPOSE_FILE="docker-compose.deploy.yml"
-BACKUP_DIR="/opt/1panel/docker/compose/${PROJECT_NAME}/backups"
-MAX_BACKUPS=5
-
-# ==============================================
-# 1. 检查前置条件
-# ==============================================
-log_info "检查部署环境..."
-
-# 检查 Docker
-if ! command -v docker &> /dev/null; then
-    log_error "Docker 未安装，请先安装 Docker"
-    exit 1
-fi
-
-# 检查 Docker Compose
-if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
-    log_error "Docker Compose 未安装"
-    exit 1
-fi
-
-# 检查环境变量文件
+# 检查 .env 文件
 if [ ! -f ".env" ]; then
-    log_error ".env 文件不存在，请先创建环境变量文件"
-    log_info "参考 .env.admin.example 创建 .env 文件"
+    echo -e "${RED}❌ .env 文件不存在${NC}"
+    echo ""
+    echo "请先创建 .env 文件："
+    echo "  cp .env.admin.example .env"
+    echo "  vi .env  # 填入实际的环境变量"
     exit 1
 fi
 
-# ==============================================
-# 2. 拉取最新代码（如果在 Git 仓库中）
-# ==============================================
-if [ -d ".git" ]; then
-    log_info "拉取最新代码..."
-    git pull origin main || {
-        log_warn "代码拉取失败，使用现有代码继续部署"
-    }
-else
-    log_warn "不是 Git 仓库，跳过代码更新"
-fi
+echo -e "${BLUE}📋 使用方法：${NC}"
+echo "  $0 up      # 启动服务"
+echo "  $0 down    # 停止服务"
+echo "  $0 restart # 重启服务"
+echo "  $0 logs    # 查看日志"
+echo "  $0 pull    # 拉取最新镜像"
+echo ""
 
-# ==============================================
-# 3. 备份当前容器（如果存在）
-# ==============================================
-if docker ps -a --format '{{.Names}}' | grep -q "^${PROJECT_NAME}$"; then
-    log_info "备份当前容器..."
+case "${1:-up}" in
+  up)
+    echo -e "${BLUE}🚀 启动服务...${NC}"
+    docker-compose -f docker-compose.admin.yml up -d
+    echo ""
+    echo -e "${GREEN}✅ 服务启动成功！${NC}"
+    echo ""
+    echo "查看状态:"
+    docker-compose -f docker-compose.admin.yml ps
+    echo ""
+    echo "查看日志:"
+    echo "  $0 logs"
+    ;;
 
-    # 创建备份目录
-    mkdir -p "${BACKUP_DIR}"
+  down)
+    echo -e "${YELLOW}🛑 停止服务...${NC}"
+    docker-compose -f docker-compose.admin.yml down
+    echo -e "${GREEN}✅ 服务已停止${NC}"
+    ;;
 
-    # 备份时间戳
-    BACKUP_TIME=$(date +%Y%m%d_%H%M%S)
-    BACKUP_FILE="${BACKUP_DIR}/backup_${BACKUP_TIME}.tar"
+  restart)
+    echo -e "${BLUE}🔄 重启服务...${NC}"
+    docker-compose -f docker-compose.admin.yml restart
+    echo -e "${GREEN}✅ 服务已重启${NC}"
+    echo ""
+    echo "查看日志:"
+    echo "  $0 logs"
+    ;;
 
-    # 导出容器镜像
-    docker commit ${PROJECT_NAME} ${PROJECT_NAME}:backup-${BACKUP_TIME} || log_warn "容器备份失败"
-    docker save -o ${BACKUP_FILE} ${PROJECT_NAME}:backup-${BACKUP_TIME} || log_warn "镜像保存失败"
+  logs)
+    echo -e "${BLUE}📋 查看日志（Ctrl+C 退出）...${NC}"
+    docker-compose -f docker-compose.admin.yml logs -f
+    ;;
 
-    log_info "备份完成: ${BACKUP_FILE}"
+  pull)
+    echo -e "${BLUE}📥 拉取最新镜像...${NC}"
+    docker-compose -f docker-compose.admin.yml pull
+    echo -e "${GREEN}✅ 镜像拉取完成${NC}"
+    echo ""
+    echo "重启服务以使用新镜像:"
+    echo "  $0 restart"
+    ;;
 
-    # 清理旧备份（保留最新 N 个）
-    cd ${BACKUP_DIR}
-    ls -t backup_*.tar | tail -n +$((MAX_BACKUPS + 1)) | xargs -r rm
-    cd - > /dev/null
-fi
+  update)
+    echo -e "${BLUE}🔄 更新并重启...${NC}"
+    docker-compose -f docker-compose.admin.yml pull
+    docker-compose -f docker-compose.admin.yml up -d
+    echo -e "${GREEN}✅ 更新完成！${NC}"
+    echo ""
+    echo "查看日志:"
+    echo "  $0 logs"
+    ;;
 
-# ==============================================
-# 4. 停止旧容器
-# ==============================================
-log_info "停止旧容器..."
-docker-compose -f ${DOCKER_COMPOSE_FILE} down || docker compose -f ${DOCKER_COMPOSE_FILE} down || true
+  status)
+    echo -e "${BLUE}📊 服务状态${NC}"
+    docker-compose -f docker-compose.admin.yml ps
+    echo ""
+    docker ps --filter name=rungame-admin --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+    ;;
 
-# ==============================================
-# 5. 清理旧镜像（可选）
-# ==============================================
-log_info "清理未使用的镜像..."
-docker image prune -f || true
-
-# ==============================================
-# 6. 构建新镜像
-# ==============================================
-log_info "构建新镜像..."
-docker-compose -f ${DOCKER_COMPOSE_FILE} build --no-cache || \
-docker compose -f ${DOCKER_COMPOSE_FILE} build --no-cache || {
-    log_error "镜像构建失败"
+  *)
+    echo -e "${RED}❌ 未知命令: $1${NC}"
+    echo ""
+    echo "可用命令:"
+    echo "  up      - 启动服务"
+    echo "  down    - 停止服务"
+    echo "  restart - 重启服务"
+    echo "  logs    - 查看日志"
+    echo "  pull    - 拉取最新镜像"
+    echo "  update  - 更新并重启"
+    echo "  status  - 查看状态"
     exit 1
-}
+    ;;
+esac
 
-# ==============================================
-# 7. 启动新容器
-# ==============================================
-log_info "启动新容器..."
-docker-compose -f ${DOCKER_COMPOSE_FILE} up -d || \
-docker compose -f ${DOCKER_COMPOSE_FILE} up -d || {
-    log_error "容器启动失败"
-    exit 1
-}
-
-# ==============================================
-# 8. 等待服务启动
-# ==============================================
-log_info "等待服务启动..."
-sleep 10
-
-# ==============================================
-# 9. 健康检查
-# ==============================================
-log_info "执行健康检查..."
-MAX_RETRIES=30
-RETRY_COUNT=0
-
-while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    if curl -f http://localhost:3001/api/health > /dev/null 2>&1; then
-        log_info "健康检查通过！"
-        break
-    fi
-
-    RETRY_COUNT=$((RETRY_COUNT + 1))
-    log_info "等待服务就绪... ($RETRY_COUNT/$MAX_RETRIES)"
-    sleep 2
-done
-
-if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
-    log_error "健康检查失败，服务可能未正常启动"
-    log_info "查看日志: docker logs ${PROJECT_NAME}"
-    exit 1
-fi
-
-# ==============================================
-# 10. 显示部署信息
-# ==============================================
-log_info "=========================================="
-log_info "部署成功！"
-log_info "=========================================="
-log_info "容器名称: ${PROJECT_NAME}"
-log_info "访问地址: http://localhost:3001"
-log_info "健康检查: http://localhost:3001/api/health"
-log_info ""
-log_info "常用命令:"
-log_info "  查看日志: docker logs -f ${PROJECT_NAME}"
-log_info "  重启服务: docker restart ${PROJECT_NAME}"
-log_info "  停止服务: docker-compose -f ${DOCKER_COMPOSE_FILE} down"
-log_info "=========================================="
+echo ""
+echo "=========================================="

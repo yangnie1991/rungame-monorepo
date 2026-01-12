@@ -1,33 +1,63 @@
+# RunGame Admin - Docker Compose 配置
+# 用于生产环境部署
 
+version: '3.8'
 
 services:
   admin:
     container_name: rungame-admin
-    # 使用本地构建并传输过来的镜像
-    image: rungame-admin:latest
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile.admin
-    #   args:
-    #     NODE_ENV: production
-    #     DATABASE_URL: ${DATABASE_URL}
-    #     BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
-    #     BETTER_AUTH_URL: ${BETTER_AUTH_URL}
-    #     ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+    image: yangnie1991/rungame:latest
     restart: always
     ports:
       - "4000:4000"
     environment:
+      # Node.js 环境
       - NODE_ENV=production
+      - PORT=4000
+      - HOSTNAME=0.0.0.0
+      - NEXT_TELEMETRY_DISABLED=1
+
+      # 数据库连接
       - DATABASE_URL=${DATABASE_URL}
+      - CACHE_DATABASE_URL=${CACHE_DATABASE_URL}
+
+      # Better Auth 认证
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
       - BETTER_AUTH_URL=${BETTER_AUTH_URL}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+      - AUTH_TRUST_HOST=true
+
+      # 加密密钥
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - NEXT_TELEMETRY_DISABLED=1
-      - PORT=4000
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/api/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
+
+    # 日志配置
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
     networks:
       - rungame-network
 
 networks:
   rungame-network:
     driver: bridge
+
