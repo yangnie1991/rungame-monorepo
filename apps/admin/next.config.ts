@@ -2,8 +2,9 @@ import type { NextConfig } from "next"
 import path from "path"
 
 const nextConfig: NextConfig = {
-  // 移除 standalone 输出，使用标准 Docker 部署
-  // output: 'standalone',
+  // 启用 standalone 输出模式（Docker 部署优化）
+  // 这会生成一个自包含的服务器输出，大幅减少 Docker 镜像大小
+  output: 'standalone',
 
   // TypeScript 类型检查
   typescript: {
