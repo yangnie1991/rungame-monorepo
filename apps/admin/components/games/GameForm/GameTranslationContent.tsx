@@ -20,7 +20,7 @@ import {
   type ContentSection,
   type ContentSectionKey,
 } from "@/lib/types/game-info"
-import { getGameTranslation } from "@/app/admin/games/actions"
+import { getGameTranslation } from "@/app/(dashboard)/games/actions"
 import { SeoTextInput } from "@/components/SeoTextInput"
 
 interface Language {

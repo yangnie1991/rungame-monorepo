@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Switch } from "@/components/ui/switch"
-import { toggleLanguageStatus } from "@/app/admin/languages/actions"
+import { toggleLanguageStatus } from "@/app/(dashboard)/languages/actions"
 import { toast } from "sonner"
 
 interface ToggleLanguageStatusProps {

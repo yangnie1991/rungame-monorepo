@@ -2,11 +2,12 @@
 
 <div align="center">
 
-![Next.js](https://img.shields.io/badge/Next.js-15-black)
+![Next.js](https://img.shields.io/badge/Next.js-16-black)
 ![React](https://img.shields.io/badge/React-19-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
-![Prisma](https://img.shields.io/badge/Prisma-6-2D3748)
+![Prisma](https://img.shields.io/badge/Prisma-7-2D3748)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind-4-38bdf8)
+![Better Auth](https://img.shields.io/badge/Better_Auth-1.4-green)
 
 </div>
 
@@ -55,18 +56,29 @@ pnpm install
 
 3. **配置环境变量**
 
-创建 `.env` 文件：
+复制示例环境变量文件：
 
-```env
-# 数据库连接
-DATABASE_URL="postgresql://username:password@localhost:5432/game?schema=public&connection_limit=5&pool_timeout=10"
-
-# NextAuth 配置
-NEXTAUTH_SECRET="your-random-secret-key-min-32-chars"
-NEXTAUTH_URL="http://localhost:3000"
+```bash
+cp apps/admin/.env.example apps/admin/.env.local
+cp apps/website/.env.example apps/website/.env.local
 ```
 
-生成 `NEXTAUTH_SECRET`:
+主要环境变量：
+
+```env
+# 数据库连接（业务数据库）
+DATABASE_URL="postgresql://user:password@host:port/db_name?schema=public"
+
+# 管理数据库（Admin 专用）
+CACHE_DATABASE_URL="postgresql://user:password@host:port/db_admin?schema=public"
+
+# Better Auth 配置
+BETTER_AUTH_SECRET="your-random-secret-key-min-32-chars"
+BETTER_AUTH_URL="http://localhost:4000"
+NEXT_PUBLIC_APP_URL="http://localhost:4000"
+```
+
+生成 `BETTER_AUTH_SECRET`:
 ```bash
 openssl rand -base64 32
 ```
@@ -75,6 +87,12 @@ openssl rand -base64 32
 
 4. **初始化数据库**
 
+启动本地数据库：
+```bash
+make start-db
+```
+
+初始化schema：
 ```bash
 # 推送数据库架构
 pnpm db:push
@@ -137,50 +155,47 @@ pnpm dev:website  # 网站端: http://localhost:3000
 - **主题**: next-themes
 
 ### 后端
-- **数据库**: PostgreSQL
-- **ORM**: Prisma 6
-- **认证**: NextAuth.js v5
+- **数据库**: PostgreSQL (双数据库架构)
+- **ORM**: Prisma 7 + Driver Adapter
+- **认证**: Better Auth v1
 - **密码加密**: bcryptjs
 
 ### 开发工具
+- **Monorepo**: Turborepo
 - **构建工具**: Turbopack
 - **代码规范**: ESLint
-- **包管理器**: npm
+- **包管理器**: pnpm
 
 ## 📁 项目结构
 
 ```
-rungame-nextjs/
-├── app/
-│   ├── (admin)/          # 管理后台（无国际化）
-│   │   └── admin/        # 管理面板路由
-│   ├── (site)/           # 用户端（完全国际化）
-│   │   └── [locale]/     # 多语言路由
-│   ├── api/              # API 路由
-│   └── login/            # 登录页面
+rungame-monorepo/
+├── apps/
+│   ├── admin/                 # 管理后台 (端口 4000)
+│   │   ├── app/
+│   │   │   ├── (dashboard)/   # 管理面板路由组
+│   │   │   ├── api/           # API 路由
+│   │   │   └── login/         # 登录页面
+│   │   ├── components/        # 管理后台组件
+│   │   └── lib/               # 工具函数
+│   │
+│   └── website/               # 用户端网站 (端口 3000)
+│       ├── app/[locale]/      # 完全国际化路由
+│       ├── components/        # 网站组件
+│       └── i18n/              # 国际化配置
 │
-├── components/
-│   ├── admin/            # 管理后台组件
-│   ├── site/             # 用户端组件
-│   └── ui/               # shadcn/ui 组件
+├── packages/
+│   ├── database/              # 业务数据库 (共享)
+│   │   └── prisma/schema.prisma
+│   ├── database-admin/        # 管理数据库 (Admin 专用)
+│   │   └── prisma/schema.prisma
+│   ├── typescript-config/     # 共享 TS 配置
+│   └── tailwind-config/       # 共享 Tailwind 配置
 │
-├── lib/
-│   ├── auth.ts           # NextAuth 配置
-│   ├── prisma.ts         # Prisma 客户端
-│   └── i18n-helpers.ts   # 国际化辅助函数
-│
-├── prisma/
-│   ├── schema.prisma     # 数据库模型
-│   └── seed.ts           # 数据填充脚本
-│
-├── i18n/
-│   ├── routing.ts        # 路由配置
-│   ├── config.ts         # i18n 配置
-│   └── messages/         # 翻译文件
-│
-├── docs/                 # 项目文档
-├── .env                  # 环境变量
-└── README.md             # 本文件
+├── docs/                      # 项目文档
+├── scripts/                   # 维护脚本
+├── turbo.json                 # Turborepo 配置
+└── README.md                  # 本文件
 ```
 
 ## 🎯 核心概念
@@ -223,18 +238,21 @@ RunGame 使用 Next.js 路由组实现完全独立的双界面：
 
 ```bash
 # 开发
-npm run dev              # 启动开发服务器（端口 3000）
+pnpm dev                 # 同时启动 Admin (4000) 和 Website (3000)
+pnpm dev:admin           # 仅启动管理后台
+pnpm dev:website         # 仅启动用户端网站
 
 # 数据库
-npm run db:push          # 推送 schema 到数据库
-npm run db:seed          # 填充初始数据
+pnpm db:push             # 推送 schema 到数据库
+pnpm db:seed             # 填充初始数据
+pnpm db:generate         # 生成 Prisma 客户端
 
 # 生产
-npm run build            # 构建生产版本
-npm run start            # 启动生产服务器
+pnpm build               # 构建所有应用
+pnpm start               # 启动生产服务器
 
 # 代码质量
-npm run lint             # 运行 ESLint
+pnpm lint                # 运行 ESLint
 ```
 
 ## 🚢 部署
@@ -256,8 +274,8 @@ docker build -t rungame:latest .
 # 运行容器
 docker run -d -p 3000:3000 \
   -e DATABASE_URL="..." \
-  -e NEXTAUTH_SECRET="..." \
-  -e NEXTAUTH_URL="..." \
+  -e BETTER_AUTH_SECRET="..." \
+  -e BETTER_AUTH_URL="..." \
   rungame:latest
 ```
 
@@ -269,7 +287,7 @@ docker run -d -p 3000:3000 \
 
 ## 🔐 安全
 
-- ✅ NextAuth.js v5 认证
+- ✅ Better Auth v1 认证
 - ✅ 基于角色的访问控制（RBAC）
 - ✅ bcrypt 密码加密
 - ✅ HTTPS 强制（生产环境）
@@ -330,10 +348,11 @@ docker run -d -p 3000:3000 \
 
 - [Next.js](https://nextjs.org/) - React 框架
 - [Prisma](https://www.prisma.io/) - 数据库 ORM
-- [NextAuth.js](https://next-auth.js.org/) - 认证解决方案
+- [Better Auth](https://www.better-auth.com/) - 认证解决方案
 - [next-intl](https://next-intl-docs.vercel.app/) - 国际化库
 - [shadcn/ui](https://ui.shadcn.com/) - UI 组件
 - [TailwindCSS](https://tailwindcss.com/) - CSS 框架
+- [Turborepo](https://turbo.build/) - Monorepo 构建工具
 
 ## 📧 联系方式
 
@@ -354,6 +373,7 @@ docker run -d -p 3000:3000 \
 
 ---
 
-**Made with ❤️ using Next.js**
+**Made with ❤️ using Next.js + Turborepo**
 
-**最后更新**: 2025-01-20
+**最后更新**: 2026-01-12
+**项目版本**: v2.0 (Monorepo + Better Auth + 双数据库)

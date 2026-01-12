@@ -12,8 +12,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
-import { createCategory, updateCategory } from "@/app/admin/categories/actions"
-import { categorySchema, type CategoryFormData } from "@/app/admin/categories/schema"
+import { createCategory, updateCategory } from "@/app/(dashboard)/categories/actions"
+import { categorySchema, type CategoryFormData } from "@/app/(dashboard)/categories/schema"
 import type { Category, CategoryTranslation } from "@rungame/database"
 import { useEnabledLanguages } from "@/hooks/useEnabledLanguages"
 import { Loader2 } from "lucide-react"
@@ -142,7 +142,7 @@ export function CategoryForm({ category, mode }: CategoryFormProps) {
           mode === "create" ? "创建成功" : "更新成功",
           { description: `分类已${mode === "create" ? "创建" : "更新"}` }
         )
-        router.push("/admin/categories")
+        router.push("/categories")
         router.refresh()
       } else {
         toast.error(

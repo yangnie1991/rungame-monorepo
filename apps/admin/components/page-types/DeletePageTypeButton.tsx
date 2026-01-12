@@ -16,7 +16,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
-import { deletePageType } from "@/app/admin/page-types/actions"
+import { deletePageType } from "@/app/(dashboard)/page-types/actions"
 
 interface DeletePageTypeButtonProps {
   pageTypeId: string

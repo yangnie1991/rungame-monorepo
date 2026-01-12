@@ -16,8 +16,9 @@ export function validateRequiredEnvVars(buildTimeOnly = false) {
 
   // 运行时必需的环境变量（认证、加密等）
   const runtimeRequired = [
-    'NEXTAUTH_SECRET',
-    'NEXTAUTH_URL',
+    'BETTER_AUTH_SECRET',
+    'BETTER_AUTH_URL',
+    'NEXT_PUBLIC_APP_URL',
     'ENCRYPTION_KEY',
   ]
 
@@ -48,7 +49,7 @@ ${missing.map(v => `  • ${v}`).join('\n')}
 生成 ENCRYPTION_KEY:
   openssl rand -base64 48
 
-生成 NEXTAUTH_SECRET:
+生成 BETTER_AUTH_SECRET:
   openssl rand -base64 32
 
 ========================================

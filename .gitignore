@@ -81,3 +81,6 @@ packages/database/src/generated/
 # archives
 *.tar.gz
 build.detailed.log
+
+# Agent rules
+!.agent/rules/workspace.md

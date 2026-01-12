@@ -4,7 +4,7 @@
  */
 
 import { prisma } from "@rungame/database"
-import type { Category } from '@prisma/client'
+import type { Category } from "@rungame/database"
 
 /**
  * 获取分类及其所有子分类的ID列表

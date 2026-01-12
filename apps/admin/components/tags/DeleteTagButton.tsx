@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
-import { deleteTag } from "@/app/admin/tags/actions"
+import { deleteTag } from "@/app/(dashboard)/tags/actions"
 
 interface DeleteTagButtonProps {
   tagId: string

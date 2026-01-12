@@ -8,7 +8,7 @@ import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
-import { createGame, updateGame, getCategories, getTags, type GameFormData } from "@/app/admin/games/actions"
+import { createGame, updateGame, getCategories, getTags, type GameFormData } from "@/app/(dashboard)/games/actions"
 import type { Game, GameTranslation } from "@rungame/database"
 import { useEnabledLanguages } from "@/hooks/useEnabledLanguages"
 import { Loader2 } from "lucide-react"
@@ -363,7 +363,7 @@ export function GameForm({ game, mode }: GameFormProps) {
           mode === "create" ? "创建成功" : "更新成功",
           { description: `游戏已${mode === "create" ? "创建" : "更新"}` }
         )
-        router.push("/admin/games")
+        router.push("/games")
         router.refresh()
       } else {
         toast.error(

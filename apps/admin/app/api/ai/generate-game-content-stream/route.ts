@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
 import { searchGoogleTopPages } from '@/lib/google-search'
 import { readWebPageWithRetry } from '@/lib/jina-reader'
 import { filterGameWebsites } from '@/lib/ai-seo-optimizer'
@@ -42,7 +43,9 @@ export const maxDuration = 60 // Pro 计划有效，Hobby 计划忽略（但保�
 export async function GET(request: NextRequest) {
   try {
     // 1. 验证身份
-    const session = await auth()
+    const session = await auth.api.getSession({
+      headers: await headers()
+    })
     if (!session || ((session.user as any)?.role !== 'ADMIN' && (session.user as any)?.role !== 'SUPER_ADMIN')) {
       return new Response('Unauthorized', { status: 401 })
     }

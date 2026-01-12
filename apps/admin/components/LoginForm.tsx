@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { signIn } from "next-auth/react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -10,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
+import { authClient } from "@/lib/auth-client"
 
 const loginSchema = z.object({
   email: z.string().email("请输入有效的邮箱地址"),
@@ -35,28 +35,33 @@ export function LoginForm() {
     setIsLoading(true)
 
     try {
-      const result = await signIn("credentials", {
+      await authClient.signIn.email({
         email: data.email,
         password: data.password,
-        redirect: false,
+        callbackURL: searchParams.get("callbackUrl") || "/",
+      }, {
+        onRequest: () => {
+          setIsLoading(true)
+        },
+        onSuccess: () => {
+          toast.success("登录成功")
+          router.refresh()
+        },
+        onError: (ctx) => {
+          toast.error("登录失败", {
+            description: ctx.error.message || "邮箱或密码错误",
+          })
+          setIsLoading(false)
+        }
       })
-
-      if (result?.error) {
-        toast.error("登录失败", {
-          description: "邮箱或密码错误",
-        })
-        return
-      }
-
-      toast.success("登录成功")
-      const callbackUrl = searchParams.get("callbackUrl") || "/admin"
-      router.push(callbackUrl)
-      router.refresh()
     } catch (error) {
+      // 处理网络错误或其他未捕获的错误
+      const errorMessage = error instanceof Error ? error.message : "网络连接失败"
       toast.error("登录失败", {
-        description: "发生了意外错误",
+        description: errorMessage === "Failed to fetch"
+          ? "无法连接到服务器，请检查网络连接或稍后重试"
+          : errorMessage,
       })
-    } finally {
       setIsLoading(false)
     }
   }

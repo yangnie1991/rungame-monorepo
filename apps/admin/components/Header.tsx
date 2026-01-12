@@ -1,6 +1,5 @@
 "use client"
 
-import { signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -12,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { LogOut, User } from "lucide-react"
+import { authClient } from "@/lib/auth-client"
 
 interface AdminHeaderProps {
   user: {
@@ -59,7 +59,15 @@ export function AdminHeader({ user }: AdminHeaderProps) {
             </button>
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() => signOut({ callbackUrl: "/admin/login" })}
+            onClick={async () => {
+              await authClient.signOut({
+                fetchOptions: {
+                  onSuccess: () => {
+                    window.location.href = "/login"
+                  }
+                }
+              })
+            }}
             className="cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50"
           >
             <LogOut className="mr-2 h-4 w-4" />

@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
-import { createLanguage, updateLanguage, type LanguageFormData } from "@/app/admin/languages/actions"
+import { createLanguage, updateLanguage, type LanguageFormData } from "@/app/(dashboard)/languages/actions"
 import type { Language } from "@rungame/database"
 
 const languageSchema = z.object({
@@ -65,7 +65,7 @@ export function LanguageForm({ language, mode }: LanguageFormProps) {
       const result = mode === "create" ? await createLanguage(data) : await updateLanguage(language!.id, data)
       if (result.success) {
         toast.success(mode === "create" ? "创建成功" : "更新成功", { description: `语言已${mode === "create" ? "创建" : "更新"}` })
-        router.push("/admin/languages")
+        router.push("/languages")
         router.refresh()
       } else {
         toast.error(mode === "create" ? "创建失败" : "更新失败", { description: result.error })

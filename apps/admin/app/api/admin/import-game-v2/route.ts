@@ -33,6 +33,7 @@
 
 import { NextRequest } from 'next/server'
 import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
 import { uploadGamePixImageToR2, type ImageUploadResult } from '@/lib/gamepix-image-upload'
 import { prisma, CACHE_TAGS } from '@rungame/database'
 
@@ -165,7 +166,9 @@ function calculateAspectRatio(width: number, height: number): string {
 
 export async function POST(req: NextRequest) {
   // 验证身份
-  const session = await auth()
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
   if (!session?.user || !['ADMIN', 'SUPER_ADMIN'].includes((session.user as any).role)) {
     return new Response(
       createSSEMessage({ type: 'error', message: '无权限', recoverable: false }),
@@ -699,7 +702,7 @@ export async function POST(req: NextRequest) {
           send({ type: 'progress', step: 6, total: totalSteps, percentage: 95, message: '更新缓存标记...' })
 
           try {
-            const { markGameAsImported } = await import('@/app/admin/import-games/cache-actions')
+            const { markGameAsImported } = await import('@/app/(dashboard)/import-games/cache-actions')
             await markGameAsImported(game.id)
           } catch (error: any) {
             console.error('[导入游戏 v2] 更新缓存标记失败:', error)

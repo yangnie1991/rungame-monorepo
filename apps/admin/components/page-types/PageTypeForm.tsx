@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { createPageType, updatePageType, type PageTypeFormData } from "@/app/admin/page-types/actions"
+import { createPageType, updatePageType, type PageTypeFormData } from "@/app/(dashboard)/page-types/actions"
 import { useEnabledLanguages } from "@/hooks/useEnabledLanguages"
 import type { PageType, PageTypeTranslation } from "@rungame/database"
 
@@ -139,7 +139,7 @@ export function PageTypeForm({ pageType, mode }: PageTypeFormProps) {
           mode === "create" ? "创建成功" : "更新成功",
           { description: `页面类型已${mode === "create" ? "创建" : "更新"}` }
         )
-        router.push("/admin/page-types")
+        router.push("/page-types")
         router.refresh()
       } else {
         toast.error(

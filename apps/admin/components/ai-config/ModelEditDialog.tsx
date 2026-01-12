@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2, TestTube, CheckCircle2, XCircle } from "lucide-react"
-import { updateAiConfig, testAiModel } from "@/app/admin/ai-config/actions"
+import { updateAiConfig, testAiModel } from "@/app/(dashboard)/ai-config/actions"
 import type { AiConfig, AiModel, AiModelConfig, AiProviderTemplate } from "@/types/ai-config"
 
 interface ModelEditDialogProps {

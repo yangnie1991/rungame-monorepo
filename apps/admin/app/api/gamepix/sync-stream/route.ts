@@ -16,6 +16,7 @@
 
 import { NextRequest } from 'next/server'
 import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
 import { prismaCache } from '@/lib/prisma-cache'
 
 export const dynamic = 'force-dynamic'
@@ -31,7 +32,9 @@ function createSSEMessage(data: any, event?: string): string {
 
 export async function GET(req: NextRequest) {
   // 验证身份
-  const session = await auth()
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
   if (!session || !['ADMIN', 'SUPER_ADMIN'].includes((session.user as any)?.role)) {
     return new Response(
       createSSEMessage({ type: 'error', error: '无权限' }),

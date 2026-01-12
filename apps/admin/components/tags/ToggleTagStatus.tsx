@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Switch } from "@/components/ui/switch"
-import { toggleTagStatus } from "@/app/admin/tags/actions"
+import { toggleTagStatus } from "@/app/(dashboard)/tags/actions"
 import { toast } from "sonner"
 
 interface ToggleTagStatusProps {

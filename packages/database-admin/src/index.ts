@@ -6,7 +6,7 @@
 export { prismaAdmin } from "./client"
 
 // 全量导出生成模型、枚举与类型
-export * from "./generated/client"
+export * from "../generated/client"
 
 // ============================================
 // 管理端特有业务逻辑导出

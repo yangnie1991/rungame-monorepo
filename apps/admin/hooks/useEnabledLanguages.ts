@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getEnabledLanguages } from '@/app/admin/languages/actions'
+import { getEnabledLanguages } from '@/app/(dashboard)/languages/actions'
 
 export interface EnabledLanguage {
   code: string

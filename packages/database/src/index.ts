@@ -6,7 +6,7 @@
 export { prisma } from "./client"
 
 // 全量导出生成模型、枚举与类型
-export * from "./generated/client"
+export * from "../generated/client"
 
 // ============================================
 // 业务逻辑与数据访问层导出

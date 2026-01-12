@@ -7,7 +7,8 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./generated": "./generated/client/index.ts"
   },
   "scripts": {
     "build": "echo 'Using JIT mode - no build needed'",
@@ -16,19 +17,23 @@
     "generate": "prisma generate --schema=./prisma/schema.prisma",
     "db:generate": "pnpm run generate",
     "generate:business": "prisma generate --schema=./prisma/schema.prisma",
-    "db:push": "prisma db push --schema=./prisma/schema.prisma",
-    "db:studio": "prisma studio --schema=./prisma/schema.prisma"
+    "db:push": "export $(grep -v '^#' .env | xargs) && prisma db push --schema=./prisma/schema.prisma",
+    "db:studio": "export $(grep -v '^#' .env | xargs) && prisma studio --schema=./prisma/schema.prisma",
+    "db:seed": "export $(grep -v '^#' .env | xargs) && npx tsx prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "export $(grep -v '^#' .env | xargs) && npx tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.2.0",
     "@prisma/client": "7.2.0",
     "@prisma/client-runtime-utils": "7.2.0",
-    "pg": "^8.13.1",
+    "pg": "^8.16.3",
     "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@rungame/typescript-config": "workspace:*",
-    "@types/node": "^22",
+    "@types/node": "^20",
     "@types/pg": "^8.16.0",
     "prisma": "7.2.0",
     "typescript": "^5"

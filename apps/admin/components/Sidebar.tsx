@@ -33,45 +33,45 @@ interface NavigationItem {
 }
 
 const navigation: NavigationItem[] = [
-  { name: "仪表盘", href: "/admin", icon: LayoutDashboard },
-  { name: "分类管理", href: "/admin/categories", icon: FolderTree },
-  { name: "标签管理", href: "/admin/tags", icon: Tags },
-  { name: "游戏管理", href: "/admin/games", icon: Gamepad2 },
+  { name: "仪表盘", href: "/", icon: LayoutDashboard },
+  { name: "分类管理", href: "/categories", icon: FolderTree },
+  { name: "标签管理", href: "/tags", icon: Tags },
+  { name: "游戏管理", href: "/games", icon: Gamepad2 },
   {
     name: "游戏导入",
-    href: "/admin/import-games",
+    href: "/import-games",
     icon: Download,
     children: [
-      { name: "GamePix", href: "/admin/import-games/gamepix" },
+      { name: "GamePix", href: "/import-games/gamepix" },
     ]
   },
-  { name: "语言管理", href: "/admin/languages", icon: Languages },
-  { name: "页面类型", href: "/admin/page-types", icon: FileType },
+  { name: "语言管理", href: "/languages", icon: Languages },
+  { name: "页面类型", href: "/page-types", icon: FileType },
   {
     name: "SEO 推送",
-    href: "/admin/seo-submissions",
+    href: "/seo-submissions",
     icon: Share2,
     children: [
-      { name: "Google", href: "/admin/seo-submissions/google" },
-      { name: "Bing (IndexNow)", href: "/admin/seo-submissions/bing" },
+      { name: "Google", href: "/seo-submissions/google" },
+      { name: "Bing (IndexNow)", href: "/seo-submissions/bing" },
     ]
   },
   {
     name: "AI 配置",
-    href: "/admin/ai-config",
+    href: "/ai-config",
     icon: Bot,
     children: [
-      { name: "模型配置", href: "/admin/ai-config" },
-      { name: "外部 API", href: "/admin/external-apis" },
+      { name: "模型配置", href: "/ai-config" },
+      { name: "外部 API", href: "/external-apis" },
     ]
   },
   {
     name: "网站配置",
-    href: "/admin/site-settings",
+    href: "/site-settings",
     icon: Settings,
     children: [
-      { name: "基础信息", href: "/admin/site-config" },
-      { name: "R2 配置", href: "/admin/site-settings/r2-config" },
+      { name: "基础信息", href: "/site-config" },
+      { name: "R2 配置", href: "/site-settings/r2-config" },
     ]
   },
 ]

@@ -232,7 +232,7 @@ export function BatchGenerateDialog({
     setConfigError(null)
 
     try {
-      const { getAiConfigsWithModels } = await import('@/app/admin/ai-config/actions')
+      const { getAiConfigsWithModels } = await import('@/app/(dashboard)/ai-config/actions')
       const configs = await getAiConfigsWithModels()
 
       if (configs.length === 0) {

@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { auth } from '@/lib/auth'
+import { headers as nextHeaders } from 'next/headers'
 import { getDecryptedAiConfig } from '@/lib/ai-config'
 
 export const dynamic = 'force-dynamic'
@@ -15,7 +16,9 @@ export const dynamic = 'force-dynamic'
 export async function POST(request: NextRequest) {
   try {
     // 验证身份（仅管理员可用）
-    const session = await auth()
+    const session = await auth.api.getSession({
+      headers: await nextHeaders()
+    })
     if (!session || ((session.user as any)?.role !== 'ADMIN' && (session.user as any)?.role !== 'SUPER_ADMIN')) {
       return new Response(JSON.stringify({ error: '未授权访问' }), {
         status: 401,

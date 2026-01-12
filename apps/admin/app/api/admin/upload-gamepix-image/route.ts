@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
 import { uploadGamePixImageToR2 } from '@/lib/gamepix-image-upload'
 
 export const runtime = 'nodejs'
@@ -30,7 +31,9 @@ export const maxDuration = 30
 export async function POST(request: NextRequest) {
   try {
     // 验证身份
-    const session = await auth()
+    const session = await auth.api.getSession({
+      headers: await headers()
+    })
     if (!session?.user) {
       return new Response(
         JSON.stringify({ error: '未授权' }),

@@ -12,6 +12,7 @@
 
 import { NextRequest } from 'next/server'
 import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
 import { uploadGamePixImageToR2 } from '@/lib/gamepix-image-upload'
 import { prisma, CACHE_TAGS } from '@rungame/database'
 import { revalidateTag } from 'next/cache'
@@ -57,7 +58,9 @@ function calculateAspectRatio(width: number, height: number): string {
 
 export async function POST(req: NextRequest) {
   // 验证身份
-  const session = await auth()
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
   const user = session?.user as any
   if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
     return new Response(
@@ -291,7 +294,7 @@ export async function POST(req: NextRequest) {
 
         try {
           await retryWithBackoff(async () => {
-            const { markGameAsImported } = await import('@/app/admin/import-games/cache-actions')
+            const { markGameAsImported } = await import('@/app/(dashboard)/import-games/cache-actions')
             await markGameAsImported(game.id)
           })
 

@@ -5,9 +5,9 @@ const nextConfig: NextConfig = {
   // 移除 standalone 输出，使用标准 Docker 部署
   // output: 'standalone',
 
-  // 忽略 TS 错误，确保 CI 构建成功
+  // TypeScript 类型检查
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 
   // 设置 Turbopack 根目录为 Monorepo 根目录

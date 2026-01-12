@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
-import { deleteCategory } from "@/app/admin/categories/actions"
+import { deleteCategory } from "@/app/(dashboard)/categories/actions"
 
 interface DeleteCategoryButtonProps {
   categoryId: string

@@ -61,7 +61,7 @@ export function GamePixExtractButton({
   // 保存提取的数据到缓存
   const saveExtractedDataToCache = async (data: ExtractedGameData) => {
     try {
-      const { saveGamePixExtractedData } = await import('@/app/admin/games/import-actions')
+      const { saveGamePixExtractedData } = await import('@/app/(dashboard)/games/import-actions')
 
       const tagNames = data.tags?.map(t => t.name) || []
       const markdown = data.markdownContent || ''

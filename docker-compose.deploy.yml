@@ -9,8 +9,8 @@ services:
       args:
         NODE_ENV: production
         DATABASE_URL: ${DATABASE_URL}
-        NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
-        NEXTAUTH_URL: ${NEXTAUTH_URL}
+        BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+        BETTER_AUTH_URL: ${BETTER_AUTH_URL}
         ENCRYPTION_KEY: ${ENCRYPTION_KEY}
     restart: always
     ports:
@@ -18,8 +18,8 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_URL=${DATABASE_URL}
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - NEXT_TELEMETRY_DISABLED=1
       - PORT=4000

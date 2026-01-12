@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
 import { generateGamePixImportContent, type GamePixImportInput } from '@/lib/ai-seo-optimizer'
 
 export const runtime = 'nodejs'
@@ -19,49 +20,13 @@ class SSEEncoder {
  * GamePix 导入专用的 AI 内容生成 API
  *
  * POST /api/ai/generate-gamepix-import
- *
- * 功能：
- * - 专门为 GamePix 导入场景设计
- * - 使用 Google Search API 获取竞品网站
- * - 使用 AI 过滤游戏网站（置信度 >= 60%）
- * - 保持竞品内容和 markdown 内容完整（不截断）
- * - 一次性生成所有 9 个字段
- * - 支持快速模式（2步）和质量模式（5步）
- *
- * Body: {
- *   gameTitle: string,           // 游戏名称
- *   mainKeyword: string,          // 主关键词
- *   subKeywords: string[],        // 副关键词数组
- *   originalDescription: string,  // 原始描述
- *   markdownContent: string,      // Markdown 内容（完整）
- *   locale: string,               // 语言（en, zh 等）
- *   mode: 'fast' | 'quality'      // 生成模式
- * }
- *
- * Response: {
- *   success: true,
- *   data: {
- *     description: string,          // 纯文本描述（150-200字）
- *     metaTitle: string,            // SEO 标题（60字符）
- *     metaDescription: string,      // SEO 描述（155字符）
- *     keywords: string,             // 关键词（包含主副关键词）
- *     contentSections: {
- *       controls: string,           // HTML
- *       howToPlay: string,          // HTML
- *       gameDetails: string,        // HTML
- *       faq: string,                // HTML
- *       extras: string              // HTML（允许 h2，禁止 h1）
- *     }
- *   },
- *   stepsCompleted: number,
- *   totalSteps: number,
- *   mode: 'fast' | 'quality'
- * }
  */
 export async function POST(request: NextRequest) {
   try {
     // 验证身份
-    const session = await auth()
+    const session = await auth.api.getSession({
+      headers: await headers()
+    })
     if (!session?.user) {
       return new Response(
         JSON.stringify({ error: '未授权' }),

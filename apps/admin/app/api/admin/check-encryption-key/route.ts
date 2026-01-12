@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +13,9 @@ export async function GET(request: NextRequest) {
   try {
     // 验证管理员身份
     // 验证管理员身份
-    const session = await auth()
+    const session = await auth.api.getSession({
+      headers: await headers()
+    })
     if (!session || ((session.user as any)?.role !== 'ADMIN' && (session.user as any)?.role !== 'SUPER_ADMIN')) {
       return NextResponse.json({ error: '未授权' }, { status: 401 })
     }

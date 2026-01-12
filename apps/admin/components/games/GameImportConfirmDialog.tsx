@@ -59,7 +59,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import type { GamePixGameItem } from '@/lib/gamepix-importer'
 import { GamePixExtractButton, type ExtractedGameData } from './GamePixExtractButton'
-import { matchGamePixCategory } from '@/app/admin/games/import-actions'
+import { matchGamePixCategory } from '@/app/(dashboard)/games/import-actions'
 import { removeWidthParameter } from '@/lib/utils-ui'
 import { ImageFieldWithUpload } from './ImageFieldWithUpload'
 import { ScreenshotsFieldWithUpload } from './ScreenshotsFieldWithUpload'
@@ -471,7 +471,7 @@ export function GameImportConfirmDialog({
     setConfigError(null)
 
     try {
-      const { getAiConfigsWithModels } = await import('@/app/admin/ai-config/actions')
+      const { getAiConfigsWithModels } = await import('@/app/(dashboard)/ai-config/actions')
       const configs = await getAiConfigsWithModels()
 
       if (configs.length === 0) {
@@ -531,7 +531,7 @@ export function GameImportConfirmDialog({
     if (!game?.namespace) return
 
     try {
-      const { getGamePixExtractedData } = await import('@/app/admin/games/import-actions')
+      const { getGamePixExtractedData } = await import('@/app/(dashboard)/games/import-actions')
       const result = await getGamePixExtractedData(game.namespace)
 
       if (result.success && result.data) {
@@ -788,7 +788,7 @@ export function GameImportConfirmDialog({
       if (data.newTagNames && data.newTagNames.length > 0) {
         console.log('🔄 预处理：创建新标签...', data.newTagNames)
 
-        const { batchCreateTags } = await import('@/app/admin/games/import-actions')
+        const { batchCreateTags } = await import('@/app/(dashboard)/games/import-actions')
         const result = await batchCreateTags(data.newTagNames)
 
         if (result.success && result.data) {

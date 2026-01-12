@@ -16,7 +16,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Plus, Trash2, Check, X } from "lucide-react"
-import { createAiConfig, updateAiConfig } from "@/app/admin/ai-config/actions"
+import { createAiConfig, updateAiConfig } from "@/app/(dashboard)/ai-config/actions"
 import { AI_PROVIDERS, getProviderConfig } from "@/lib/ai-providers"
 import type { AiConfig, AiModel, AiModelParameters, AiModelConfig } from "@/types/ai-config"
 
@@ -247,7 +247,7 @@ export function AiConfigForm({ config, mode = "create", initialProvider }: AiCon
           : await updateAiConfig(config!.id, formData)
 
       if (result.success) {
-        router.push("/admin/ai-config")
+        router.push("/ai-config")
         router.refresh()
       } else {
         setError(result.error || "操作失败")

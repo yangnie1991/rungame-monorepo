@@ -8,16 +8,17 @@ RunGame 是一个多语言在线游戏平台，采用 **Turborepo Monorepo** 架
 
 ### Monorepo 结构
 
-- **apps/admin** - 管理后台应用 (Next.js 15, 端口 4000)
-- **apps/website** - 用户端网站 (Next.js 15, 端口 3000)
-- **packages/database** - 共享数据库层 (Prisma + PostgreSQL)
+- **apps/admin** - 管理后台应用 (Next.js 16, 端口 4000)
+- **apps/website** - 用户端网站 (Next.js 16, 端口 3000)
+- **packages/database** - 业务数据库层 (Prisma 7 + PostgreSQL)
+- **packages/database-admin** - 管理数据库层 (Prisma 7 + PostgreSQL)
 
 ### 双界面架构
 
 - **用户端网站** (apps/website): 国际化游戏门户，包含动态内容
-- **管理后台** (apps/admin): 内容管理系统，用于管理游戏、分类、标签、语言和页面类型
+- **管理后台** (apps/admin): 内容管理系统，用于管理游戏、分类、标签、语言、页面类型、AI 配置和 SEO 提交
 
-**技术栈**: Turborepo, Next.js 15, React 19, TypeScript, Prisma (PostgreSQL), NextAuth.js, next-intl, TailwindCSS 4, shadcn/ui
+**技术栈**: Turborepo, Next.js 16, React 19, TypeScript, Prisma 7 (PostgreSQL), Better Auth, next-intl, TailwindCSS 4, shadcn/ui, pnpm
 
 ## 开发命令
 
@@ -41,11 +42,15 @@ pnpm start:website             # 启动 website 生产服务器（端口 3000）
 # 数据库（通过 @rungame/database workspace）
 pnpm db:push                   # 将 Prisma schema 推送到数据库
 pnpm db:seed                   # 填充数据库初始数据（管理员、分类、游戏）
-pnpm db:generate               # 生成 Prisma 客户端
+pnpm db:generate               # 生成 Prisma 客户端（两个数据库）
 pnpm db:studio                 # 打开 Prisma Studio
 
 # 代码质量
 pnpm lint                      # 运行所有应用的 ESLint
+
+# Docker 数据库（本地开发）
+docker-compose -f docker-compose.db.yml up -d    # 启动 PostgreSQL
+docker-compose -f docker-compose.db.yml down     # 停止 PostgreSQL
 ```
 
 **管理员登录**（填充数据后）:
@@ -63,12 +68,11 @@ rungame-monorepo/
 ├── apps/
 │   ├── admin/                 # 管理后台应用（端口 4000）
 │   │   ├── app/               # Next.js App Router
-│   │   │   ├── (admin)/       # 管理后台路由组
+│   │   │   ├── (dashboard)/   # 管理后台路由组（认证保护）
 │   │   │   ├── api/           # API 路由
 │   │   │   └── login/         # 登录页面
 │   │   ├── components/        # 管理后台组件
 │   │   ├── lib/               # 工具函数和配置
-│   │   ├── i18n/              # 国际化配置
 │   │   ├── middleware.ts      # 身份验证中间件
 │   │   └── package.json
 │   │
@@ -82,15 +86,25 @@ rungame-monorepo/
 │       └── package.json
 │
 ├── packages/
-│   └── database/              # 共享数据库层
+│   ├── database/              # 业务数据库层（共享）
+│   │   ├── prisma/
+│   │   │   ├── schema.prisma  # 业务数据模型
+│   │   │   └── seed.ts        # 数据填充脚本
+│   │   ├── generated/         # Prisma 7 生成的客户端
+│   │   ├── src/               # 导出的数据库工具
+│   │   └── package.json
+│   │
+│   └── database-admin/        # 管理数据库层（仅 Admin）
 │       ├── prisma/
-│       │   ├── schema.prisma  # 数据库模型
-│       │   └── seed.ts        # 数据填充脚本
+│       │   ├── schema.prisma  # 管理配置数据模型
+│       │   └── seed.ts        # 管理数据填充
+│       ├── generated/         # Prisma 7 生成的客户端
 │       ├── src/               # 导出的数据库工具
 │       └── package.json
 │
 ├── docs/                      # 项目文档
 ├── scripts/                   # 维护脚本
+├── docker-compose.db.yml      # 本地数据库容器
 ├── turbo.json                 # Turborepo 配置
 └── package.json               # 根 workspace 配置
 ```
@@ -101,20 +115,39 @@ rungame-monorepo/
 
 ```
 app/
-├── (admin)/                   # 管理后台 - 无国际化
-│   ├── layout.tsx            # 未认证时重定向到 /login
-│   └── admin/
-│       ├── layout.tsx        # 管理后台侧边栏 + 顶部布局
-│       ├── games/            # 游戏管理
-│       ├── categories/       # 分类管理
-│       ├── tags/             # 标签管理
-│       ├── languages/        # 语言管理
-│       └── page-types/       # PageType 管理
+├── layout.tsx                 # 根布局（html, body, Toaster）
+├── login/
+│   └── page.tsx              # 登录页面（/login）
+├── (dashboard)/               # Dashboard 路由组（认证保护）
+│   ├── layout.tsx            # Dashboard 布局（侧边栏 + 头部）
+│   ├── page.tsx              # 首页（/）
+│   ├── games/                # 游戏管理
+│   │   ├── page.tsx          # 列表（/games）
+│   │   ├── new/page.tsx      # 新建（/games/new）
+│   │   └── [id]/page.tsx     # 编辑（/games/[id]）
+│   ├── categories/           # 分类管理
+│   ├── tags/                 # 标签管理
+│   ├── languages/            # 语言管理
+│   ├── page-types/           # PageType 管理
+│   ├── ai-config/            # AI 配置管理
+│   ├── external-apis/        # 外部 API 配置
+│   ├── import-games/         # 游戏导入
+│   │   ├── page.tsx          # 导入平台列表
+│   │   └── gamepix/page.tsx  # GamePix 导入
+│   ├── seo-submissions/      # SEO 提交管理
+│   │   ├── page.tsx          # 概览
+│   │   ├── submit/page.tsx   # 提交 URL
+│   │   ├── google/page.tsx   # Google 状态
+│   │   └── bing/page.tsx     # Bing 状态
+│   ├── site-config/          # 网站配置
+│   └── site-settings/        # 网站设置
+│       └── r2-config/        # R2 CDN 配置
 │
-├── api/                      # API 路由
-│   └── auth/[...nextauth]/   # NextAuth.js 处理程序
-│
-└── login/                    # 登录页面
+└── api/                      # API 路由
+    ├── auth/[...all]/        # Better Auth 处理程序
+    ├── admin/                # 管理 API
+    ├── ai/                   # AI 相关 API
+    └── gamepix/              # GamePix 同步 API
 ```
 
 ### Website 应用路由结构 (apps/website/app/)
@@ -161,56 +194,121 @@ app/
 - 在整个应用中用于游戏标题、分类名称等
 - 实现位置: [apps/website/lib/i18n-helpers.ts](apps/website/lib/i18n-helpers.ts) 和 [apps/admin/lib/i18n-helpers.ts](apps/admin/lib/i18n-helpers.ts)
 
-### 数据库架构 (Prisma)
+### 双数据库架构
 
-**位置**: [packages/database/prisma/schema.prisma](packages/database/prisma/schema.prisma)
+项目采用**双数据库分离**架构，提高安全性和性能：
 
-**翻译模式**: 主表存储不可翻译数据；独立的 `*Translation` 表存储特定语言的内容。
+| 数据库 | 环境变量 | 包 | 用途 |
+|--------|----------|-----|------|
+| 业务数据库 | `DATABASE_URL` | `@rungame/database` | 游戏、分类、标签、语言等业务数据（Admin + Website 共享） |
+| 管理数据库 | `CACHE_DATABASE_URL` | `@rungame/database-admin` | 认证、AI 配置、缓存、SEO 提交等管理数据（仅 Admin） |
 
-**核心模型**:
-- `Category` + `CategoryTranslation` - 游戏分类（每个语言的名称、描述、元标签）
-- `Tag` + `TagTranslation` - 游戏标签（每个语言的名称）
+**业务数据库模型** (`packages/database/prisma/schema.prisma`):
 - `Game` + `GameTranslation` - 游戏（每个语言的标题、描述、说明）
-- `Language` - 系统中可用的语言（包含 nameCn 字段用于中文名称）
-- `PageType` + `PageTypeTranslation` - 动态页面类型（见下文 PageType 系统）
-- `Admin` - 管理员用户，使用 bcrypt 密码
-- `ApiKey` - API 密钥管理，包含作用域和速率限制
+- `Category` + `CategoryTranslation` - 游戏分类（支持层级）
+- `Tag` + `TagTranslation` - 游戏标签
+- `Language` + `LanguageTranslation` - 系统语言
+- `PageType` + `PageTypeTranslation` - 动态页面类型
+- `SiteConfig` + `SiteConfigTranslation` - 网站配置
+- `GameVote` - 用户投票记录
+- `AITask` - AI 任务状态
+
+**管理数据库模型** (`packages/database-admin/prisma/schema.prisma`):
+- `User` / `Session` / `Account` / `Verification` - Better Auth 认证表
+- `AiConfig` - AI 模型配置（provider、apiKey、modelConfig JSON）
+- `ExternalApiConfig` - 外部 API 配置（Google Search、Jina Reader）
+- `ImportPlatform` - 导入平台配置（GamePix、CrazyGames）
+- `SearchEngineConfig` - 搜索引擎配置（Bing、Google、百度）
+- `UrlSubmission` - URL 提交记录
+- `SubmissionBatch` - 批量提交任务
+- `GamePixGameCache` - GamePix 游戏缓存
+- `SyncLog` - 同步日志
+- `AiChatHistory` - AI 对话历史
+
+**使用方法**:
+```typescript
+// 在 Admin 应用中导入
+import { prisma, prismaAdmin } from "@/lib/prisma"
+
+// 业务数据操作
+const games = await prisma.game.findMany()
+
+// 管理数据操作
+const aiConfig = await prismaAdmin.aiConfig.findFirst({ where: { isActive: true } })
+```
 
 **重要索引**:
 - 所有翻译表都有 `@@unique([entityId, locale])` 和 `@@index([locale])`
-- 游戏索引: `slug`, `categoryId`, `isFeatured`, `isPublished`, `playCount`
+- 游戏索引: `slug`, `status`, `isFeatured`, `playCount`
 - 分类和标签索引: `slug` 和 `isEnabled`
 
 **数据填充**:
-- 运行 `npm run db:seed` 填充初始数据
+- 运行 `pnpm db:seed` 填充初始数据
 - 创建超级管理员、25个游戏分类（中英文翻译）、30个示例游戏和所有标签
 - 在 [packages/database/prisma/seed.ts](packages/database/prisma/seed.ts) 中设置 `RESET_DATABASE = true` 可清除并重建数据（危险操作！）
 
 ### 身份验证与授权
 
-**NextAuth.js v5** 配置在 [apps/admin/lib/auth.ts](apps/admin/lib/auth.ts):
-- 策略: JWT，7天会话
-- 提供者: Credentials（邮箱 + bcrypt 密码）
-- 自定义回调将 `role` 注入会话
-- 登录时更新 `lastLoginAt` 时间戳
+**Better Auth v1** 配置在 [apps/admin/lib/auth.ts](apps/admin/lib/auth.ts):
 
-**中间件保护** ([apps/admin/middleware.ts](apps/admin/middleware.ts)):
-- 管理员路由 (`/admin/*`) 需要身份验证 + 角色检查（ADMIN 或 SUPER_ADMIN）
-- 未认证用户重定向到 `/login?callbackUrl={pathname}`
-- 权限不足返回 403 JSON 响应
+```typescript
+import { betterAuth } from "better-auth"
+import { prismaAdapter } from "better-auth/adapters/prisma"
+import { prismaAdmin } from "@/lib/prisma"
 
-**使用方法** (在 Admin 应用中):
+export const auth = betterAuth({
+  database: prismaAdapter(prismaAdmin, { provider: "postgresql" }),
+  emailAndPassword: { enabled: true },
+  secret: process.env.BETTER_AUTH_SECRET,
+  user: {
+    modelName: "User", // Maps to 'admins' table
+    additionalFields: {
+      role: { type: "string", defaultValue: "ADMIN" },
+      isActive: { type: "boolean", defaultValue: true }
+    }
+  },
+  session: {
+    cookieCache: { enabled: true, maxAge: 5 * 60 } // 5分钟缓存
+  }
+})
+```
+
+**环境变量**:
+```env
+BETTER_AUTH_SECRET="openssl rand -base64 32"
+BETTER_AUTH_URL="http://localhost:4000"
+NEXT_PUBLIC_APP_URL="http://localhost:4000"
+AUTH_TRUST_HOST=true
+```
+
+**API 端点** (`/api/auth/[...all]`):
+- `POST /api/auth/sign-in/email` - 登录
+- `POST /api/auth/sign-out` - 登出
+- `GET /api/auth/session` - 获取会话
+
+**会话检查**:
 ```typescript
 import { auth } from "@/lib/auth"
+import { headers } from "next/headers"
 
-// Server Components
-const session = await auth()
+// Server Components / API Routes
+const session = await auth.api.getSession({ headers: await headers() })
 if (!session) redirect("/login")
-
-// API Routes
-const session = await auth()
-if (session.user.role !== "SUPER_ADMIN") return Response.json({ error: "Forbidden" }, { status: 403 })
 ```
+
+**客户端使用** ([apps/admin/lib/auth-client.ts](apps/admin/lib/auth-client.ts)):
+```typescript
+import { createAuthClient } from "better-auth/react"
+
+export const { signIn, signOut, useSession } = createAuthClient({
+  baseURL: process.env.NEXT_PUBLIC_APP_URL
+})
+```
+
+**Dashboard 布局保护** ([apps/admin/app/(dashboard)/layout.tsx](apps/admin/app/(dashboard)/layout.tsx)):
+- 所有 `(dashboard)` 路由组下的页面自动受认证保护
+- 未认证用户重定向到 `/login`
+- 使用 `force-dynamic` 避免构建时数据库查询
 
 ### PageType 系统
 
@@ -218,25 +316,21 @@ if (session.user.role !== "SUPER_ADMIN") return Response.json({ error: "Forbidde
 
 1. **GAME_LIST**: 根据配置筛选/排序的动态游戏列表
    - 示例: 最多游玩、热门、新游戏
-   - 配置: `gameListConfig` JSON（筛选、排序、分页）
+   - 配置: `pageInfo.gameList` JSON
    - URL: `/{locale}/most-played`, `/{locale}/new-games`
 
-2. **STATIC_CONTENT**: 纯内容页面
+2. **DISPLAY_PAGE**: 纯内容展示页面
    - 示例: 关于我们、隐私政策、条款
-   - 内容来自 `PageContentBlock` + `PageContentBlockTranslation`
-   - 块类型: TEXT, IMAGE, VIDEO, HTML
+   - 配置: `pageInfo.displayPage` JSON
 
-3. **MIXED**: 静态内容 + 游戏列表的组合
-   - 示例: 夏日游戏活动、益智挑战
-   - 同时使用 `gameListConfig` 和内容块
-   - `layoutConfig` 控制块/游戏列表的位置
+3. **OTHER_PAGE**: 其他自定义页面
+   - 示例: 自定义功能页面
+   - 配置: `pageInfo.otherPage` JSON
 
 **关键字段**:
 - `slug` - URL 标识符（如 "most-played"）
-- `type` - GAME_LIST, STATIC_CONTENT 或 MIXED
-- `gameListConfig` - 游戏的 JSON 筛选/排序规则
-- `layoutConfig` - JSON 布局设置（网格 vs 列表、列数、侧边栏）
-- `cacheConfig` - JSON 缓存策略（TTL、失效触发器）
+- `type` - GAME_LIST, DISPLAY_PAGE 或 OTHER_PAGE（枚举）
+- `pageInfo` - JSON 页面配置
 
 ### 组件组织
 
@@ -261,7 +355,7 @@ if (session.user.role !== "SUPER_ADMIN") return Response.json({ error: "Forbidde
 **TailwindCSS 4** 带自定义动画:
 - 各应用独立的 Tailwind 配置（根目录有共享配置）
 - 使用各应用 `@/lib/utils` 中的 `cn()` 进行类合并
-- 管理后台强制浅色模式: `style={{ colorScheme: 'light' }}`
+- 管理后台强制浅色模式: `className="light"` + `style={{ colorScheme: 'light' }}`
 - 用户网站支持 `next-themes` 的深色模式
 
 ## 重要模式
@@ -275,7 +369,7 @@ if (session.user.role !== "SUPER_ADMIN") return Response.json({ error: "Forbidde
 ```typescript
 "use server"
 import { revalidatePath } from "next/cache"
-import { prisma } from "@rungame/database" // Monorepo: 从共享包导入
+import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 
 // 1. 定义 zod 验证 Schema
@@ -316,7 +410,7 @@ export async function createCategory(data: CategoryFormData) {
     })
 
     // 重新验证缓存
-    revalidatePath("/admin/categories")
+    revalidatePath("/categories")
     revalidatePath("/[locale]", "layout")
 
     return { success: true, data: category }
@@ -334,25 +428,20 @@ export async function createCategory(data: CategoryFormData) {
 ```
 
 **验证规范**:
-- ✅ 必须为所有增、改操作定义 zod schema
-- ✅ 使用 `schema.parse()` 在数据库操作前验证数据
-- ✅ 处理 `ZodError` 并返回清晰的错误消息
-- ✅ 字符串字段使用 `.trim()` 清理空白字符
-- ✅ 可选字段使用 `.optional()` 标记
-- ✅ 数字字段使用 `.int()`, `.min()`, `.max()` 等约束
-- ✅ 使用 `z.infer<typeof schema>` 导出类型供前端使用
-
-**参考示例**:
-- [apps/admin/app/(admin)/admin/categories/actions.ts](apps/admin/app/(admin)/admin/categories/actions.ts) - 分类管理
-- [apps/admin/app/(admin)/admin/games/actions.ts](apps/admin/app/(admin)/admin/games/actions.ts) - 游戏管理
-- [apps/admin/app/(admin)/admin/tags/actions.ts](apps/admin/app/(admin)/admin/tags/actions.ts) - 标签管理
+- 必须为所有增、改操作定义 zod schema
+- 使用 `schema.parse()` 在数据库操作前验证数据
+- 处理 `ZodError` 并返回清晰的错误消息
+- 字符串字段使用 `.trim()` 清理空白字符
+- 可选字段使用 `.optional()` 标记
+- 数字字段使用 `.int()`, `.min()`, `.max()` 等约束
+- 使用 `z.infer<typeof schema>` 导出类型供前端使用
 
 ### 翻译查询
 
 始终获取当前语言和回退语言：
 
 ```typescript
-import { prisma } from "@rungame/database" // Monorepo: 从共享包导入
+import { prisma } from "@/lib/prisma"
 import { buildLocaleCondition, getTranslationWithFallback } from "@/lib/i18n-helpers"
 
 const game = await prisma.game.findUnique({
@@ -365,10 +454,10 @@ const game = await prisma.game.findUnique({
 })
 
 const translation = getTranslationWithFallback(game.translations, locale)
-const title = translation?.title || "未命名游戏"
+const title = translation?.title || game.title // 回退到主表英文
 ```
 
-**重要**: 在 Monorepo 中，所有数据库操作必须从 `@rungame/database` 导入 `prisma` 实例。
+**重要**: 在 Monorepo 中，所有数据库操作必须从 `@/lib/prisma` 导入，该文件代理到对应的包。
 
 ### 多语言表单
 
@@ -401,50 +490,78 @@ return (
 ### Turborepo 任务依赖
 
 [turbo.json](turbo.json) 定义了任务执行顺序:
-- `build` 任务依赖于依赖包的 build (如 database)
-- `lint` 任务依赖于 build 完成
-- `dev`、`db:*` 任务不使用缓存,每次都执行
+- `build` 任务依赖于依赖包的 build 和 db:generate
+- `dev` 任务依赖于 db:generate
+- `db:generate` 输出到 `packages/database/generated/**` 和 `packages/database-admin/generated/**`
+- `dev`、`db:*` 任务不使用缓存，每次都执行
 
 ### 共享数据库包
 
-**@rungame/database** 包被 admin 和 website 共享使用:
+**@rungame/database** 和 **@rungame/database-admin** 包的使用:
 
 ```typescript
-// 在 admin 或 website 中使用
-import { prisma } from "@rungame/database"
+// packages/database/src/client.ts - 业务数据库
+import { PrismaClient } from "../generated/client"
+export const prisma = new PrismaClient()
 
-const games = await prisma.game.findMany()
+// packages/database-admin/src/client.ts - 管理数据库
+import { PrismaClient } from "../generated/client"
+export const prismaAdmin = new PrismaClient()
+
+// apps/admin/lib/prisma.ts - 代理导出
+export { prisma } from "@rungame/database"
+export { prismaAdmin } from "@rungame/database-admin"
 ```
 
 **重要**: 修改 Prisma schema 后需要:
-1. `npm run db:generate` - 重新生成 Prisma 客户端
-2. `npm run build:database` - 构建数据库包
-3. 重启开发服务器
+1. `pnpm db:generate` - 重新生成两个 Prisma 客户端
+2. 重启开发服务器
+
+### Prisma 7 驱动适配器
+
+项目使用 Prisma 7 的 `@prisma/adapter-pg` 驱动适配器：
+
+```typescript
+import { Pool } from "pg"
+import { PrismaPg } from "@prisma/adapter-pg"
+import { PrismaClient } from "../generated/client"
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 10,
+  idleTimeoutMillis: 30000
+})
+
+const adapter = new PrismaPg(pool)
+export const prisma = new PrismaClient({ adapter })
+```
 
 ### 添加新依赖
 
 ```bash
 # 为特定应用添加依赖
-npm install <package> -w @rungame/admin
-npm install <package> -w @rungame/website
-npm install <package> -w @rungame/database
+pnpm add <package> --filter @rungame/admin
+pnpm add <package> --filter @rungame/website
+pnpm add <package> --filter @rungame/database
 
 # 为根 workspace 添加依赖 (如 turbo, 共享开发工具)
-npm install <package> -w root
+pnpm add <package> -w
 ```
 
 ### 开发最佳实践
 
-1. **并行开发**: 使用 `npm run dev` 同时运行两个应用
-2. **独立开发**: 使用 `npm run dev:admin` 或 `npm run dev:website` 单独开发某个应用
-3. **数据库修改**: 始终在 `packages/database/prisma/schema.prisma` 中修改
+1. **并行开发**: 使用 `pnpm dev` 同时运行两个应用
+2. **独立开发**: 使用 `pnpm dev:admin` 或 `pnpm dev:website` 单独开发某个应用
+3. **数据库修改**:
+   - 业务模型修改 `packages/database/prisma/schema.prisma`
+   - 管理模型修改 `packages/database-admin/prisma/schema.prisma`
 4. **共享代码**: 考虑在 `packages/` 下创建新的共享包
 
 ## 配置说明
 
-- **Monorepo 管理**: Turborepo + npm workspaces
+- **Monorepo 管理**: Turborepo + pnpm workspaces
 - **路径别名**: 每个应用中 `@/*` 映射到各自的根目录（见各应用的 [tsconfig.json](apps/admin/tsconfig.json)）
-- **共享数据库**: `@rungame/database` 包被两个应用引用
+- **共享数据库**: `@rungame/database` 和 `@rungame/database-admin` 包
 - **图片域名**: 在各应用的 [next.config.ts](apps/admin/next.config.ts) 中配置游戏缩略图
 - **Turbopack**: 所有应用构建和开发使用 `--turbopack` 标志
 - **端口分配**:
@@ -455,6 +572,53 @@ npm install <package> -w root
   - 管理数据库: `CACHE_DATABASE_URL` (仅 Admin)
   - 外部托管（生产环境推荐使用云数据库服务）
 
+## 环境变量配置
+
+### Admin 应用 (.env)
+
+```env
+# 数据库
+DATABASE_URL="postgresql://user:password@host:port/db_name?schema=public"
+CACHE_DATABASE_URL="postgresql://user:password@host:port/db_name_admin?schema=public"
+
+# Better Auth 认证
+BETTER_AUTH_SECRET="openssl rand -base64 32"
+BETTER_AUTH_URL="http://localhost:4000"
+NEXT_PUBLIC_APP_URL="http://localhost:4000"
+AUTH_TRUST_HOST=true
+
+# 加密密钥（用于 API Key 加密）
+ENCRYPTION_KEY="openssl rand -base64 48"
+
+# Cloudflare R2 存储
+R2_ACCOUNT_ID=""
+R2_ACCESS_KEY_ID=""
+R2_SECRET_ACCESS_KEY=""
+R2_BUCKET_NAME=""
+R2_PUBLIC_URL=""
+
+# Google 搜索 API
+GOOGLE_SEARCH_API_KEY=""
+GOOGLE_SEARCH_ENGINE_ID=""
+
+# Jina Reader API
+JINA_API_KEY=""
+```
+
+### Website 应用 (.env)
+
+```env
+# 数据库
+DATABASE_URL="postgresql://user:password@host:port/db_name?schema=public"
+
+# 网站 URL
+NEXT_PUBLIC_SITE_URL="https://rungame.online"
+
+# 分析和广告
+NEXT_PUBLIC_GA_ID=""
+NEXT_PUBLIC_ADSENSE_ID=""
+```
+
 ## 关键约束
 
 1. **禁止直接修改翻译** - 始终通过翻译表操作
@@ -463,7 +627,9 @@ npm install <package> -w root
 4. **PageType slug 是 URL slug** - 必须是 URL 安全且唯一的
 5. **游戏 embedUrl 必须是 HTTPS** - iframe 的安全要求
 6. **Language.code 必须匹配 next-intl locales** - 同步 [apps/website/i18n/routing.ts](apps/website/i18n/routing.ts) 和 Language 表
-7. **数据库修改必须在 packages/database** - 不要在各应用中单独配置 Prisma
+7. **业务数据库修改必须在 packages/database** - 不要在各应用中单独配置 Prisma
+8. **管理数据库修改必须在 packages/database-admin** - 认证、AI 配置等管理数据
+9. **使用正确的 Prisma 实例** - 业务数据用 `prisma`，管理数据用 `prismaAdmin`
 
 ## 常见任务
 
@@ -475,10 +641,9 @@ npm install <package> -w root
 
 **创建新 PageType**:
 1. 管理后台 → 页面类型 → 创建
-2. 选择类型（GAME_LIST, STATIC_CONTENT 或 MIXED）
-3. 如适用，配置 gameListConfig JSON
+2. 选择类型（GAME_LIST, DISPLAY_PAGE 或 OTHER_PAGE）
+3. 如适用，配置 pageInfo JSON
 4. 为所有启用的语言添加翻译
-5. 对于 STATIC_CONTENT 或 MIXED，添加 PageContentBlocks
 
 **添加游戏**:
 1. 确保分类存在
@@ -486,7 +651,13 @@ npm install <package> -w root
 3. 填写 slug、embedUrl、缩略图、尺寸
 4. 为所有语言添加翻译
 5. 分配分类和标签
-6. 切换 `isPublished` 以在网站上显示
+6. 切换 `status` 为 PUBLISHED 以在网站上显示
+
+**配置 AI 功能**:
+1. 管理后台 → AI 配置 → 添加提供商
+2. 配置 API Key、Base URL 和模型
+3. 设置默认激活的配置
+4. 在 External APIs 中配置 Jina Reader 等辅助服务
 
 ## 数据库连接最佳实践
 
@@ -514,21 +685,19 @@ DATABASE_URL="postgresql://game:password@host:6432/game?schema=public&pgbouncer=
 - Admin 文件: [admin/app/page.tsx](apps/admin/app/page.tsx)
 - Website 文件: [website/app/[locale]/page.tsx](apps/website/app/[locale]/page.tsx)
 - Database 文件: [database/prisma/schema.prisma](packages/database/prisma/schema.prisma)
+- Database-Admin 文件: [database-admin/prisma/schema.prisma](packages/database-admin/prisma/schema.prisma)
 - 特定行: [admin/lib/auth.ts:42](apps/admin/lib/auth.ts#L42)
 - 行范围: [website/lib/utils.ts:10-20](apps/website/lib/utils.ts#L10-L20)
 
 示例：
 - 管理后台认证配置在 [apps/admin/lib/auth.ts](apps/admin/lib/auth.ts)
+- 认证客户端在 [apps/admin/lib/auth-client.ts](apps/admin/lib/auth-client.ts)
 - 网站国际化路由在 [apps/website/i18n/routing.ts](apps/website/i18n/routing.ts)
-- 数据库模型定义在 [packages/database/prisma/schema.prisma](packages/database/prisma/schema.prisma)
+- 业务数据库模型在 [packages/database/prisma/schema.prisma](packages/database/prisma/schema.prisma)
+- 管理数据库模型在 [packages/database-admin/prisma/schema.prisma](packages/database-admin/prisma/schema.prisma)
 - 翻译辅助函数在 [apps/website/lib/i18n-helpers.ts](apps/website/lib/i18n-helpers.ts)
 
 ## 相关文档
-
-### 📚 完整文档目录
-详见 [docs/README.md](docs/README.md) - 包含完整的文档导航和索引
-
-**文档总数**: 11 个核心文档（已精简）
 
 ### 核心架构（4 个）
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - 项目架构和技术栈详解
@@ -564,44 +733,34 @@ DATABASE_URL="postgresql://game:password@host:6432/game?schema=public&pgbouncer=
 - 在修改完功能且测试通过之后提交到git，但是不进行远程推送，只有当用户明确说明推送到远程的时候才进行推送操作
 - 在测试时，不要随意启动开服务器，一般在项目开始时我会启在终端中启动开发服务器，如需使用直接调用终端的开发服务器，如果开发服务器没有启动，提示用户启动开发服务器，启动后告知到你，你继续执行工作
 
-**最后更新**: 2025-11-15
-**项目版本**: v1.0 (Monorepo)
+**最后更新**: 2026-01-12
+**项目版本**: v2.0 (Monorepo + Better Auth + 双数据库)
 
 ---
 
-## 📝 更新日志
+## 更新日志
+
+### 2026-01-12
+- **重大更新**: 认证系统从 NextAuth.js v5 迁移到 Better Auth v1
+- 新增双数据库架构：`@rungame/database` + `@rungame/database-admin`
+- 路由结构从 `(admin)` 迁移到 `(dashboard)` 路由组
+- Prisma 升级到 7.2.0，使用 `@prisma/adapter-pg` 驱动适配器
+- 包管理器从 npm 迁移到 pnpm
+- Next.js 升级到 16.1.1
+- 新增管理功能：AI Config、External APIs、SEO Submissions
+- 新增 `docker-compose.db.yml` 用于本地数据库开发
+- 更新所有环境变量配置文档
 
 ### 2025-11-15
-- 🏗️ **重大更新**: 完整重写文档以反映 Monorepo 架构
-- 📦 迁移到 Turborepo + npm workspaces 结构
-- 🔄 更新所有开发命令以支持 monorepo
-- 📂 重组项目结构：apps/admin (3001), apps/website (3000), packages/database
-- 🛠️ 添加 Monorepo 工作流章节
-- 🔗 更新所有文件路径引用以包含应用路径
-- ✨ 优化配置说明，明确端口分配和共享包使用
+- 完整重写文档以反映 Monorepo 架构
+- 迁移到 Turborepo + npm workspaces 结构
+- 更新所有开发命令以支持 monorepo
+- 重组项目结构：apps/admin (4000), apps/website (3000), packages/database
+- 添加 Monorepo 工作流章节
+- 更新所有文件路径引用以包含应用路径
+- 优化配置说明，明确端口分配和共享包使用
 
 ### 2025-11-01
-- 🧹 第三轮项目清理：删除 34 个临时分析文档
-- 📄 文档清理：
-  - 删除所有带 ANALYSIS、PLAN、SUMMARY、FIX 等后缀的临时文档
-  - 保留 14 个核心和扩展文档
-  - 删除根目录的临时检查脚本（check-*.js）和清理报告
-- 🔧 脚本清理：
-  - 删除过时的迁移脚本（migrate-category-slugs.ts, update-pagetype-content.ts）
-  - 删除过时的检查工具脚本（check-video-data.ts, check-ai-config-db.ts 等）
-  - 保留 16 个有用的工具、示例、SEO、资源生成和验证脚本
-- ✨ 清理后项目结构更加清晰，仅保留必要的文档和工具
-
-### 2025-01-30
-- 🧹 第二轮大规模清理：删除 105 个临时文档
-- 📚 合并相关文档：
-  - 创建 AI-FEATURES.md 整合所有 AI 功能文档
-  - 创建 GAMEPIX-IMPORT.md 整合游戏导入文档
-- ✨ 精简到 14 个核心+扩展文档（从 117 个）
-- 📖 更新 CLAUDE.md 和 docs/README.md 的文档索引
-
-### 2025-01-20
-- 🧹 大规模清理：删除 108 个过时文件
-- 📁 重组 scripts/ 目录为清晰的子目录结构
-- ✨ 文档精简：从 54 个减少到 6 个核心文档
-- 📚 更新所有文档引用链接
+- 第三轮项目清理：删除 34 个临时分析文档
+- 文档清理：保留 14 个核心和扩展文档
+- 脚本清理：保留 16 个有用的工具脚本

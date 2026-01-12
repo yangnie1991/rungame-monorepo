@@ -43,7 +43,7 @@ import {
   toggleAiConfigActive,
   toggleAiConfigEnabled,
   testAiConfig,
-} from "@/app/admin/ai-config/actions"
+} from "@/app/(dashboard)/ai-config/actions"
 import { maskSensitiveData } from "@/lib/crypto"
 import { getProviderDisplayInfo } from "@/lib/ai-providers"
 import type { AiConfig, AiModelConfig } from "@/types/ai-config"
@@ -148,7 +148,7 @@ export function AiConfigList({ configs }: AiConfigListProps) {
       <Card>
         <CardContent className="py-12 text-center text-gray-500">
           <p className="text-lg mb-4">还没有配置任何 AI 提供商</p>
-          <Link href="/admin/ai-config/new">
+          <Link href="/ai-config/new">
             <Button>创建第一个配置</Button>
           </Link>
         </CardContent>

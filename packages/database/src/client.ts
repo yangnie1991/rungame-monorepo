@@ -1,7 +1,7 @@
 import 'server-only'
 import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient } from './generated/client'
+import { PrismaClient } from '../generated/client'
 
 /**
  * ============================================
@@ -44,9 +44,6 @@ const prismaClientSingleton = () => {
     max: 10,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000,
-    ssl: {
-      rejectUnauthorized: false
-    }
   })
 
   // 创建 Prisma 适配器

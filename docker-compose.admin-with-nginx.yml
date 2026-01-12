@@ -54,8 +54,8 @@ services:
       dockerfile: Dockerfile.admin
       args:
         DATABASE_URL: ${DATABASE_URL}
-        NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
-        NEXTAUTH_URL: ${NEXTAUTH_URL}
+        BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+        BETTER_AUTH_URL: ${BETTER_AUTH_URL}
     container_name: rungame-admin
     restart: unless-stopped
     expose:
@@ -66,10 +66,10 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       # 管理数据库（外部托管，从 GitHub Secrets 读取）
       - CACHE_DATABASE_URL=${CACHE_DATABASE_URL}
-      # NextAuth 配置
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-      - NEXTAUTH_URL=${NEXTAUTH_URL}
-      - NEXTAUTH_TRUST_HOST=true
+      # Better Auth 配置
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL}
+      - BETTER_AUTH_TRUSTED_ORIGINS=${BETTER_AUTH_URL}
       # R2 存储配置（如果使用）
       - R2_ACCOUNT_ID=${R2_ACCOUNT_ID}
       - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID}

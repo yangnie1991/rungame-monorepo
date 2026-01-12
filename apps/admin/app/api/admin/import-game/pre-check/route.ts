@@ -16,6 +16,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
 
 export const dynamic = 'force-dynamic'
 import { prisma } from '@rungame/database'
@@ -68,7 +69,9 @@ export interface PreCheckResponse {
 export async function POST(req: NextRequest) {
   try {
     // 验证身份
-    const session = await auth()
+    const session = await auth.api.getSession({
+      headers: await headers()
+    })
     if (!session || !['ADMIN', 'SUPER_ADMIN'].includes((session.user as any)?.role)) {
       return NextResponse.json(
         { success: false, error: '无权限' },

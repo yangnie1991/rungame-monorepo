@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { deleteGame } from '@/app/admin/games/actions'
+import { deleteGame } from '@/app/(dashboard)/games/actions'
 
 interface DeleteGameButtonProps {
   gameId: string

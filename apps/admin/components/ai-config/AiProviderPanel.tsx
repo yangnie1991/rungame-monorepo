@@ -38,7 +38,7 @@ import {
   testAiConfig,
   getDecryptedApiKey,
   updateAiConfig,
-} from "@/app/admin/ai-config/actions"
+} from "@/app/(dashboard)/ai-config/actions"
 import { maskSensitiveData } from "@/lib/crypto"
 import type { AiConfig, AiModelConfig, AiProviderTemplate } from "@/types/ai-config"
 import { AiConfigForm } from "./AiConfigForm"

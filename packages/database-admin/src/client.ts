@@ -1,7 +1,7 @@
 import 'server-only'
 import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient } from './generated/client'
+import { PrismaClient } from '../generated/client'
 
 /**
  * ============================================
@@ -49,9 +49,6 @@ const prismaAdminSingleton = () => {
         max: 10,
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 10000, // 增加到 10 秒
-        ssl: {
-            rejectUnauthorized: false
-        }
     })
 
     // 创建 Prisma 适配器

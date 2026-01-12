@@ -48,7 +48,19 @@ export function validatePublicEnvVars() {
   // 其他变量（如 NEXT_PUBLIC_* 变量）由 Next.js 自动处理
 
   if (process.env.NODE_ENV === 'development') {
-    console.log('✅ Website 环境变量验证通过')
+    const optionalDocs = [
+      'NEXT_PUBLIC_SITE_URL',
+      'NEXT_PUBLIC_GA_ID',
+      'NEXT_PUBLIC_ADSENSE_ID'
+    ]
+
+    const missingOptional = optionalDocs.filter(key => !process.env[key])
+
+    if (missingOptional.length > 0) {
+      console.warn('⚠️  [Dev] 缺少可选环境变量 (不影响启动):', missingOptional.join(', '))
+    } else {
+      console.log('✅ Website 环境变量验证通过')
+    }
   }
 }
 

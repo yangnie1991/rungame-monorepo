@@ -1,7 +1,7 @@
 # RunGame Monorepo - Docker 管理 Makefile
 # 基于 Next.js with-docker-multi-env 官方示例
 
-.PHONY: help build-admin build-website build-all start-admin start-website start-all stop-admin stop-website stop-all clean logs-admin logs-website
+.PHONY: help build-admin build-website build-all start-admin start-website start-all stop-admin stop-website stop-all clean logs-admin logs-website start-db stop-db
 
 # 默认目标
 help:
@@ -28,6 +28,10 @@ help:
 	@echo ""
 	@echo "清理:"
 	@echo "  make clean             - 清理所有容器和镜像"
+	@echo ""
+	@echo "数据库:"
+	@echo "  make start-db          - 启动本地 PostgreSQL 数据库"
+	@echo "  make stop-db           - 停止本地 PostgreSQL 数据库"
 
 # ============================================
 # Admin 应用
@@ -42,8 +46,8 @@ build-admin:
 	docker build \
 		--file Dockerfile.admin \
 		--build-arg DATABASE_URL="${DATABASE_URL}" \
-		--build-arg NEXTAUTH_SECRET="${NEXTAUTH_SECRET}" \
-		--build-arg NEXTAUTH_URL="${NEXTAUTH_URL:-http://localhost:4000}" \
+		--build-arg BETTER_AUTH_SECRET="${BETTER_AUTH_SECRET}" \
+		--build-arg BETTER_AUTH_URL="${BETTER_AUTH_URL:-http://localhost:4000}" \
 		--tag rungame-admin:latest \
 		--tag rungame-admin:$(shell date +%Y%m%d-%H%M%S) \
 		.
@@ -136,6 +140,20 @@ start-all: start-admin start-website
 
 stop-all: stop-admin stop-website
 	@echo "🎉 所有容器已停止！"
+
+# ============================================
+# 数据库管理
+# ============================================
+
+start-db:
+	@echo "🚀 启动本地数据库..."
+	@docker compose -f docker-compose.db.yml up -d
+	@echo "✅ 数据库已启动: localhost:5432"
+
+stop-db:
+	@echo "🛑 停止本地数据库..."
+	@docker compose -f docker-compose.db.yml down
+	@echo "✅ 数据库已停止"
 
 # ============================================
 # 清理

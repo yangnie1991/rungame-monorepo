@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  # 纯数据库服务 - 用于本地开发
+  db:
+    container_name: rungame-db
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: game
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: game
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

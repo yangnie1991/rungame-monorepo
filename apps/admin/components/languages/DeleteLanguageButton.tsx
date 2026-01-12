@@ -6,7 +6,7 @@ import { Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { toast } from "sonner"
-import { deleteLanguage } from "@/app/admin/languages/actions"
+import { deleteLanguage } from "@/app/(dashboard)/languages/actions"
 
 interface DeleteLanguageButtonProps {
   languageId: string

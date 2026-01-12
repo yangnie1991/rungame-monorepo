@@ -22,15 +22,15 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Loader2, Download, RefreshCw, Settings, ChevronLeft, ChevronRight, Database, CloudDownload, Search, X } from 'lucide-react'
-import { importSingleGamePixGame, deleteGameByGamePixId } from '@/app/admin/games/import-actions'
-import { updateGamePixSiteId, getCategoriesAndTags } from '@/app/admin/import-games/platform-actions'
+import { importSingleGamePixGame, deleteGameByGamePixId } from '@/app/(dashboard)/games/import-actions'
+import { updateGamePixSiteId, getCategoriesAndTags } from '@/app/(dashboard)/import-games/platform-actions'
 import {
   getGamePixGamesFromCache,
   getCacheStats,
   getGamePixApiTotal,
   markGameAsImported,
   unmarkGameAsImported,
-} from '@/app/admin/import-games/cache-actions'
+} from '@/app/(dashboard)/import-games/cache-actions'
 import type { GamePixGameItem } from '@/lib/gamepix-importer'
 import { removeWidthParameter } from '@/lib/utils-ui'
 import { SyncProgressDialog } from './SyncProgressDialog'

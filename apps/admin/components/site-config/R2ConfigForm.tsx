@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { updateR2ConfigAction, type R2ConfigData } from '@/app/admin/site-config/actions'
+import { updateR2ConfigAction, type R2ConfigData } from '@/app/(dashboard)/site-config/actions'
 import { Loader2, Save, Eye, EyeOff, AlertCircle, CheckCircle2, Cloud } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 

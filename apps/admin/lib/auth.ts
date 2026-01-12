@@ -1,77 +1,45 @@
-import NextAuth from "next-auth"
-import CredentialsProvider from "next-auth/providers/credentials"
+import { hash, compare } from "bcryptjs"
+import { betterAuth } from "better-auth"
+import { prismaAdapter } from "better-auth/adapters/prisma"
 import { prismaAdmin } from "@/lib/prisma"
-import bcrypt from "bcryptjs"
-import { z } from "zod"
-import { authConfig } from "./auth.config"
 
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
-})
-
-// 🔒 安全检查：生产环境必须配置 NEXTAUTH_SECRET
-if (process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_SECRET) {
-  throw new Error(
-    '🚨 安全错误：生产环境必须配置 NEXTAUTH_SECRET 环境变量！\n' +
-    '生成方法: openssl rand -base64 32'
-  )
-}
-
-const nextAuth = NextAuth({
-  ...authConfig,
-  providers: [
-    CredentialsProvider({
-      name: "Credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        try {
-          const { email, password } = loginSchema.parse(credentials)
-
-          const admin = await prismaAdmin.admin.findUnique({
-            where: { email },
-            select: {
-              id: true,
-              email: true,
-              password: true,
-              name: true,
-              role: true,
-              isActive: true,
-            },
-          })
-
-          if (!admin || !admin.isActive) {
-            return null
-          }
-
-          const isValidPassword = await bcrypt.compare(password, admin.password)
-          if (!isValidPassword) {
-            return null
-          }
-
-          // 记录登录时间
-          await prismaAdmin.admin.update({
-            where: { id: admin.id },
-            data: { lastLoginAt: new Date() },
-          })
-
-          return {
-            id: admin.id,
-            email: admin.email,
-            name: admin.name || admin.email,
-            role: admin.role,
-          }
-        } catch (error) {
-          console.error("Auth error:", error)
-          return null
-        }
-      },
-    }),
+export const auth = betterAuth({
+  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:4000",
+  trustedOrigins: [
+    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:4000",
   ],
+  database: prismaAdapter(prismaAdmin, {
+    provider: "postgresql",
+  }),
+  emailAndPassword: {
+    enabled: true,
+    password: {
+      hash: async (password: string) => {
+        return await hash(password, 10);
+      },
+      verify: async ({ hash: hashStr, password }: { hash: string; password: string }) => {
+        return await compare(password, hashStr);
+      },
+    }
+  },
+  secret: process.env.BETTER_AUTH_SECRET || "temp_secret_for_build",
+  user: {
+    modelName: "User", // Maps to 'admins' table via Prisma
+    additionalFields: {
+      role: {
+        type: "string",
+        defaultValue: "ADMIN"
+      },
+      isActive: {
+        type: "boolean",
+        defaultValue: true
+      }
+    }
+  },
+  session: {
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60 // 5 minutes
+    }
+  }
 })
-
-export const { handlers, signIn, signOut, auth } = nextAuth as any
-

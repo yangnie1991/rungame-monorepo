@@ -4,23 +4,35 @@
     "type": "module",
     "private": true,
     "description": "Admin context database layer (管理端数据库层)",
-    "main": "./src/main.ts",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
     "exports": {
-        ".": "./src/main.ts"
+        ".": "./src/index.ts",
+        "./generated": "./generated/client/index.ts"
     },
     "scripts": {
+        "build": "echo 'Using JIT mode - no build needed'",
+        "dev": "echo 'Database package is in JIT mode'",
         "generate": "prisma generate --schema=./prisma/schema.prisma",
-        "db:generate": "pnpm run generate"
+        "db:generate": "pnpm run generate",
+        "db:push": "export $(grep -v '^#' .env | xargs) && prisma db push --schema=./prisma/schema.prisma",
+        "db:seed": "export $(grep -v '^#' .env | xargs) && npx tsx prisma/seed.ts"
     },
     "dependencies": {
         "@prisma/adapter-pg": "7.2.0",
         "@prisma/client": "7.2.0",
         "@prisma/client-runtime-utils": "7.2.0",
-        "pg": "^8.12.0",
+        "pg": "^8.16.3",
         "server-only": "^0.0.1"
     },
     "devDependencies": {
+        "@types/bcryptjs": "^2.4.6",
+        "bcryptjs": "^3.0.2",
         "prisma": "7.2.0",
+        "ts-node": "^10.9.1",
         "typescript": "^5"
+    },
+    "prisma": {
+        "seed": "export $(grep -v '^#' .env | xargs) && npx tsx prisma/seed.ts"
     }
 }

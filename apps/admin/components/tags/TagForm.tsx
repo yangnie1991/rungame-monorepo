@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
-import { createTag, updateTag, type TagFormData } from "@/app/admin/tags/actions"
+import { createTag, updateTag, type TagFormData } from "@/app/(dashboard)/tags/actions"
 import type { Tag, TagTranslation } from "@rungame/database"
 import { useEnabledLanguages } from "@/hooks/useEnabledLanguages"
 import { Loader2 } from "lucide-react"
@@ -158,7 +158,7 @@ export function TagForm({ tag, mode }: TagFormProps) {
           mode === "create" ? "创建成功" : "更新成功",
           { description: `标签已${mode === "create" ? "创建" : "更新"}` }
         )
-        router.push("/admin/tags")
+        router.push("/tags")
         router.refresh()
       } else {
         toast.error(

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Switch } from "@/components/ui/switch"
-import { toggleGamePublishStatus, toggleGameFeaturedStatus } from "@/app/admin/games/actions"
+import { toggleGamePublishStatus, toggleGameFeaturedStatus } from "@/app/(dashboard)/games/actions"
 import { toast } from "sonner"
 
 interface ToggleGamePublishStatusProps {
