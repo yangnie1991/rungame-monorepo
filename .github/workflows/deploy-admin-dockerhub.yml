@@ -97,18 +97,18 @@ jobs:
             # 创建 .env 文件
             echo "📝 配置环境变量..."
             cat > .env << EOF
-  NODE_ENV=production
-  PORT=4000
-  HOSTNAME=0.0.0.0
-  NEXT_TELEMETRY_DISABLED=1
-  DATABASE_URL="${{ secrets.DATABASE_URL }}"
-  CACHE_DATABASE_URL="${{ secrets.CACHE_DATABASE_URL }}"
-  BETTER_AUTH_SECRET="${{ secrets.BETTER_AUTH_SECRET }}"
-  BETTER_AUTH_URL="${{ secrets.BETTER_AUTH_URL }}"
-  NEXT_PUBLIC_APP_URL="${{ secrets.NEXT_PUBLIC_APP_URL }}"
-  AUTH_TRUST_HOST=true
-  ENCRYPTION_KEY="${{ secrets.ENCRYPTION_KEY }}"
-  EOF
+NODE_ENV=production
+PORT=4000
+HOSTNAME=0.0.0.0
+NEXT_TELEMETRY_DISABLED=1
+DATABASE_URL="${{ secrets.DATABASE_URL }}"
+CACHE_DATABASE_URL="${{ secrets.CACHE_DATABASE_URL }}"
+BETTER_AUTH_SECRET="${{ secrets.BETTER_AUTH_SECRET }}"
+BETTER_AUTH_URL="${{ secrets.BETTER_AUTH_URL }}"
+NEXT_PUBLIC_APP_URL="${{ secrets.NEXT_PUBLIC_APP_URL }}"
+AUTH_TRUST_HOST=true
+ENCRYPTION_KEY="${{ secrets.ENCRYPTION_KEY }}"
+EOF
 
             # 拉取最新镜像
             echo "📦 拉取最新镜像..."
