@@ -212,8 +212,10 @@ jobs:
           # 构建时需要的环境变量（用于 Next.js 预渲染）
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           CACHE_DATABASE_URL: ${{ secrets.CACHE_DATABASE_URL }}
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          AUTH_TRUST_HOST: "true"
           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
         run: |
           echo "开始构建 Admin 应用..."
@@ -434,8 +436,10 @@ jobs:
           REQUIRED_VARS=(
             "DATABASE_URL"
             "CACHE_DATABASE_URL"
-            "NEXTAUTH_SECRET"
-            "NEXTAUTH_URL"
+            "BETTER_AUTH_SECRET"
+            "BETTER_AUTH_URL"
+            "NEXT_PUBLIC_APP_URL"
+            "AUTH_TRUST_HOST"
             "ENCRYPTION_KEY"
             "R2_ACCOUNT_ID"
             "R2_ACCESS_KEY_ID"
@@ -564,8 +568,10 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           CACHE_DATABASE_URL: ${{ secrets.CACHE_DATABASE_URL }}
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          AUTH_TRUST_HOST: "true"
           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
@@ -595,8 +601,10 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           CACHE_DATABASE_URL: ${{ secrets.CACHE_DATABASE_URL }}
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          AUTH_TRUST_HOST: "true"
           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
@@ -608,7 +616,7 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
-          envs: DATABASE_URL,CACHE_DATABASE_URL,NEXTAUTH_SECRET,NEXTAUTH_URL,ENCRYPTION_KEY,R2_ACCOUNT_ID,R2_ACCESS_KEY_ID,R2_SECRET_ACCESS_KEY,R2_BUCKET_NAME,R2_PUBLIC_URL
+          envs: DATABASE_URL,CACHE_DATABASE_URL,BETTER_AUTH_SECRET,BETTER_AUTH_URL,NEXT_PUBLIC_APP_URL,AUTH_TRUST_HOST,ENCRYPTION_KEY,R2_ACCOUNT_ID,R2_ACCESS_KEY_ID,R2_SECRET_ACCESS_KEY,R2_BUCKET_NAME,R2_PUBLIC_URL
           command_timeout: 30m
           script: |
             set -e
@@ -630,8 +638,10 @@ jobs:
             REQUIRED_VARS=(
               "DATABASE_URL"
               "CACHE_DATABASE_URL"
-              "NEXTAUTH_SECRET"
-              "NEXTAUTH_URL"
+              "BETTER_AUTH_SECRET"
+              "BETTER_AUTH_URL"
+              "NEXT_PUBLIC_APP_URL"
+              "AUTH_TRUST_HOST"
               "ENCRYPTION_KEY"
               "R2_ACCOUNT_ID"
               "R2_ACCESS_KEY_ID"
@@ -896,8 +906,10 @@ jobs:
             CACHE_DATABASE_URL="${CACHE_DATABASE_URL}"
 
             # NextAuth 配置
-            NEXTAUTH_SECRET="${NEXTAUTH_SECRET}"
-            NEXTAUTH_URL="${NEXTAUTH_URL}"
+            BETTER_AUTH_SECRET="${BETTER_AUTH_SECRET}"
+            BETTER_AUTH_URL="${BETTER_AUTH_URL}"
+            NEXT_PUBLIC_APP_URL="${NEXT_PUBLIC_APP_URL}"
+            AUTH_TRUST_HOST="${AUTH_TRUST_HOST}"
             AUTH_TRUST_HOST=true
 
             # 加密密钥
@@ -1062,7 +1074,7 @@ jobs:
 
             echo "=========================================="
             echo "✅ 部署完成！"
-            echo "🌐 访问地址: ${NEXTAUTH_URL}"
+            echo "🌐 访问地址: ${BETTER_AUTH_URL}"
             echo "时间: $(date '+%Y-%m-%d %H:%M:%S')"
             echo "=========================================="
 
