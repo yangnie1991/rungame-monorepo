@@ -16,6 +16,8 @@ export const auth = betterAuth({
     },
     // SameSite cookie 设置
     useSameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    // 禁用 CSRF 保护（生产环境通过 HTTPS 和 SameSite=None 保护）
+    disableCSRF: true,
   },
   // 允许相对路径的 callbackURL（内部路由）
   allowRelativeURLs: true,
