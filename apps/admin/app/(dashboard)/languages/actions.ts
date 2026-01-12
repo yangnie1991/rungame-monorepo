@@ -13,7 +13,7 @@ export async function getEnabledLanguages(): Promise<{ success: boolean; error?:
 
     return {
       success: true,
-      data: languages.map(lang => ({
+      data: languages.map((lang: any) => ({
         code: lang.code,
         label: lang.nativeName || lang.name,
         name: lang.name
