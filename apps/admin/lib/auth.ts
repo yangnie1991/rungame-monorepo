@@ -7,6 +7,8 @@ export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:4000",
   trustedOrigins: [
     process.env.NEXT_PUBLIC_APP_URL || "http://localhost:4000",
+    "http://127.0.0.1:4000",
+    "http://localhost:4000",
   ],
   // 安全配置
   advanced: {
