@@ -45,8 +45,9 @@ COPY --from=prepare /app/out/full/ .
 # 构建参数
 ARG DATABASE_URL
 ARG CACHE_DATABASE_URL
-ARG NEXTAUTH_SECRET
-ARG NEXTAUTH_URL
+ARG BETTER_AUTH_SECRET
+ARG BETTER_AUTH_URL
+ARG NEXT_PUBLIC_APP_URL
 ARG ENCRYPTION_KEY
 ARG NODE_ENV=production
 # 设置 Docker 构建标志
@@ -55,8 +56,10 @@ ENV DOCKER_BUILD=true
 # 设置环境变量
 ENV DATABASE_URL=${DATABASE_URL}
 ENV CACHE_DATABASE_URL=${CACHE_DATABASE_URL}
-ENV NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-ENV NEXTAUTH_URL=${NEXTAUTH_URL}
+ENV BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+ENV BETTER_AUTH_URL=${BETTER_AUTH_URL}
+ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+ENV AUTH_TRUST_HOST=true
 ENV ENCRYPTION_KEY=${ENCRYPTION_KEY}
 ENV NODE_ENV=${NODE_ENV}
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -82,12 +85,12 @@ WORKDIR /app
 # 明确指定只编译 admin 及其依赖
 # 确保 SKIP_ENV_VALIDATION 对 turbo 和子进程生效
 ENV SKIP_ENV_VALIDATION=true
-# 关键修复: 在构建阶段设置一个有效的 NEXTAUTH_URL，防止 NextAuth 初始化因 URL 为空而报错 (Invalid URL)
+# 关键修复: 在构建阶段设置有效的 Better Auth URL，防止 Better Auth 初始化因 URL 为空而报错
 # 这个设置仅在构建阶段生效，不会影响运行时（运行时使用 docker run 传入的环境变量）
-ENV NEXTAUTH_URL=http://localhost:3000
-ENV AUTH_URL=http://localhost:3000
-RUN echo "Debug: NEXTAUTH_URL during build is $NEXTAUTH_URL"
-RUN echo "Debug: AUTH_URL during build is $AUTH_URL"
+ENV BETTER_AUTH_URL=http://localhost:4000
+ENV NEXT_PUBLIC_APP_URL=http://localhost:4000
+RUN echo "Debug: BETTER_AUTH_URL during build is $BETTER_AUTH_URL"
+RUN echo "Debug: NEXT_PUBLIC_APP_URL during build is $NEXT_PUBLIC_APP_URL"
 RUN pnpm turbo build --filter=@rungame/admin --verbosity=2
 
 # ============================================
