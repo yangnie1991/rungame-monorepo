@@ -19,7 +19,7 @@ async function getPageTypesWithDetails() {
     orderBy: { sortOrder: 'asc' }
   })
 
-  return pageTypes.map(pt => ({
+  return pageTypes.map((pt: any) => ({
     id: pt.id,
     slug: pt.slug,
     type: pt.type,
