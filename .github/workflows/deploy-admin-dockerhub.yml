@@ -43,9 +43,9 @@ jobs:
           context: .
           file: ./Dockerfile.admin
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/rungame:latest
-          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/rungame:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/rungame:buildcache,mode=max
+          tags: yangnie/rungame:latest
+          cache-from: type=registry,ref=yangnie/rungame:buildcache
+          cache-to: type=registry,ref=yangnie/rungame:buildcache,mode=max
           build-args: |
             DATABASE_URL=${{ secrets.DATABASE_URL }}
             CACHE_DATABASE_URL=${{ secrets.CACHE_DATABASE_URL }}
