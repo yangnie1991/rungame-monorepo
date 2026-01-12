@@ -1,21 +1,22 @@
-name: Deploy Admin to VPS (PM2 - Auto)
+name: Deploy Admin to VPS (PM2 - Manual)
 
 on:
-  push:
-    branches:
-      - main                        # 主分支自动触发
-    paths:
-      - 'apps/admin/**'
-      - 'packages/database/**'
-      - 'packages/typescript-config/**'
-      - 'packages/tailwind-config/**'
-      - 'pnpm-lock.yaml'
-      - 'package.json'
-      - 'turbo.json'
-      - 'ecosystem.config.js'
-      - '.github/workflows/deploy-admin-pm2.yml'
+  # 🚫 自动部署已禁用，改用 deploy-admin-dockerhub.yml 自动部署
+  # push:
+  #   branches:
+  #     - main                        # 主分支自动触发
+  #   paths:
+  #     - 'apps/admin/**'
+  #     - 'packages/database/**'
+  #     - 'packages/typescript-config/**'
+  #     - 'packages/tailwind-config/**'
+  #     - 'pnpm-lock.yaml'
+  #     - 'package.json'
+  #     - 'turbo.json'
+  #     - 'ecosystem.config.js'
+  #     - '.github/workflows/deploy-admin-pm2.yml'
 
-  workflow_dispatch:  # 也支持手动触发
+  workflow_dispatch:  # 仅允许手动触发
     inputs:
       branch:
         description: '要部署的分支（留空则使用当前分支）'
