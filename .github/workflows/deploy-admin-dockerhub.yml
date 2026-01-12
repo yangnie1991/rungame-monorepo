@@ -108,6 +108,10 @@ jobs:
             echo "AUTH_TRUST_HOST=true" >> .env
             echo 'ENCRYPTION_KEY="${{ secrets.ENCRYPTION_KEY }}"' >> .env
 
+            # 登录 Docker Hub
+            echo "🔐 登录 Docker Hub..."
+            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
             # 拉取最新镜像
             echo "📦 拉取最新镜像..."
             docker-compose -f docker-compose.admin.yml pull
