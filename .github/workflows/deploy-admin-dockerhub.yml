@@ -79,7 +79,6 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
-          envs: DATABASE_URL,CACHE_DATABASE_URL,BETTER_AUTH_SECRET,BETTER_AUTH_URL,NEXT_PUBLIC_APP_URL,ENCRYPTION_KEY
           script: |
             set -e
             echo "=========================================="
@@ -97,19 +96,17 @@ jobs:
 
             # 创建 .env 文件
             echo "📝 配置环境变量..."
-            cat > .env << 'EOF'
-NODE_ENV=production
-PORT=4000
-HOSTNAME=0.0.0.0
-NEXT_TELEMETRY_DISABLED=1
-DATABASE_URL=$DATABASE_URL
-CACHE_DATABASE_URL=$CACHE_DATABASE_URL
-BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET
-BETTER_AUTH_URL=$BETTER_AUTH_URL
-NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
-AUTH_TRUST_HOST=true
-ENCRYPTION_KEY=$ENCRYPTION_KEY
-EOF
+            echo "NODE_ENV=production" > .env
+            echo "PORT=4000" >> .env
+            echo "HOSTNAME=0.0.0.0" >> .env
+            echo "NEXT_TELEMETRY_DISABLED=1" >> .env
+            echo 'DATABASE_URL="${{ secrets.DATABASE_URL }}"' >> .env
+            echo 'CACHE_DATABASE_URL="${{ secrets.CACHE_DATABASE_URL }}"' >> .env
+            echo 'BETTER_AUTH_SECRET="${{ secrets.BETTER_AUTH_SECRET }}"' >> .env
+            echo 'BETTER_AUTH_URL="${{ secrets.BETTER_AUTH_URL }}"' >> .env
+            echo 'NEXT_PUBLIC_APP_URL="${{ secrets.NEXT_PUBLIC_APP_URL }}"' >> .env
+            echo "AUTH_TRUST_HOST=true" >> .env
+            echo 'ENCRYPTION_KEY="${{ secrets.ENCRYPTION_KEY }}"' >> .env
 
             # 拉取最新镜像
             echo "📦 拉取最新镜像..."
