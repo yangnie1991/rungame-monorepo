@@ -391,30 +391,43 @@ export function GameImportConfirmDialog({
     const existingIds: string[] = []
     const newNames: string[] = []
 
-    console.log(`🔄 [标签分类-${source}] 开始分类 ${tagNames.length} 个英文标签`)
-    console.log(`🔄 [标签分类-${source}] 可用标签列表: ${tags.length} 个`)
-
     tagNames.forEach(tagName => {
       const normalizedName = tagName.trim()
       if (!normalizedName) return // 跳过空标签
 
-      // 尝试在已有标签中匹配（忽略大小写，匹配英文 name）
-      const matchedTag = tags.find(dbTag =>
+      // 尝试在已有标签中匹配（增强匹配逻辑）
+      // 1. 首先尝试精确匹配英文名称
+      let matchedTag = tags.find(dbTag =>
         dbTag.name.toLowerCase() === normalizedName.toLowerCase()
       )
+
+      // 2. 如果没有匹配，尝试匹配翻译表中的名称
+      if (!matchedTag) {
+        matchedTag = tags.find(dbTag =>
+          dbTag.translations?.some(t =>
+            t.name.toLowerCase() === normalizedName.toLowerCase()
+          )
+        )
+      }
+
+      // 3. 如果还是没有匹配，尝试部分匹配（包含关系）
+      if (!matchedTag) {
+        matchedTag = tags.find(dbTag => {
+          const dbTagName = dbTag.name.toLowerCase()
+          const inputName = normalizedName.toLowerCase()
+          // 检查英文名称是否包含输入或输入是否包含英文名称
+          return dbTagName.includes(inputName) || inputName.includes(dbTagName)
+        })
+      }
 
       if (matchedTag) {
         // ✅ 已存在的标签（绿色）
         existingIds.push(matchedTag.id)
-        console.log(`  ✅ [${source}] 已存在: "${tagName}" → ID: ${matchedTag.id}`)
       } else {
         // 🆕 新标签（红色）
         newNames.push(normalizedName)
-        console.log(`  🆕 [${source}] 新标签: "${normalizedName}" (需要创建)`)
       }
     })
-
-    console.log(`✅ [标签分类-${source}] 完成: ${existingIds.length} 个已存在, ${newNames.length} 个待创建`)
 
     return { existingIds, newNames }
   }, [tags])
@@ -451,8 +464,6 @@ export function GameImportConfirmDialog({
 
         // 重置表单
         form.reset()
-
-        console.log('✅ 弹窗关闭，已清理所有状态和表单数据')
       }, 300)
 
       return () => clearTimeout(timer)
@@ -555,7 +566,6 @@ export function GameImportConfirmDialog({
             // 🎯 统一使用 classifyTags 函数进行分类
             if (tags.length === 0) {
               // 标签列表还未加载，先暂存到 newTagNames，等标签加载后再分类
-              console.log('⚠️ [缓存数据源] 标签列表尚未加载，暂存待分类')
               form.setValue('newTagNames', cachedTags.map(t => t.trim()))
               form.setValue('existingTagIds', [])
             } else {
@@ -580,11 +590,6 @@ export function GameImportConfirmDialog({
             const allScreenshots = [...new Set([...existingScreenshots, ...screenshots])]
             form.setValue('screenshots', allScreenshots)
           }
-
-          console.log('✅ 已从缓存加载提取数据并填充到表单')
-          console.log(`  - 标签: ${cachedTags.length} 个`)
-          console.log(`  - 视频: ${videos?.length || 0} 个`)
-          console.log(`  - 截图: ${screenshots?.length || 0} 个`)
         }
       }
     } catch (error) {
@@ -603,9 +608,6 @@ export function GameImportConfirmDialog({
       if (currentNewTags.length === 0 || currentExistingIds.length > 0) {
         return
       }
-
-      console.log('🔄 [重新分类] Tags 已加载，重新分类待分类标签...')
-      console.log('🔄 [重新分类] 待分类标签数量:', currentNewTags.length)
 
       // 🎯 使用统一的分类函数
       const { existingIds, newNames } = classifyTags(currentNewTags, '重新分类')
@@ -678,23 +680,11 @@ export function GameImportConfirmDialog({
       if (game.date_published) {
         // 转换为标准 ISO 8601 格式字符串
         const releaseDateISO = new Date(game.date_published).toISOString()
-        console.log('📅 设置 releaseDate:', {
-          原始值: game.date_published,
-          类型: typeof game.date_published,
-          转换后: releaseDateISO,
-          转换后类型: typeof releaseDateISO
-        })
         form.setValue('releaseDate', releaseDateISO)
       }
       if (game.date_modified) {
         // 转换为标准 ISO 8601 格式字符串
         const sourceUpdatedAtISO = new Date(game.date_modified).toISOString()
-        console.log('📅 设置 sourceUpdatedAt:', {
-          原始值: game.date_modified,
-          类型: typeof game.date_modified,
-          转换后: sourceUpdatedAtISO,
-          转换后类型: typeof sourceUpdatedAtISO
-        })
         form.setValue('sourceUpdatedAt', sourceUpdatedAtISO)
       }
       form.setValue('importedAt', new Date().toISOString())
@@ -729,15 +719,12 @@ export function GameImportConfirmDialog({
 
       // 使用 replace 方法替换整个 translations 数组
       form.setValue('translations', initialTranslations)
-
-      console.log('✅ 表单已初始化，包含所有新字段')
     }
   }, [game, form])
 
   // 执行导入的核心逻辑
   const executeImport = async (data: any, startFromStep?: number, context?: any) => {
     const actualStartFromStep = startFromStep || 1
-    console.log(`🚀 开始执行导入流程${actualStartFromStep > 1 ? ` (从步骤${actualStartFromStep}恢复)` : ''}`)
 
     // 保存表单数据以便重试
     setLastFormData(data)
@@ -786,15 +773,12 @@ export function GameImportConfirmDialog({
 
       // ========== 预处理：创建新标签（如果有）==========
       if (data.newTagNames && data.newTagNames.length > 0) {
-        console.log('🔄 预处理：创建新标签...', data.newTagNames)
-
         const { batchCreateTags } = await import('@/app/(dashboard)/games/import-actions')
         const result = await batchCreateTags(data.newTagNames)
 
         if (result.success && result.data) {
           const newTagIds = result.data.map(tag => tag.id)
           allTagIds = [...allTagIds, ...newTagIds]
-          console.log(`✅ 标签创建成功，新增 ${newTagIds.length} 个标签`)
         } else {
           throw new Error(result.error || '创建标签失败')
         }
@@ -811,8 +795,6 @@ export function GameImportConfirmDialog({
           orientation: data.orientation,
         },
       }
-
-      console.log('📤 提交游戏数据:', submitData)
 
       // ========== 调用 SSE 导入 API ==========
       const response = await fetch('/api/admin/import-game-v2', {
@@ -853,11 +835,8 @@ export function GameImportConfirmDialog({
           if (!line.trim() || !line.startsWith('data:')) continue
 
           try {
-            console.log('[SSE Debug] Raw line:', line)
             const jsonStr = line.substring(5).trim()
-            console.log('[SSE Debug] JSON string:', jsonStr)
             const eventData = JSON.parse(jsonStr)
-            console.log('[SSE Debug] Parsed event:', eventData)
 
             if (eventData.type === 'conflict') {
               const isGameExists = eventData.conflictType === 'game_exists'
@@ -867,7 +846,6 @@ export function GameImportConfirmDialog({
                 : `发现来源重复 (ID: ${conflictData.id})。\n是否更新现有游戏？`
 
               if (window.confirm(message)) {
-                console.log('🔄 用户选择更新现有游戏，重新发起请求...')
                 reader.cancel()
                 const newData = { ...data, conflictStrategy: 'update' }
                 await executeImport(newData, 1, context)
@@ -887,7 +865,6 @@ export function GameImportConfirmDialog({
 
             if (eventData.type === 'step_completed' && eventData.context) {
               // 步骤完成,保存上下文数据
-              console.log(`[步骤完成] 步骤 ${eventData.stepIndex + 1}, 上下文:`, eventData.context)
               setStepContext((prev: any) => ({
                 ...prev,
                 ...eventData.context
@@ -902,7 +879,6 @@ export function GameImportConfirmDialog({
                 updateStep(stepId, 'running', eventData.percentage)
               }
 
-              console.log(`[导入进度] ${eventData.percentage}% - ${eventData.message}`)
               setImportLogs(prev => [...prev, `[进度 ${eventData.percentage}%] ${eventData.message}`])
             } else if (eventData.type === 'success') {
               // 完成
@@ -911,7 +887,6 @@ export function GameImportConfirmDialog({
                 updateStep(step.id, 'success')
               })
               finalResult = eventData
-              console.log('✅ 导入成功:', eventData)
               setImportLogs(prev => [...prev, `✅ 导入成功! 游戏 ID: ${eventData.gameId}`])
 
               // 保存最终的上下文
@@ -971,16 +946,12 @@ export function GameImportConfirmDialog({
   }
 
   const handleSubmit = form.handleSubmit(async (data: any) => {
-    console.log('🎯 handleSubmit 被调用')
-
     if (!game) {
-      console.log('❌ game 为 null，提前返回')
       return
     }
 
     // 阻止表单重复提交
     if (showImportProgress) {
-      console.log('⚠️ 导入进行中，跳过重复提交')
       return
     }
 
@@ -1012,18 +983,14 @@ export function GameImportConfirmDialog({
 
         // 🔧 如果分类列表为空，尝试重新加载分类列表
         if (categories.length === 0) {
-          console.log('⚠️ 分类列表为空，尝试重新加载...')
-
           if (onLoadCategories) {
             const loadSuccess = await onLoadCategories()
 
             if (loadSuccess) {
-              console.log('✅ 分类列表加载成功')
               // 加载成功后，自动填充到表单并触发验证
               form.setValue('categoryId', result.data.categoryId, { shouldValidate: true })
             } else {
               // 加载失败，添加临时分类项并提示用户
-              console.log('❌ 分类列表加载失败，使用临时分类')
               const tempCategory = {
                 id: result.data.categoryId,
                 name: result.data.categoryName,
@@ -1041,7 +1008,6 @@ export function GameImportConfirmDialog({
             }
           } else {
             // 没有提供加载函数，直接使用临时分类
-            console.log('⚠️ 未提供分类加载函数，使用临时分类')
             const tempCategory = {
               id: result.data.categoryId,
               name: result.data.categoryName,
@@ -1062,7 +1028,6 @@ export function GameImportConfirmDialog({
           // 如果匹配的分类不在列表中，添加临时分类项
           const categoryExists = categories.some(cat => cat.id === result.data.categoryId)
           if (!categoryExists) {
-            console.log('⚠️ 匹配的分类不在列表中，添加临时分类项')
             const tempCategory = {
               id: result.data.categoryId,
               name: result.data.categoryName,
@@ -1091,7 +1056,6 @@ export function GameImportConfirmDialog({
 
   // 处理从浏览器插件提取的数据
   const handleDataExtracted = (data: ExtractedGameData) => {
-    console.log('收到提取的数据:', data)
     setExtraDetails(data as any)
 
     // ========== 1. 标签处理（分离存储）==========
@@ -1101,7 +1065,6 @@ export function GameImportConfirmDialog({
       // 🎯 统一使用 classifyTags 函数进行分类
       if (tags.length === 0) {
         // 标签列表还未加载，先暂存到 newTagNames，等标签加载后再分类
-        console.log('⚠️ [浏览器插件数据源] 标签列表尚未加载，暂存待分类')
         form.setValue('newTagNames', tagNames.map(t => t.trim()))
         form.setValue('existingTagIds', [])
       } else {
@@ -1116,34 +1079,24 @@ export function GameImportConfirmDialog({
     if (data.screenshots && data.screenshots.length > 0) {
       const screenshotUrls = data.screenshots.map(s => s.url)
       form.setValue('screenshots', screenshotUrls)
-      console.log(`✅ 已填充 ${screenshotUrls.length} 张截图`)
     }
 
     if (data.videos && data.videos.length > 0) {
       const videoUrls = data.videos.map(v => v.url)
       form.setValue('videos', videoUrls)
-      console.log(`✅ 已填充 ${videoUrls.length} 个视频`)
     }
 
     // ========== 3. 开发者信息（自动填充到表单）==========
     if (data.developer) {
       form.setValue('developer', data.developer)
-      console.log(`✅ 已填充开发者: ${data.developer}`)
     }
 
     if (data.developerUrl) {
       form.setValue('developerUrl', data.developerUrl)
-      console.log(`✅ 已填充开发者URL: ${data.developerUrl}`)
     }
 
     // ========== 4. Markdown 内容（保存到状态，供 AI 使用）==========
-    if (data.markdownContent) {
-      console.log('✅ Markdown 内容已保存，供 AI 批量生成使用')
-      console.log('📝 Markdown 内容预览（前200字符）:')
-      console.log(data.markdownContent.substring(0, 200) + '...')
-    }
-
-    console.log('✅ 插件数据处理完成：标签匹配 + 多媒体填充 + 开发者信息 + Markdown 内容')
+    // Markdown 内容自动保存到 extraDetails 状态
   }
 
   // 导入进度状态（使用独立弹窗）
@@ -1276,8 +1229,6 @@ export function GameImportConfirmDialog({
         throw new Error('生成失败')
       }
 
-      console.log('[GamePix AI 生成] 成功:', result.data)
-
       // 应用生成结果到表单
       if (batchGenerateLocale === 'en') {
         // ========== 更新英文主表字段 ==========
@@ -1322,15 +1273,11 @@ export function GameImportConfirmDialog({
       } else {
         // ========== 更新指定语言的翻译 ==========
         const translations = form.getValues('translations')
-        console.log('[调试] 当前所有翻译:', translations)
-        console.log('[调试] 目标语言:', batchGenerateLocale)
 
         const translationIndex = translations?.findIndex(t => t.locale === batchGenerateLocale)
-        console.log('[调试] 找到的翻译索引:', translationIndex)
 
         if (translationIndex !== undefined && translationIndex >= 0) {
           const currentTranslation = form.getValues(`translations.${translationIndex}`)
-          console.log('[调试] 当前翻译数据:', currentTranslation)
 
           const updatedTranslation: any = { ...currentTranslation }
 
@@ -1338,13 +1285,6 @@ export function GameImportConfirmDialog({
           updatedTranslation.keywords = result.data.keywords
           updatedTranslation.metaTitle = result.data.metaTitle
           updatedTranslation.metaDescription = result.data.metaDescription
-
-          console.log('[调试] 更新后的翻译数据:', {
-            description: updatedTranslation.description?.substring(0, 50),
-            keywords: updatedTranslation.keywords,
-            metaTitle: updatedTranslation.metaTitle,
-            metaDescription: updatedTranslation.metaDescription?.substring(0, 50)
-          })
 
           // 更新 ContentSections
           const contentSections: any = {}
@@ -1380,7 +1320,6 @@ export function GameImportConfirmDialog({
           }
           updatedTranslation.contentSections = contentSections
 
-          console.log('[调试] 准备更新翻译，索引:', translationIndex)
           updateTranslation(translationIndex, updatedTranslation)
 
           // 🔥 强制触发表单重新验证，确保 UI 立即更新
@@ -1389,24 +1328,12 @@ export function GameImportConfirmDialog({
           form.setValue(`translations.${translationIndex}.keywords`, result.data.keywords, { shouldValidate: true, shouldDirty: true })
           form.setValue(`translations.${translationIndex}.metaTitle`, result.data.metaTitle, { shouldValidate: true, shouldDirty: true })
           form.setValue(`translations.${translationIndex}.metaDescription`, result.data.metaDescription, { shouldValidate: true, shouldDirty: true })
-
-          console.log('[调试] 翻译已更新（包含强制刷新）')
-
-          // 验证更新是否成功
-          const verifyTranslation = form.getValues(`translations.${translationIndex}`)
-          console.log('[调试] 验证更新后的数据:', {
-            description: verifyTranslation?.description?.substring(0, 50),
-            keywords: verifyTranslation?.keywords,
-            metaTitle: verifyTranslation?.metaTitle,
-            metaDescription: verifyTranslation?.metaDescription?.substring(0, 50)
-          })
         } else {
           console.error('[调试] 未找到翻译索引！语言:', batchGenerateLocale)
         }
       }
 
       setGenerationProgress('✅ 生成完成！')
-      console.log('✅ AI 生成的内容已应用到表单')
 
       // 3秒后清除进度消息
       setTimeout(() => setGenerationProgress(''), 3000)
@@ -1422,8 +1349,6 @@ export function GameImportConfirmDialog({
 
   // ========== 兼容旧的批量生成回调（游戏编辑场景使用）==========
   const handleBatchGenerated = (results: Record<string, string>) => {
-    console.log('AI 批量生成结果:', results)
-
     // 根据当前语言决定更新哪个部分
     if (batchGenerateLocale === 'en') {
       // ========== 更新英文主表字段 ==========
@@ -1518,8 +1443,6 @@ export function GameImportConfirmDialog({
         form.setValue(`translations.${translationIndex}.contentSections`, contentSections)
       }
     }
-
-    console.log('✅ AI 生成的内容已应用到表单')
   }
 
   // ========== UI 辅助函数 ==========
